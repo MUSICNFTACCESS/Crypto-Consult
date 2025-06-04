@@ -1,11 +1,11 @@
 import express from "express";
 import fetch from "node-fetch";
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 
 const app = express();
 app.use(express.json());
 
-// 🔴 Live Price Endpoint
+// 🔶 Live crypto prices
 app.get("/prices", async (req, res) => {
   try {
     const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd", {
@@ -25,18 +25,17 @@ app.get("/prices", async (req, res) => {
   }
 });
 
-// 🧠 CrimznBot Setup
+// 🧠 CrimznBot OpenAI setup
 let openai;
 try {
-  const configuration = new Configuration({
+  openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
-  openai = new OpenAIApi(configuration);
 } catch (err) {
   console.error("⚠️ OpenAI config failed:", err.message);
 }
 
-// 🗣️ CrimznBot Chat Endpoint
+// 💬 CrimznBot route
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
 
@@ -46,36 +45,36 @@ app.post("/chat", async (req, res) => {
 
   if (!openai) {
     return res.json({
-      reply: "CrimznBot here. My connection to GPT is down right now. Be right back."
+      reply: "CrimznBot here. My connection to GPT is down right now. Be back soon!",
     });
   }
 
   try {
-    const response = await openai.createChatCompletion({
+    const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "You are CrimznBot, a crypto-native strategist. Be sharp, degen, and informative."
+          content: "You are CrimznBot, a crypto-native strategist. Be sharp, friendly, and helpful.",
         },
         {
           role: "user",
-          content: userMessage
-        }
-      ]
+          content: userMessage,
+        },
+      ],
     });
 
-    const reply = response.data.choices[0].message.content;
+    const reply = response.choices[0].message.content;
     res.json({ reply });
   } catch (err) {
     console.error("❌ CrimznBot error:", err.message);
     res.json({
-      reply: "Yo, something glitched. CrimznBot will be right back — stay based."
+      reply: "Yo, something glitched. CrimznBot will be right back — stay tuned.",
     });
   }
 });
 
-// ✅ Start Server
+// 🚀 Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 CrimznBot running on port ${PORT}`);

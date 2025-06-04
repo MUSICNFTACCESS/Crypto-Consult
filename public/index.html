@@ -1,8 +1,9 @@
+cat > ~/CryptoConsult/public/index.html << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CryptoConsult by Crimzn</title>
   <style>
     body {
@@ -64,15 +65,15 @@
 
   <div class="section">
     <h2>Available Services</h2>
-    <p>Technical Analysis, Wallet Setup, On/Off-Ramping, Risk Management, Market Insights, and more.</p>
+    <p>Technical Analysis, Wallet Setup, On/Off-Ramping, Risk Management</p>
   </div>
 
   <div class="section">
     <h2>Support & Payments</h2>
-    <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Pay $99.99 for Services</button>
+    <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Book a Consultation 99.99 USDC</button>
     <button onclick="window.open('https://paypal.me/crimzn')">Pay with PayPal</button>
     <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')">Send Tip (1 USDC)</button>
-    <button onclick="window.open('https://solana-pay.vercel.app/api/pay/Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF')">Pay with Solana</button>
+    <button onclick="window.open('https://solana-pay.vercel.app/api/pay/Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF/1')">Pay with Solana</button>
   </div>
 
   <div class="section" id="chat">
@@ -80,21 +81,18 @@
     <div id="chat-log">Ask me anything...</div>
     <form onsubmit="sendMessage(event)">
       <input type="text" id="user-input" placeholder="Ask me anything crypto..." required />
-      <br />
+      <br>
       <button type="submit">Send</button>
     </form>
-    <div id="payment-options" style="display:none; margin-top:10px;">
-      <p>You’ve hit your free limit. Please pay to continue:</p>
-      <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Pay $99.99</button>
-      <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')">Tip 1 USDC</button>
-      <button onclick="window.open('https://t.me/Crimznbot')">Contact Me via Telegram</button>
-    </div>
+    <p>You’ve hit your free limit. Please pay to continue:</p>
+    <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Unlock Full Access</button>
+    <button onclick="window.open('https://t.me/Crimznbot')">Contact Me</button>
   </div>
 
   <div class="section">
     <h2>Documentation</h2>
     <p><a href="/whitepaper.pdf" download>📄 View Whitepaper (PDF)</a></p>
-    <p><a href="https://github.com/MUSICNFTACCESS/CryptoConsult/blob/main/LICENSE" target="_blank">🛡 Licensed under MIT</a></p>
+    <p><a href="https://github.com/MUSICNFTACCESS/CryptoConsult">📁 GitHub Repo</a></p>
   </div>
 
   <footer>
@@ -105,3 +103,4 @@
   <script src="script.js"></script>
 </body>
 </html>
+EOF

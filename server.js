@@ -1,11 +1,15 @@
 const express = require("express");
 const fetch = require("node-fetch");
+const path = require("path");
 const { Configuration, OpenAIApi } = require("openai");
 
 const app = express();
 app.use(express.json());
 
-// 🔶 Live Price Route
+// ✅ Serve static files (frontend)
+app.use(express.static(path.join(__dirname, "public")));
+
+// 🔁 Live price fetch route
 app.get("/prices", async (req, res) => {
   try {
     const response = await fetch(
@@ -40,7 +44,7 @@ try {
   console.error("⚠️ OpenAI config failed:", err.message);
 }
 
-// 🤖 CrimznBot Chat Route
+// 💬 CrimznBot chat route
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
 
@@ -50,7 +54,7 @@ app.post("/chat", async (req, res) => {
 
   if (!openai) {
     return res.json({
-      reply: "CrimznBot here. My connection to GPT is down right now. Be back shortly.",
+      reply: "CrimznBot here. My connection to GPT is down right now. Be right back.",
     });
   }
 
@@ -60,8 +64,7 @@ app.post("/chat", async (req, res) => {
       messages: [
         {
           role: "system",
-          content:
-            "You are CrimznBot, a crypto-native strategist with real-time insight. Be sharp, professional, slightly degen, and always helpful.",
+          content: "You are CrimznBot, a crypto-native strategist with real-time insight.",
         },
         {
           role: "user",
@@ -75,13 +78,13 @@ app.post("/chat", async (req, res) => {
   } catch (err) {
     console.error("❌ CrimznBot error:", err.message);
     res.json({
-      reply: "Yo, something glitched. CrimznBot will be right back — stay based.",
+      reply: "⚠️ CrimznBot glitch — check back in a few. If urgent, contact @CrimznBot on Telegram.",
     });
   }
 });
 
-// ✅ Start Server
+// ✅ Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 CrimznBot running on port ${PORT}`);
+  console.log(`🚀 CrimznBot backend running on port ${PORT}`);
 });

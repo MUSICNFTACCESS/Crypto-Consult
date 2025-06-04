@@ -1,16 +1,1 @@
-{
-  "name": "crimznbot",
-  "type": "module",
-  "type": "module",
-  "version": "1.0.0",
-  "description": "CryptoConsult backend for CrimznBot",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "node-fetch": "^3.3.2",
-    "openai": "^4.21.1"
-  }
-}
+404: Not Found

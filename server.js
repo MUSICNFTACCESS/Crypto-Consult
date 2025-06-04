@@ -1,13 +1,11 @@
 import express from "express";
 import fetch from "node-fetch";
 import { Configuration, OpenAIApi } from "openai";
-import dotenv from "dotenv";
-dotenv.config();
 
 const app = express();
 app.use(express.json());
 
-// 📈 Price endpoint
+// 🟠 Live price route
 app.get("/prices", async (req, res) => {
   try {
     const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd", {
@@ -38,7 +36,7 @@ try {
   console.error("⚠️ OpenAI config failed:", err.message);
 }
 
-// 🔮 CrimznBot route
+// 🧠 CrimznBot route
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
 
@@ -48,7 +46,7 @@ app.post("/chat", async (req, res) => {
 
   if (!openai) {
     return res.json({
-      reply: "CrimznBot here. My connection to GPT is down right now. Be back soon ⚡️",
+      reply: "CrimznBot here. My connection to GPT is down right now. Be right back!"
     });
   }
 
@@ -58,13 +56,13 @@ app.post("/chat", async (req, res) => {
       messages: [
         {
           role: "system",
-          content: "You are CrimznBot, a crypto-native strategist. Be sharp, degen-savvy, and educational.",
+          content: "You are CrimznBot, a crypto-native strategist. Be sharp, helpful, real-time, and a little degen."
         },
         {
           role: "user",
           content: userMessage,
-        },
-      ],
+        }
+      ]
     });
 
     const reply = response.data.choices[0].message.content;
@@ -72,12 +70,12 @@ app.post("/chat", async (req, res) => {
   } catch (err) {
     console.error("❌ CrimznBot error:", err.message);
     res.json({
-      reply: "Yo, something glitched. CrimznBot will be right back — stay based 🛠️",
+      reply: "Yo, something glitched. CrimznBot will be right back — stay based."
     });
   }
 });
 
-// ✅ Start server
+// 🟢 Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 CrimznBot running on port ${PORT}`);

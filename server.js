@@ -1,15 +1,11 @@
 const express = require("express");
 const fetch = require("node-fetch");
-const path = require("path");
-const { Configuration, OpenAIApi } = require("openai");
+const OpenAI = require("openai");
 
 const app = express();
 app.use(express.json());
 
-// ✅ Serve static files (frontend)
-app.use(express.static(path.join(__dirname, "public")));
-
-// 🔁 Live price fetch route
+// 📈 Live Price Route
 app.get("/prices", async (req, res) => {
   try {
     const response = await fetch(
@@ -21,11 +17,12 @@ app.get("/prices", async (req, res) => {
         },
       }
     );
+
     const data = await response.json();
     res.json({
-      btc: data?.bitcoin?.usd || "Error",
-      eth: data?.ethereum?.usd || "Error",
-      sol: data?.solana?.usd || "Error",
+      btc: data.bitcoin?.usd || "Error",
+      eth: data.ethereum?.usd || "Error",
+      sol: data.solana?.usd || "Error",
     });
   } catch (err) {
     console.error("CoinGecko fetch failed:", err.message);
@@ -33,13 +30,12 @@ app.get("/prices", async (req, res) => {
   }
 });
 
-// 🧠 OpenAI Setup
+// 🤖 OpenAI Setup
 let openai;
 try {
-  const configuration = new Configuration({
+  openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
-  openai = new OpenAIApi(configuration);
 } catch (err) {
   console.error("⚠️ OpenAI config failed:", err.message);
 }
@@ -59,12 +55,12 @@ app.post("/chat", async (req, res) => {
   }
 
   try {
-    const response = await openai.createChatCompletion({
+    const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "You are CrimznBot, a crypto-native strategist with real-time insight.",
+          content: "You are CrimznBot, a crypto-native strategist with real-time insights.",
         },
         {
           role: "user",
@@ -73,12 +69,12 @@ app.post("/chat", async (req, res) => {
       ],
     });
 
-    const reply = response.data.choices[0].message.content;
+    const reply = response.choices[0].message.content;
     res.json({ reply });
   } catch (err) {
     console.error("❌ CrimznBot error:", err.message);
     res.json({
-      reply: "⚠️ CrimznBot glitch — check back in a few. If urgent, contact @CrimznBot on Telegram.",
+      reply: "⚠️ CrimznBot glitch – check back in a few. If urgent, contact support.",
     });
   }
 });

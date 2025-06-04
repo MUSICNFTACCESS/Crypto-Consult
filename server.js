@@ -27,7 +27,7 @@ app.get("/prices", async (req, res) => {
   }
 });
 
-// 🧠 OpenAI Setup
+// 🤖 CrimznBot setup
 let openai;
 try {
   const configuration = new Configuration({
@@ -38,7 +38,7 @@ try {
   console.error("⚠️ OpenAI config failed:", err.message);
 }
 
-// 🤖 CrimznBot chat route
+// 🔮 CrimznBot route
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
 

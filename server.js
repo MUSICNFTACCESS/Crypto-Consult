@@ -1,7 +1,11 @@
 const express = require("express");
-const app = express();
-const fetch = (...args) => import("node-fetch").then(({default: fetch}) => fetch(...args));
+const fetch = require("node-fetch");
+const { Configuration, OpenAIApi } = require("openai");
 
+const app = express();
+app.use(express.json());
+
+// 🟠 Live price route
 app.get("/prices", async (req, res) => {
   try {
     const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd", {
@@ -21,23 +25,18 @@ app.get("/prices", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 CrimznBot running on port ${PORT}`);
-});
-
-// 🧠 CrimznBot Chat Route (GPT-4o style)
-app.use(express.json());
-
+// 🧠 OpenAI Setup
 let openai;
 try {
+  const configuration = new Configuration({
     apiKey: process.env.OPENAI_API_KEY,
   });
-  openai = new OpenAIApi({ apiKey: process.env.OPENAI_API_KEY });
+  openai = new OpenAIApi(configuration);
 } catch (err) {
   console.error("⚠️ OpenAI config failed:", err.message);
 }
 
+// 🤖 CrimznBot chat route
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
 
@@ -75,4 +74,9 @@ app.post("/chat", async (req, res) => {
     });
   }
 });
+
+// 🟢 Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 CrimznBot running on port ${PORT}`);
 });

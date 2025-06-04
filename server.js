@@ -1,11 +1,13 @@
-const express = require("express");
-const fetch = require("node-fetch");
-const { Configuration, OpenAIApi } = require("openai");
+import express from "express";
+import fetch from "node-fetch";
+import { Configuration, OpenAIApi } from "openai";
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 app.use(express.json());
 
-// 🟠 Live price route
+// 📈 Price endpoint
 app.get("/prices", async (req, res) => {
   try {
     const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd", {
@@ -46,7 +48,7 @@ app.post("/chat", async (req, res) => {
 
   if (!openai) {
     return res.json({
-      reply: "CrimznBot here. My connection to GPT is down right now. But stay sharp — BTC doesn't sleep.",
+      reply: "CrimznBot here. My connection to GPT is down right now. Be back soon ⚡️",
     });
   }
 
@@ -56,7 +58,7 @@ app.post("/chat", async (req, res) => {
       messages: [
         {
           role: "system",
-          content: "You are CrimznBot, a crypto-native strategist. Be sharp, slightly degen, with real market knowledge, alpha, and clear calls. If a user asks about a token, give sentiment, real-time relevance, and concise insight. Never say you’re an AI assistant.",
+          content: "You are CrimznBot, a crypto-native strategist. Be sharp, degen-savvy, and educational.",
         },
         {
           role: "user",
@@ -70,12 +72,12 @@ app.post("/chat", async (req, res) => {
   } catch (err) {
     console.error("❌ CrimznBot error:", err.message);
     res.json({
-      reply: "Yo, something glitched. CrimznBot will be right back — stay based.",
+      reply: "Yo, something glitched. CrimznBot will be right back — stay based 🛠️",
     });
   }
 });
 
-// 🟢 Start server
+// ✅ Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 CrimznBot running on port ${PORT}`);

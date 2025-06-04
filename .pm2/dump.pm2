@@ -1,0 +1,201 @@
+[
+  {
+    "kill_retry_time": 100,
+    "windowsHide": true,
+    "username": "u0_a400",
+    "treekill": true,
+    "automation": true,
+    "pmx": true,
+    "instance_var": "NODE_APP_INSTANCE",
+    "watch": false,
+    "autorestart": true,
+    "autostart": true,
+    "vizion": true,
+    "merge_logs": true,
+    "env": {
+      "SHELL": "/data/data/com.termux/files/usr/bin/bash",
+      "COLORTERM": "truecolor",
+      "HISTCONTROL": "ignoreboth",
+      "PREFIX": "/data/data/com.termux/files/usr",
+      "PWD": "/data/data/com.termux/files/home/CryptoConsult",
+      "TERMUX_VERSION": "googleplay.2025.01.18",
+      "SYSTEMSERVERCLASSPATH": "/system/framework/com.android.location.provider.jar:/system/framework/knoxanalyticssdk.jar:/system/framework/mcfsdk.jar:/system/framework/uibc_java.jar:/system/framework/services.jar:/system/framework/semwifi-service.jar:/system/framework/ssrm.jar:/apex/com.android.adservices/javalib/service-adservices.jar:/apex/com.android.adservices/javalib/service-sdksandbox.jar:/apex/com.android.appsearch/javalib/service-appsearch.jar:/apex/com.android.art/javalib/service-art.jar:/apex/com.android.configinfrastructure/javalib/service-configinfrastructure.jar:/apex/com.android.healthfitness/javalib/service-healthfitness.jar:/apex/com.android.media/javalib/service-media-s.jar:/apex/com.android.ondevicepersonalization/javalib/service-ondevicepersonalization.jar:/apex/com.android.permission/javalib/service-permission.jar:/apex/com.android.rkpd/javalib/service-rkp.jar:/apex/com.samsung.android.shell/javalib/service-samsung-shell.jar",
+      "EXTERNAL_STORAGE": "/sdcard",
+      "LD_PRELOAD": "/data/data/com.termux/files/usr/lib/libtermux-exec.so",
+      "HOME": "/data/data/com.termux/files/home",
+      "LANG": "en_US.UTF-8",
+      "TMUX_TMPDIR": "/data/data/com.termux/files/usr/var/run",
+      "DEX2OATBOOTCLASSPATH": "/apex/com.android.art/javalib/core-oj.jar:/apex/com.android.art/javalib/core-libart.jar:/apex/com.android.art/javalib/okhttp.jar:/apex/com.android.art/javalib/bouncycastle.jar:/apex/com.android.art/javalib/apache-xml.jar:/system/framework/framework.jar:/system/framework/framework-graphics.jar:/system/framework/ext.jar:/system/framework/telephony-common.jar:/system/framework/voip-common.jar:/system/framework/ims-common.jar:/system/framework/knoxsdk.jar:/system_ext/framework/mediatek-common.jar:/system_ext/framework/mediatek-framework.jar:/system_ext/framework/mediatek-ims-base.jar:/apex/com.android.i18n/javalib/core-icu4j.jar",
+      "TMPDIR": "/data/data/com.termux/files/usr/tmp",
+      "ANDROID_DATA": "/data",
+      "ANDROID_STORAGE": "/storage",
+      "TERM": "xterm-256color",
+      "ASEC_MOUNTPOINT": "/mnt/asec",
+      "TERMUX_EXEC__PROC_SELF_EXE": "/data/data/com.termux/files/usr/bin/node",
+      "ANDROID_I18N_ROOT": "/apex/com.android.i18n",
+      "SHLVL": "1",
+      "ANDROID_ROOT": "/system",
+      "BOOTCLASSPATH": "/apex/com.android.art/javalib/core-oj.jar:/apex/com.android.art/javalib/core-libart.jar:/apex/com.android.art/javalib/okhttp.jar:/apex/com.android.art/javalib/bouncycastle.jar:/apex/com.android.art/javalib/apache-xml.jar:/system/framework/framework.jar:/system/framework/framework-graphics.jar:/system/framework/ext.jar:/system/framework/telephony-common.jar:/system/framework/voip-common.jar:/system/framework/ims-common.jar:/system/framework/knoxsdk.jar:/system_ext/framework/mediatek-common.jar:/system_ext/framework/mediatek-framework.jar:/system_ext/framework/mediatek-ims-base.jar:/apex/com.android.i18n/javalib/core-icu4j.jar:/apex/com.android.adservices/javalib/framework-adservices.jar:/apex/com.android.adservices/javalib/framework-sdksandbox.jar:/apex/com.android.appsearch/javalib/framework-appsearch.jar:/apex/com.android.btservices/javalib/framework-bluetooth.jar:/apex/com.android.configinfrastructure/javalib/framework-configinfrastructure.jar:/apex/com.android.conscrypt/javalib/conscrypt.jar:/apex/com.android.devicelock/javalib/framework-devicelock.jar:/apex/com.android.healthfitness/javalib/framework-healthfitness.jar:/apex/com.android.ipsec/javalib/android.net.ipsec.ike.jar:/apex/com.android.media/javalib/updatable-media.jar:/apex/com.android.mediaprovider/javalib/framework-mediaprovider.jar:/apex/com.android.mediaprovider/javalib/framework-pdf.jar:/apex/com.android.mediaprovider/javalib/framework-photopicker.jar:/apex/com.android.ondevicepersonalization/javalib/framework-ondevicepersonalization.jar:/apex/com.android.os.statsd/javalib/framework-statsd.jar:/apex/com.android.permission/javalib/framework-permission.jar:/apex/com.android.permission/javalib/framework-permission-s.jar:/apex/com.android.scheduling/javalib/framework-scheduling.jar:/apex/com.android.sdkext/javalib/framework-sdkextensions.jar:/apex/com.android.tethering/javalib/framework-connectivity.jar:/apex/com.android.tethering/javalib/framework-connectivity-t.jar:/apex/com.android.tethering/javalib/framework-tethering.jar:/apex/com.android.uwb/javalib/framework-uwb.jar:/apex/com.android.virt/javalib/framework-virtualization.jar:/apex/com.android.wifi/javalib/framework-wifi.jar:/apex/com.samsung.android.lifeguard/javalib/framework-lifeguard.jar:/apex/com.samsung.android.shell/javalib/framework-samsung-shell.jar",
+      "ANDROID_TZDATA_ROOT": "/apex/com.android.tzdata",
+      "TMP": "/data/data/com.termux/files/usr/tmp",
+      "PATH": "/data/data/com.termux/files/usr/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin",
+      "ANDROID_ART_ROOT": "/apex/com.android.art",
+      "ANDROID_ASSETS": "/system/app",
+      "_": "/data/data/com.termux/files/usr/bin/pm2",
+      "OLDPWD": "/data/data/com.termux/files/home/CryptoConsult",
+      "PM2_USAGE": "CLI",
+      "PM2_HOME": "/data/data/com.termux/files/home/.pm2",
+      "CryptoConsult": {},
+      "unique_id": "3f52d69c-09b8-41a7-84b9-76888b66c8f6"
+    },
+    "namespace": "default",
+    "filter_env": [],
+    "name": "CryptoConsult",
+    "node_args": [],
+    "pm_exec_path": "/data/data/com.termux/files/home/CryptoConsult/server.js",
+    "pm_cwd": "/data/data/com.termux/files/home/CryptoConsult",
+    "exec_interpreter": "node",
+    "exec_mode": "fork_mode",
+    "pm_out_log_path": "/data/data/com.termux/files/home/.pm2/logs/CryptoConsult-out.log",
+    "pm_err_log_path": "/data/data/com.termux/files/home/.pm2/logs/CryptoConsult-error.log",
+    "pm_pid_path": "/data/data/com.termux/files/home/.pm2/pids/CryptoConsult-0.pid",
+    "km_link": false,
+    "vizion_running": false,
+    "NODE_APP_INSTANCE": 0,
+    "SHELL": "/data/data/com.termux/files/usr/bin/bash",
+    "COLORTERM": "truecolor",
+    "HISTCONTROL": "ignoreboth",
+    "PREFIX": "/data/data/com.termux/files/usr",
+    "PWD": "/data/data/com.termux/files/home/CryptoConsult",
+    "TERMUX_VERSION": "googleplay.2025.01.18",
+    "SYSTEMSERVERCLASSPATH": "/system/framework/com.android.location.provider.jar:/system/framework/knoxanalyticssdk.jar:/system/framework/mcfsdk.jar:/system/framework/uibc_java.jar:/system/framework/services.jar:/system/framework/semwifi-service.jar:/system/framework/ssrm.jar:/apex/com.android.adservices/javalib/service-adservices.jar:/apex/com.android.adservices/javalib/service-sdksandbox.jar:/apex/com.android.appsearch/javalib/service-appsearch.jar:/apex/com.android.art/javalib/service-art.jar:/apex/com.android.configinfrastructure/javalib/service-configinfrastructure.jar:/apex/com.android.healthfitness/javalib/service-healthfitness.jar:/apex/com.android.media/javalib/service-media-s.jar:/apex/com.android.ondevicepersonalization/javalib/service-ondevicepersonalization.jar:/apex/com.android.permission/javalib/service-permission.jar:/apex/com.android.rkpd/javalib/service-rkp.jar:/apex/com.samsung.android.shell/javalib/service-samsung-shell.jar",
+    "EXTERNAL_STORAGE": "/sdcard",
+    "LD_PRELOAD": "/data/data/com.termux/files/usr/lib/libtermux-exec.so",
+    "HOME": "/data/data/com.termux/files/home",
+    "LANG": "en_US.UTF-8",
+    "TMUX_TMPDIR": "/data/data/com.termux/files/usr/var/run",
+    "DEX2OATBOOTCLASSPATH": "/apex/com.android.art/javalib/core-oj.jar:/apex/com.android.art/javalib/core-libart.jar:/apex/com.android.art/javalib/okhttp.jar:/apex/com.android.art/javalib/bouncycastle.jar:/apex/com.android.art/javalib/apache-xml.jar:/system/framework/framework.jar:/system/framework/framework-graphics.jar:/system/framework/ext.jar:/system/framework/telephony-common.jar:/system/framework/voip-common.jar:/system/framework/ims-common.jar:/system/framework/knoxsdk.jar:/system_ext/framework/mediatek-common.jar:/system_ext/framework/mediatek-framework.jar:/system_ext/framework/mediatek-ims-base.jar:/apex/com.android.i18n/javalib/core-icu4j.jar",
+    "TMPDIR": "/data/data/com.termux/files/usr/tmp",
+    "ANDROID_DATA": "/data",
+    "ANDROID_STORAGE": "/storage",
+    "TERM": "xterm-256color",
+    "ASEC_MOUNTPOINT": "/mnt/asec",
+    "TERMUX_EXEC__PROC_SELF_EXE": "/data/data/com.termux/files/usr/bin/node",
+    "ANDROID_I18N_ROOT": "/apex/com.android.i18n",
+    "SHLVL": "1",
+    "ANDROID_ROOT": "/system",
+    "BOOTCLASSPATH": "/apex/com.android.art/javalib/core-oj.jar:/apex/com.android.art/javalib/core-libart.jar:/apex/com.android.art/javalib/okhttp.jar:/apex/com.android.art/javalib/bouncycastle.jar:/apex/com.android.art/javalib/apache-xml.jar:/system/framework/framework.jar:/system/framework/framework-graphics.jar:/system/framework/ext.jar:/system/framework/telephony-common.jar:/system/framework/voip-common.jar:/system/framework/ims-common.jar:/system/framework/knoxsdk.jar:/system_ext/framework/mediatek-common.jar:/system_ext/framework/mediatek-framework.jar:/system_ext/framework/mediatek-ims-base.jar:/apex/com.android.i18n/javalib/core-icu4j.jar:/apex/com.android.adservices/javalib/framework-adservices.jar:/apex/com.android.adservices/javalib/framework-sdksandbox.jar:/apex/com.android.appsearch/javalib/framework-appsearch.jar:/apex/com.android.btservices/javalib/framework-bluetooth.jar:/apex/com.android.configinfrastructure/javalib/framework-configinfrastructure.jar:/apex/com.android.conscrypt/javalib/conscrypt.jar:/apex/com.android.devicelock/javalib/framework-devicelock.jar:/apex/com.android.healthfitness/javalib/framework-healthfitness.jar:/apex/com.android.ipsec/javalib/android.net.ipsec.ike.jar:/apex/com.android.media/javalib/updatable-media.jar:/apex/com.android.mediaprovider/javalib/framework-mediaprovider.jar:/apex/com.android.mediaprovider/javalib/framework-pdf.jar:/apex/com.android.mediaprovider/javalib/framework-photopicker.jar:/apex/com.android.ondevicepersonalization/javalib/framework-ondevicepersonalization.jar:/apex/com.android.os.statsd/javalib/framework-statsd.jar:/apex/com.android.permission/javalib/framework-permission.jar:/apex/com.android.permission/javalib/framework-permission-s.jar:/apex/com.android.scheduling/javalib/framework-scheduling.jar:/apex/com.android.sdkext/javalib/framework-sdkextensions.jar:/apex/com.android.tethering/javalib/framework-connectivity.jar:/apex/com.android.tethering/javalib/framework-connectivity-t.jar:/apex/com.android.tethering/javalib/framework-tethering.jar:/apex/com.android.uwb/javalib/framework-uwb.jar:/apex/com.android.virt/javalib/framework-virtualization.jar:/apex/com.android.wifi/javalib/framework-wifi.jar:/apex/com.samsung.android.lifeguard/javalib/framework-lifeguard.jar:/apex/com.samsung.android.shell/javalib/framework-samsung-shell.jar",
+    "ANDROID_TZDATA_ROOT": "/apex/com.android.tzdata",
+    "TMP": "/data/data/com.termux/files/usr/tmp",
+    "PATH": "/data/data/com.termux/files/usr/bin:/product/bin:/apex/com.android.runtime/bin:/apex/com.android.art/bin:/system_ext/bin:/system/bin:/system/xbin:/odm/bin:/vendor/bin:/vendor/xbin",
+    "ANDROID_ART_ROOT": "/apex/com.android.art",
+    "ANDROID_ASSETS": "/system/app",
+    "_": "/data/data/com.termux/files/usr/bin/pm2",
+    "OLDPWD": "/data/data/com.termux/files/home/CryptoConsult",
+    "PM2_USAGE": "CLI",
+    "PM2_HOME": "/data/data/com.termux/files/home/.pm2",
+    "unique_id": "3f52d69c-09b8-41a7-84b9-76888b66c8f6",
+    "status": "online",
+    "pm_uptime": 1747023146663,
+    "axm_actions": [
+      {
+        "action_name": "km:heapdump",
+        "action_type": "internal",
+        "arity": 2
+      },
+      {
+        "action_name": "km:cpu:profiling:start",
+        "action_type": "internal",
+        "arity": 2
+      },
+      {
+        "action_name": "km:cpu:profiling:stop",
+        "action_type": "internal",
+        "arity": 1
+      },
+      {
+        "action_name": "km:heap:sampling:start",
+        "action_type": "internal",
+        "arity": 2
+      },
+      {
+        "action_name": "km:heap:sampling:stop",
+        "action_type": "internal",
+        "arity": 1
+      }
+    ],
+    "axm_monitor": {
+      "Used Heap Size": {
+        "value": "18.85",
+        "type": "internal/v8/heap/used",
+        "unit": "MiB",
+        "historic": true
+      },
+      "Heap Usage": {
+        "value": 62.79,
+        "type": "internal/v8/heap/usage",
+        "unit": "%",
+        "historic": true
+      },
+      "Heap Size": {
+        "value": "30.03",
+        "type": "internal/v8/heap/total",
+        "unit": "MiB",
+        "historic": true
+      },
+      "Event Loop Latency p95": {
+        "value": "543.13",
+        "type": "internal/libuv/latency/p95",
+        "unit": "ms",
+        "historic": true
+      },
+      "Event Loop Latency": {
+        "value": "0.67",
+        "type": "internal/libuv/latency/p50",
+        "unit": "ms",
+        "historic": true
+      },
+      "Active handles": {
+        "value": 4,
+        "type": "internal/libuv/handles",
+        "historic": true
+      },
+      "Active requests": {
+        "value": 0,
+        "type": "internal/libuv/requests",
+        "historic": true
+      }
+    },
+    "axm_options": {
+      "error": true,
+      "heapdump": true,
+      "feature.profiler.heapsnapshot": false,
+      "feature.profiler.heapsampling": true,
+      "feature.profiler.cpu_js": true,
+      "latency": true,
+      "catchExceptions": true,
+      "profiling": true,
+      "metrics": {
+        "http": true,
+        "runtime": true,
+        "eventLoop": true,
+        "network": false,
+        "v8": true
+      },
+      "standalone": false,
+      "module_conf": {},
+      "apm": {
+        "version": "6.1.0",
+        "type": "node"
+      },
+      "module_name": "CryptoConsult",
+      "module_version": "6.0.5"
+    },
+    "axm_dynamic": {},
+    "created_at": 1747023146663,
+    "restart_time": 0,
+    "unstable_restarts": 0,
+    "version": "1.0.0",
+    "node_version": "23.11.0"
+  }
+]

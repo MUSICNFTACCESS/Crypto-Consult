@@ -1,0 +1,16 @@
+const TelegramBot = require('node-telegram-bot-api');
+const token = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
+const bot = new TelegramBot(token, { polling: true });
+
+bot.onText(/\/start/, (msg) => {
+  const chatId = msg.chat.id;
+
+  const imageUrl = 'https://i.imgur.com/3KbpPZm.png'; // Crimzn logo
+  const welcomeText = `Welcome to CryptoConsult by Crimzn!
+
+CrimznBot is your crypto AI assistant — delivering alpha, TA, real-time prices, and insights.
+
+Powered by CryptoConsult. Book sessions, ape smart, and win long term.`;
+
+  bot.sendPhoto(chatId, imageUrl, { caption: welcomeText });
+});

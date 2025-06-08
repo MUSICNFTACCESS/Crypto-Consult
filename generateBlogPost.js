@@ -1,8 +1,21 @@
-<!DOCTYPE html>
+const fs = require('fs');
+const path = require('path');
+
+const today = new Date();
+const yyyy = today.getFullYear();
+const mm = String(today.getMonth() + 1).padStart(2, '0');
+const dd = String(today.getDate()).padStart(2, '0');
+const fileName = `${yyyy}-${mm}-${dd}.html`;
+const blogDir = path.join(__dirname, 'public', 'blog');
+const filePath = path.join(blogDir, fileName);
+
+const postTitle = `🟠 BTC Market Update – ${today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+
+const blogPostHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>🟠 BTC Market Update – June 8, 2025</title>
+  <title>${postTitle}</title>
   <style>
     body {
       background-color: #000;
@@ -23,7 +36,7 @@
   </style>
 </head>
 <body>
-  <h1>🟠 BTC Market Update – June 8, 2025</h1>
+  <h1>${postTitle}</h1>
 
   <p><strong>Price:</strong> $105,671</p>
   <p><strong>Key Levels:</strong><br>
@@ -44,4 +57,22 @@
     <p>Watching for signs of consolidation or a push toward $110K. Risk builds only on loss of $96K or ETF outflows accelerating further.</p>
   </div>
 </body>
-</html>
+</html>`;
+
+// Write blog post
+fs.writeFileSync(filePath, blogPostHTML);
+
+// Update blog.html
+const blogHTMLPath = path.join(blogDir, 'blog.html');
+let blogHTML = fs.readFileSync(blogHTMLPath, 'utf8');
+
+const linkLine = `<a href="${fileName}">🟠 ${today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} – BTC Market Overview</a>`;
+
+if (!blogHTML.includes(fileName)) {
+  blogHTML = blogHTML.replace(/<h2>🗓️ Latest Posts<\/h2>/, `<h2>🗓️ Latest Posts</h2>\n  ${linkLine}`);
+  fs.writeFileSync(blogHTMLPath, blogHTML);
+  console.log(`✅ Blog post created: ${filePath}`);
+  console.log(`✅ Link added to blog.html`);
+} else {
+  console.log(`⚠️ Post for today already exists.`);
+}

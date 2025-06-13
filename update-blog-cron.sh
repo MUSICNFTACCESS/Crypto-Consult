@@ -114,3 +114,4 @@ PY
 # 7. Git commit & push
 cd "$HOME/CryptoConsult"
 touch force-redeploy.txt
+node public/blog/build-index.js

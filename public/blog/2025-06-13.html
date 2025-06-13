@@ -3,10 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <title>BTC Daily Blog - 2025-06-13</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #f7931a;
+      font-family: 'Courier New', monospace;
+      padding: 20px;
+    }
+    .chart-container {
+      margin-top: 30px;
+    }
+    .price {
+      font-size: 1.5em;
+      margin-bottom: 10px;
+    }
+    .summary {
+      margin-top: 20px;
+      background: #222;
+      padding: 10px;
+      border-left: 4px solid #f7931a;
+    }
+  </style>
 </head>
-<body style="background:#111; color:#f7931a; font-family:'Courier New',monospace;">
+<body>
   <h1>BTC Daily Blog</h1>
   <h2>2025-06-13</h2>
-  <p>🚀 Placeholder for BTC price and analysis.</p>
+  <p class="price">Current BTC Price: $105410</p>
+
+  <div class="summary">
+    <strong>CrimznBot Summary:</strong>
+    <p>🧠 BTC is showing strength around $105410. Watch ETF flows, volume, and 00K support level.</p>
+  </div>
+
+  <div class="chart-container">
+    <h3>Live BTC Chart:</h3>
+    <div class="tradingview-widget-container">
+      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+      <script type="text/javascript">
+        new TradingView.widget({
+          "width": "100%",
+          "height": 400,
+          "symbol": "BITSTAMP:BTCUSD",
+          "interval": "D",
+          "timezone": "Etc/UTC",
+          "theme": "dark",
+          "style": "1",
+          "locale": "en",
+          "container_id": "tradingview-widget"
+        });
+      </script>
+    </div>
+  </div>
 </body>
 </html>

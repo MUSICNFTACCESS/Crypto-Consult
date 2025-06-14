@@ -1,1 +1,78 @@
-Not Found
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CryptoConsult by Crimzn</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 1rem;
+      background-color: #000;
+      color: #f7931a;
+      font-family: Courier, monospace;
+      text-align: center;
+    }
+    h1, h2, h3 {
+      margin: 1rem 0 0.5rem;
+    }
+    button, a.button {
+      background-color: #f7931a;
+      color: #000;
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      margin: 0.4rem;
+    }
+    #chat-box {
+      max-width: 600px;
+      margin: 1rem auto;
+      padding: 1rem;
+      background-color: #111;
+      border-radius: 8px;
+    }
+    .user { color: #f7931a; }
+    .bot { color: #0f0; margin-top: 0.3rem; }
+    input, textarea {
+      width: 90%;
+      padding: 0.5rem;
+      margin-top: 1rem;
+      border-radius: 6px;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>CryptoConsult by Crimzn</h1>
+  <h3>Web3 Consulting Powered by AI + Onchain Tools</h3>
+
+  <div id="live-prices">
+    <p><strong>Live Prices:</strong></p>
+    <div id="prices">BTC: $-- | ETH: $-- | SOL: $--</div>
+  </div>
+
+  <h3>Available Services:</h3>
+  <ul style="list-style: none; padding: 0;">
+    <li>🧠 Technical Analysis (Crypto/Stocks)</li>
+    <li>🔐 Wallet Setup & Onramping</li>
+    <li>⚖️ Risk Management</li>
+    <li>📈 Portfolio Strategy</li>
+    <li>🪙 Token + dApp Support</li>
+  </ul>
+
+  <h3>Support & Payments:</h3>
+  <a class="button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8" target="_blank">Pay $99.99 for Services Rendered</a>
+  <a class="button" href="https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b" target="_blank">Tip 1 USDC</a>
+  <a class="button" href="https://cryptoconsult.onrender.com/whitepaper.html" target="_blank">📄 View Whitepaper</a>
+  <a class="button" href="https://cryptoconsult.onrender.com/public/blog/2025-06-13.html" target="_blank">🧠 BTC Daily Blog</a>
+  <a class="button" href="https://t.me/Crimznbot" target="_blank">📩 Contact via Telegram</a>
+
+  <h3>Talk to CrimznBot:</h3>
+  <div id="chat-box"></div>
+  <input type="text" id="user-input" placeholder="Ask a crypto question..." />
+
+  <script src="script.js"></script>
+</body>
+</html>

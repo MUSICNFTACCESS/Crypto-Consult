@@ -92,28 +92,31 @@ loadBTCSentiment();
 
 // ✅ Custom Sentiment Search
 async function searchSentiment() {
-  const query = document.getElementById("sentiment-query").value.toLowerCase();
+  const query = document.getElementById("sentiment-query").value.trim();
   const resultEl = document.getElementById("sentiment-result");
 
-  try {
-    const res = await fetch("https://api.coinstats.app/public/v1/news?skip=0&limit=20");
-    const news = await res.json();
-    const relevant = news.news.filter(n => n.title.toLowerCase().includes(query));
+  if (!query) {
+    resultEl.innerText = "Please enter a topic.";
+    return;
+  }
 
-    let score = 0;
-    relevant.forEach(n => {
-      const t = n.title.toLowerCase();
-      if (t.includes("up") || t.includes("gain")) score++;
-      if (t.includes("down") || t.includes("drop")) score--;
+  try {
+    const res = await fetch("/api/sentiment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query })
     });
 
-    let sentiment = "Neutral 🤔";
-    if (score > 1) sentiment = "Bullish 🟢";
-    else if (score < -1) sentiment = "Bearish 🔴";
+    const data = await res.json();
 
-    resultEl.innerText = `Sentiment for "${query}": ${sentiment}`;
+    if (data.error) {
+      resultEl.innerText = "Error fetching sentiment.";
+    } else {
+      resultEl.innerText = `Sentiment for "${query}": ${data.sentiment || "Neutral 🤔"}`;
+    }
   } catch (e) {
-    resultEl.innerText = "Error fetching sentiment.";
+    resultEl.innerText = "Network error while fetching sentiment.";
+    console.error(e);
   }
 }
 

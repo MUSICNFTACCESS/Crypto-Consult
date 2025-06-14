@@ -1,3 +1,4 @@
+// 🧠 CrimznBot Chat Logic
 let messageCount = 0;
 
 async function sendMessage(event) {
@@ -18,7 +19,7 @@ async function sendMessage(event) {
 
   const userDiv = document.createElement("div");
   userDiv.className = "user";
-  userDiv.textContent = "You: " + userMessage;
+  userDiv.textContent = "🧑‍🚀 You: " + userMessage;
   chatLog.appendChild(userDiv);
 
   input.value = "";
@@ -37,45 +38,44 @@ async function sendMessage(event) {
 
     const botDiv = document.createElement("div");
     botDiv.className = "bot";
-    botDiv.textContent = "CrimznBot: " + (data.reply || "Sorry, no response.");
+    botDiv.textContent = "🤖 CrimznBot: " + (data.reply || "Sorry, no response.");
     chatLog.appendChild(botDiv);
   } catch (error) {
     const errorDiv = document.createElement("div");
     errorDiv.className = "bot";
-    errorDiv.textContent = "CrimznBot: ⚠️ Error processing your request.";
+    errorDiv.textContent = "🤖 CrimznBot: ⚠️ Error processing your request.";
     chatLog.appendChild(errorDiv);
   }
 
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-// Price fetch logic
+// 📈 Price Fetch Logic
 async function fetchPrices() {
   try {
     const res = await fetch("/prices");
     const data = await res.json();
-    document.getElementById("btc-price").textContent = data.btc.toLocaleString();
-    document.getElementById("eth-price").textContent = data.eth.toLocaleString();
-    document.getElementById("sol-price").textContent = data.sol.toLocaleString();
+    document.getElementById("btc-price").textContent = data.btc.toLocaleString("en-US", { style: "currency", currency: "USD" });
+    document.getElementById("eth-price").textContent = data.eth.toLocaleString("en-US", { style: "currency", currency: "USD" });
+    document.getElementById("sol-price").textContent = data.sol.toLocaleString("en-US", { style: "currency", currency: "USD" });
   } catch (e) {
     console.error("Failed to fetch prices", e);
   }
 }
-
 fetchPrices();
 setInterval(fetchPrices, 60000);
 
-// 🔄 Load default BTC sentiment
+// 🧪 Load default BTC sentiment on load
 async function loadBTCSentiment() {
   try {
-    const res = await fetch("https://api.coinstats.app/public/v1/news?skip=0&limit=5&category=crypto");
+    const res = await fetch("https://api.coinstats.app/public/v1/news?skip=0&limit=20");
     const news = await res.json();
-    const btcNews = news.news.filter(n => n.title.toLowerCase().includes("bitcoin") || n.description.toLowerCase().includes("bitcoin"));
+    const btcNews = news.news.filter(n => n.title.toLowerCase().includes("bitcoin"));
 
     let score = 0;
     btcNews.forEach(n => {
-      if (n.title.toLowerCase().includes("up") || n.title.toLowerCase().includes("bullish")) score++;
-      if (n.title.toLowerCase().includes("down") || n.title.toLowerCase().includes("bearish")) score--;
+      if (n.title.toLowerCase().includes("up") || n.title.toLowerCase().includes("gain")) score++;
+      if (n.title.toLowerCase().includes("down") || n.title.toLowerCase().includes("drop")) score--;
     });
 
     let sentiment = "Neutral 🤔";
@@ -88,20 +88,20 @@ async function loadBTCSentiment() {
   }
 }
 
-// 🧠 Custom Sentiment Search
+// 🔍 Custom Sentiment Search
 async function searchSentiment() {
   const query = document.getElementById("sentiment-query").value.toLowerCase();
   const resultEl = document.getElementById("sentiment-result");
 
   try {
-    const res = await fetch("https://api.coinstats.app/public/v1/news?skip=0&limit=10&category=crypto");
+    const res = await fetch("https://api.coinstats.app/public/v1/news?skip=0&limit=20");
     const news = await res.json();
-    const relevant = news.news.filter(n => n.title.toLowerCase().includes(query) || n.description.toLowerCase().includes(query));
+    const relevant = news.news.filter(n => n.title.toLowerCase().includes(query));
 
     let score = 0;
     relevant.forEach(n => {
-      if (n.title.toLowerCase().includes("up") || n.title.toLowerCase().includes("bullish")) score++;
-      if (n.title.toLowerCase().includes("down") || n.title.toLowerCase().includes("bearish")) score--;
+      if (n.title.toLowerCase().includes("up") || n.title.toLowerCase().includes("gain")) score++;
+      if (n.title.toLowerCase().includes("down") || n.title.toLowerCase().includes("drop")) score--;
     });
 
     let sentiment = "Neutral 🤔";
@@ -114,5 +114,5 @@ async function searchSentiment() {
   }
 }
 
-// 🔁 Auto-load BTC sentiment on page load
+// 🧠 Auto-run BTC sentiment tracker
 loadBTCSentiment();

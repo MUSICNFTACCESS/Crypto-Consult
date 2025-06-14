@@ -74,3 +74,30 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 CrimznBot backend running on port ${PORT}`);
 });
+
+app.post("/api/sentiment", async (req, res) => {
+  try {
+    const { topic } = req.body;
+
+    if (!topic) {
+      return res.status(400).json({ error: "Missing 'topic' in request body." });
+    }
+
+    const prompt = `
+      Analyze the current sentiment in the crypto market about "${topic}". 
+      Include macro factors, news tone, and emotional signals from traders.
+    `;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const sentiment = response.choices?.[0]?.message?.content || "No sentiment found.";
+
+    res.json({ sentiment });
+  } catch (error) {
+    console.error("Error fetching sentiment:", error.message);
+    res.status(500).json({ error: "Failed to fetch sentiment analysis." });
+  }
+});

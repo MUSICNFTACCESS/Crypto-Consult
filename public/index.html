@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>CryptoConsult by Crimzn</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       margin: 0;
@@ -13,9 +12,11 @@
       font-family: Courier, monospace;
       text-align: center;
     }
+
     h1, h2, h3 {
       margin: 1rem 0 0.5rem;
     }
+
     button, a.button {
       background-color: #f7931a;
       color: #000;
@@ -25,18 +26,22 @@
       font-weight: bold;
       cursor: pointer;
       text-decoration: none;
-      margin: 0.4rem;
+      margin: 0.3rem;
       display: inline-block;
     }
+
     #chat-box {
       max-width: 600px;
       margin: 1rem auto;
       padding: 1rem;
       background-color: #111;
       border-radius: 8px;
+      min-height: 80px;
     }
+
     .user { color: #f7931a; }
     .bot { color: #0f0; margin-top: 0.3rem; }
+
     input, textarea {
       width: 90%;
       padding: 0.5rem;
@@ -44,12 +49,19 @@
       border-radius: 6px;
       border: none;
     }
-    .button-group {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.5rem;
+
+    #payment-options {
+      display: none;
+      margin-top: 1rem;
+    }
+
+    #live-prices, #sentiment-result {
       margin-bottom: 1rem;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
     }
   </style>
 </head>
@@ -63,7 +75,7 @@
   </div>
 
   <h3>Available Services:</h3>
-  <ul style="list-style: none; padding: 0;">
+  <ul>
     <li>🧠 Technical Analysis (Crypto/Stocks)</li>
     <li>🔐 Wallet Setup & Onramping</li>
     <li>⚖️ Risk Management</li>
@@ -71,35 +83,31 @@
     <li>🪙 Token + dApp Support</li>
   </ul>
 
-  <h3>Alpha Pulse Tracker+ 📊</h3>
-  <p>Loading default BTC sentiment...</p>
-  <form onsubmit="return false;">
-    <input type="text" id="sentiment-query" placeholder="Ethereum">
-    <button onclick="getSentiment()">Pulse It 🧠</button>
-  </form>
-  <p id="sentiment-result">Sentiment for "BTC": Neutral 🤔</p>
-
   <h3>Support & Payments:</h3>
-  <div class="button-group">
-    <a class="button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8">Pay $99.99 for Services Rendered</a>
-    <a class="button" href="https://commerce.coinbase.com/checkout/1d7cd9e2-835f-4903-9c36-c04f1a8d1652">Tip 1 USDC 💸</a>
-    <a class="button" href="https://cryptoconsult.onrender.com/whitepaper.html">📰 View Whitepaper</a>
-    <a class="button" href="https://cryptoconsult.onrender.com/public/blog/2025-06-13.html">📅 BTC Daily Blog</a>
-    <a class="button" href="https://t.me/Crimznbot" target="_blank">📬 Contact via Telegram</a>
-  </div>
+  <a class="button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8">Pay $99.99 for Services Rendered</a>
+  <a class="button" href="https://commerce.coinbase.com/checkout/1d7cd9d7-2c45-4cf5-a7dc-143e2c5df5f4">Tip 1 USDC</a>
+  <a class="button" href="https://cryptoconsult.onrender.com/whitepaper">📄 View Whitepaper</a>
+  <a class="button" href="https://cryptoconsult.onrender.com/public/blog/2025-06-13.html">📅 BTC Daily Blog</a>
+  <a class="button" href="https://t.me/Crimznbot" target="_blank">📬 Contact via Telegram</a>
 
   <h3>Talk to CrimznBot:</h3>
   <div id="chat-box"></div>
   <input type="text" id="user-input" placeholder="Ask a crypto question..." />
+  <br />
   <button id="send-button">Send</button>
 
-  <div id="payment-options" style="display:none;">
-    <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Pay $99.99</button>
-    <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd9e2-835f-4903-9c36-c04f1a8d1652')">Tip 1 USDC</button>
-    <button onclick="window.open('https://cryptoconsult.onrender.com/whitepaper.html')">Whitepaper</button>
-    <button onclick="window.open('https://cryptoconsult.onrender.com/public/blog/2025-06-13.html')">BTC Blog</button>
+  <div id="payment-options">
+    <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Pay $99.99 for Services</button>
+    <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd9d7-2c45-4cf5-a7dc-143e2c5df5f4')">Tip 1 USDC</button>
+    <button onclick="window.open('https://cryptoconsult.onrender.com/whitepaper')">📄 Whitepaper</button>
+    <button onclick="window.open('https://cryptoconsult.onrender.com/public/blog/2025-06-13.html')">📅 BTC Blog</button>
     <button onclick="window.open('https://t.me/Crimznbot')">📬 Contact</button>
   </div>
+
+  <h3>Alpha Pulse Tracker+</h3>
+  <input type="text" id="sentiment-query" placeholder="Enter token or topic..." />
+  <button onclick="getSentiment()">🔍 Pulse It</button>
+  <div id="sentiment-result"></div>
 
   <script src="script.js"></script>
 </body>

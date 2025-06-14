@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>CryptoConsult by Crimzn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       margin: 0;
@@ -25,6 +26,9 @@
       cursor: pointer;
       text-decoration: none;
       margin: 0.4rem;
+    }
+    .payment-button {
+      margin: 0.3rem;
     }
     #chat-box {
       max-width: 600px;
@@ -63,11 +67,11 @@
   </ul>
 
   <h3>Support & Payments:</h3>
-  <a class="button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8">Pay $99.99 for Services Rendered</a>
-  <a class="button" href="https://commerce.coinbase.com/checkout/1d7cd9fd-c582-45bb-bc16-87bce41935b5">Tip 1 USDC</a>
-  <a class="button" href="https://cryptoconsult.onrender.com/whitepaper">📄 View Whitepaper</a>
-  <a class="button" href="https://cryptoconsult.onrender.com/public/blog/2025-06-13.html">📅 BTC Daily Blog</a>
-  <a class="button" href="https://t.me/Crimznbot" target="_blank">📬 Contact via Telegram</a>
+  <a class="button payment-button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8">Pay $99.99 for Services Rendered</a>
+  <a class="button payment-button" href="https://commerce.coinbase.com/checkout/1d7cd9cc-8e8a-45a2-93d2-411b410648a3">Tip 1 USDC</a>
+  <a class="button payment-button" href="https://cryptoconsult.onrender.com/whitepaper">📄 View Whitepaper</a>
+  <a class="button payment-button" href="https://cryptoconsult.onrender.com/public/blog/2025-06-13.html">📅 BTC Daily Blog</a>
+  <a class="button payment-button" href="https://t.me/Crimznbot" target="_blank">📬 Contact via Telegram</a>
 
   <h3>Talk to CrimznBot:</h3>
   <div id="chat-box"></div>
@@ -76,9 +80,9 @@
 
   <div id="payment-options" style="display:none;">
     <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Pay $99.99</button>
-    <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd9fd-c582-45bb-bc16-87bce41935b5')">Tip 1 USDC</button>
+    <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd9cc-8e8a-45a2-93d2-411b410648a3')">Tip 1 USDC</button>
     <button onclick="window.open('https://cryptoconsult.onrender.com/whitepaper')">Whitepaper</button>
-    <button onclick="window.open('https://cryptoconsult.onrender.com/public/blog/2025-06-13.html')">BTC Daily Blog</button>
+    <button onclick="window.open('https://cryptoconsult.onrender.com/public/blog/2025-06-13.html')">BTC Blog</button>
     <button onclick="window.open('https://t.me/Crimznbot')">📬 Contact</button>
   </div>
 

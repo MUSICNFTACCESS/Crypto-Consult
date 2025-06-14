@@ -14,7 +14,7 @@ async function handleCrimznBot(question) {
   input.value = "";
 
   if (questionCount >= maxFreeQuestions) {
-    chatBox.innerHTML += `<div class="bot">⚠️ Free limit reached. Please <a class="button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8">pay to continue</a>.</div>`;
+    chatBox.innerHTML += `<div class="bot">⚠️ Free limit reached. Please <a class="button" href="https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b">pay to continue</a>.</div>`;
     paymentSection.style.display = "block";
     return;
   }
@@ -47,12 +47,12 @@ input.addEventListener("keypress", (e) => {
   }
 });
 
-// Fetch crypto prices
+// 🟦 Fetch crypto prices from backend proxying CoinGecko
 async function fetchPrices() {
   try {
-    const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
+    const res = await fetch("https://crypto-consult.onrender.com/prices");
     const data = await res.json();
-    pricesDiv.innerText = `BTC: $${data.bitcoin.usd.toLocaleString()} | ETH: $${data.ethereum.usd.toLocaleString()} | SOL: $${data.solana.usd.toLocaleString()}`;
+    pricesDiv.innerText = `BTC: $${data.btc.toLocaleString()} | ETH: $${data.eth.toLocaleString()} | SOL: $${data.sol.toLocaleString()}`;
   } catch (err) {
     pricesDiv.innerText = "Price fetch error";
   }
@@ -61,7 +61,7 @@ async function fetchPrices() {
 fetchPrices();
 setInterval(fetchPrices, 60000);
 
-// Alpha Pulse Tracker+
+// 🔍 Alpha Pulse Tracker+
 window.getSentiment = async function () {
   const query = sentimentQuery?.value?.trim();
   if (!query) return;
@@ -76,7 +76,7 @@ window.getSentiment = async function () {
     });
 
     const data = await res.json();
-    sentimentResult.innerText = `Sentiment for "${query}": ${data.summary || "Neutral"} (${data.tally || "N/A"})`;
+    sentimentResult.innerText = `Sentiment for "${query}": ${data.summary || "Neutral"} (${data.sentiment_score || "N/A"})`;
   } catch (e) {
     sentimentResult.innerText = "Error analyzing sentiment.";
   }

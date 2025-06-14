@@ -1,71 +1,67 @@
 // 🧠 CrimznBot Chat Logic
 let messageCount = 0;
 
-async function sendMessage(event) {
+document.getElementById("chat-form").addEventListener("submit", async function (event) {
   event.preventDefault();
 
   const input = document.getElementById("user-input");
   const chatLog = document.getElementById("chat-log");
   const paymentOptions = document.getElementById("payment-options");
 
-  if (messageCount >= 3) {
-    paymentOptions.style.display = "block";
-    input.disabled = true;
-    return;
-  }
+  const userText = input.value.trim();
+  if (!userText) return;
 
-  const userMessage = input.value.trim();
-  if (!userMessage) return;
-
-  const userDiv = document.createElement("div");
-  userDiv.className = "user";
-  userDiv.textContent = "🧑‍🚀 You: " + userMessage;
-  chatLog.appendChild(userDiv);
+  const userMsg = document.createElement("p");
+  userMsg.className = "user";
+  userMsg.innerText = `🧑‍🚀 You: ${userText}`;
+  chatLog.appendChild(userMsg);
 
   input.value = "";
-  messageCount++;
+
+  const botMsg = document.createElement("p");
+  botMsg.className = "bot";
+  botMsg.innerText = "🤖 CrimznBot: ...thinking...";
+  chatLog.appendChild(botMsg);
 
   try {
-    const response = await fetch("/chat", {
+    const res = await fetch("/chat", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ message: userMessage })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: userText })
     });
 
-    const data = await response.json();
-
-    const botDiv = document.createElement("div");
-    botDiv.className = "bot";
-    botDiv.textContent = "🤖 CrimznBot: " + (data.reply || "Sorry, no response.");
-    chatLog.appendChild(botDiv);
-  } catch (error) {
-    const errorDiv = document.createElement("div");
-    errorDiv.className = "bot";
-    errorDiv.textContent = "🤖 CrimznBot: ⚠️ Error processing your request.";
-    chatLog.appendChild(errorDiv);
+    const data = await res.json();
+    botMsg.innerText = `🤖 CrimznBot: ${data.reply || "No response."}`;
+  } catch (e) {
+    botMsg.innerText = "🤖 CrimznBot: ⚠️ Error fetching response.";
   }
 
   chatLog.scrollTop = chatLog.scrollHeight;
-}
+
+  messageCount++;
+  if (messageCount >= 3) {
+    paymentOptions.style.display = "block";
+    input.disabled = true;
+  }
+});
 
 // 📈 Price Fetch Logic
 async function fetchPrices() {
   try {
     const res = await fetch("/prices");
     const data = await res.json();
+
     document.getElementById("btc-price").textContent = data.btc.toLocaleString("en-US", { style: "currency", currency: "USD" });
     document.getElementById("eth-price").textContent = data.eth.toLocaleString("en-US", { style: "currency", currency: "USD" });
     document.getElementById("sol-price").textContent = data.sol.toLocaleString("en-US", { style: "currency", currency: "USD" });
   } catch (e) {
-    console.error("Failed to fetch prices", e);
+    console.error("Price fetch failed:", e);
   }
 }
 fetchPrices();
 setInterval(fetchPrices, 60000);
 
-// 🧪 Load default BTC sentiment on load
+// 🧠 Load Default BTC Sentiment
 async function loadBTCSentiment() {
   try {
     const res = await fetch("https://api.coinstats.app/public/v1/news?skip=0&limit=20");
@@ -74,8 +70,9 @@ async function loadBTCSentiment() {
 
     let score = 0;
     btcNews.forEach(n => {
-      if (n.title.toLowerCase().includes("up") || n.title.toLowerCase().includes("gain")) score++;
-      if (n.title.toLowerCase().includes("down") || n.title.toLowerCase().includes("drop")) score--;
+      const title = n.title.toLowerCase();
+      if (title.includes("up") || title.includes("gain")) score++;
+      if (title.includes("down") || title.includes("drop")) score--;
     });
 
     let sentiment = "Neutral 🤔";
@@ -84,11 +81,11 @@ async function loadBTCSentiment() {
 
     document.getElementById("sentiment-score").innerText = sentiment;
   } catch (e) {
-    document.getElementById("sentiment-score").innerText = "Error fetching sentiment";
+    document.getElementById("sentiment-score").innerText = "Error fetching sentiment.";
   }
 }
 
-// 🔍 Custom Sentiment Search
+// 🔍 Custom Sentiment Tracker
 async function searchSentiment() {
   const query = document.getElementById("sentiment-query").value.toLowerCase();
   const resultEl = document.getElementById("sentiment-result");
@@ -96,12 +93,13 @@ async function searchSentiment() {
   try {
     const res = await fetch("https://api.coinstats.app/public/v1/news?skip=0&limit=20");
     const news = await res.json();
-    const relevant = news.news.filter(n => n.title.toLowerCase().includes(query));
+    const matches = news.news.filter(n => n.title.toLowerCase().includes(query));
 
     let score = 0;
-    relevant.forEach(n => {
-      if (n.title.toLowerCase().includes("up") || n.title.toLowerCase().includes("gain")) score++;
-      if (n.title.toLowerCase().includes("down") || n.title.toLowerCase().includes("drop")) score--;
+    matches.forEach(n => {
+      const title = n.title.toLowerCase();
+      if (title.includes("up") || title.includes("gain")) score++;
+      if (title.includes("down") || title.includes("drop")) score--;
     });
 
     let sentiment = "Neutral 🤔";
@@ -114,5 +112,5 @@ async function searchSentiment() {
   }
 }
 
-// 🧠 Auto-run BTC sentiment tracker
+// Auto-run BTC sentiment on page load
 loadBTCSentiment();

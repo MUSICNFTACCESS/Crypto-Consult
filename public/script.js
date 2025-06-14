@@ -20,7 +20,7 @@ async function handleCrimznBot(question) {
   }
 
   try {
-    const res = await fetch("/ask", {
+    const res = await fetch("https://crypto-consult.onrender.com/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question })
@@ -29,7 +29,7 @@ async function handleCrimznBot(question) {
     chatBox.innerHTML += `<div class="bot">🤖 ${data.answer}</div>`;
     questionCount++;
   } catch (err) {
-    chatBox.innerHTML += `<div class="bot">❌ Error: Failed to fetch</div>`;
+    chatBox.innerHTML += `<div class="bot">❌ Error: Failed to fetch response</div>`;
   }
 
   chatBox.scrollTop = chatBox.scrollHeight;
@@ -69,7 +69,7 @@ window.getSentiment = async function () {
   sentimentResult.innerText = `Analyzing sentiment for "${query}"...`;
 
   try {
-    const res = await fetch("/api/sentiment", {
+    const res = await fetch("https://crypto-consult.onrender.com/api/sentiment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query })

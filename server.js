@@ -71,6 +71,36 @@ app.post("/chat", async (req, res) => {
 
 // ✅ Start the server
 const PORT = process.env.PORT || 3000;
+// ✅ Pulse Sentiment Route
+app.post("/api/sentiment", async (req, res) => {
+  const { query } = req.body;
+
+  if (!query) {
+    return res.status(400).json({ error: "Missing sentiment query" });
+  }
+
+  try {
+    const response = await fetch("https://api.coinstats.app/public/v1/news?skip=0&limit=30");
+    const data = await response.json();
+    const articles = data.news.filter(n => n.title.toLowerCase().includes(query.toLowerCase()));
+
+    let score = 0;
+    articles.forEach(n => {
+      const title = n.title.toLowerCase();
+      if (title.includes("up") || title.includes("gain")) score++;
+      if (title.includes("down") || title.includes("drop")) score--;
+    });
+
+    let sentiment = "Neutral 🤔";
+    if (score > 1) sentiment = "Bullish 🟢";
+    else if (score < -1) sentiment = "Bearish 🔴";
+
+    res.json({ sentiment });
+  } catch (err) {
+    console.error("❌ Sentiment error:", err.message);
+    res.status(500).json({ error: "Failed to fetch sentiment" });
+  }
+});
 app.listen(PORT, () => {
   console.log(`🚀 CryptoConsult running on http://localhost:${PORT}`);
 });

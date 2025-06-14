@@ -22,6 +22,9 @@
       font-weight: bold;
       border-radius: 8px;
     }
+    button:hover {
+      background-color: #ffa940;
+    }
     .section {
       margin-top: 40px;
     }
@@ -30,76 +33,62 @@
       text-decoration: none;
       font-weight: bold;
     }
-    .sentiment-container {
-      margin: 20px auto;
-      padding: 20px;
-      border: 1px solid #f7931a;
-      border-radius: 10px;
-      max-width: 600px;
-      background-color: #111;
+    .bot {
+      color: lightgreen;
+      margin-top: 5px;
     }
-    #sentiment-result {
-      margin-top: 10px;
+    .user {
+      color: orange;
+      margin-bottom: 5px;
+    }
+    #chat-log {
+      max-height: 300px;
+      overflow-y: auto;
       padding: 10px;
-    }
-    .indicator {
-      height: 15px;
-      width: 15px;
-      border-radius: 50%;
-      display: inline-block;
-      margin-right: 10px;
-    }
-    .bullish { background-color: green; }
-    .neutral { background-color: yellow; }
-    .bearish { background-color: red; }
-    footer {
-      margin-top: 40px;
-      font-size: 0.8em;
+      border: 1px solid #f7931a;
+      border-radius: 8px;
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
   <h1>CryptoConsult by Crimzn</h1>
 
-  <div class="section" id="prices">
+  <div class="section">
     <h2>Live Prices</h2>
     <p>BTC: <span id="btc-price">Loading...</span> USD</p>
     <p>ETH: <span id="eth-price">Loading...</span> USD</p>
     <p>SOL: <span id="sol-price">Loading...</span> USD</p>
   </div>
 
-  <div class="section" id="alpha-pulse">
+  <div class="section">
     <h2>Alpha Pulse Tracker+</h2>
-    <input type="text" id="sentiment-topic" placeholder="Enter a crypto topic..." />
-    <button onclick="getSentiment()">Pulse It 🔍</button>
-    <div id="sentiment-result"></div>
+    <input type="text" id="sentiment-query" placeholder="Enter a crypto topic..." />
+    <button onclick="searchSentiment()">Pulse It 🔍</button>
+    <p id="sentiment-result"></p>
   </div>
 
   <div class="section" id="chat">
     <h2>Talk to CrimznBot</h2>
-    <div id="chat-log">What can Crimzn unlock for you today? Alpha, gains, or glory? 🧠📈🚀</div>
+    <p>What can Crimzn unlock for you today? Alpha, gains, or glory? 🧠📈</p>
+    <div id="chat-log">Ask me anything...</div>
     <form id="chat-form">
-      <input type="text" id="user-input" placeholder="Ask me anything, degen-style..." required />
+      <input type="text" id="user-input" placeholder="Ask me anything, degen-style..." />
       <br />
       <button type="submit">Send</button>
     </form>
 
     <div id="payment-options" style="display:none; margin-top:10px;">
       <p>You’ve hit your free limit. Please pay to continue:</p>
-      <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">
-        Pay $99.99 USDC
-      </button>
-      <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')">
-        Tip 1 USDC
-      </button>
-      <button onclick="window.open('https://t.me/Crimznbot')">Contact Me via Telegram</button>
+      <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Pay 99.99 USDC for Services Rendered</button>
+      <button onclick="window.open('https://t.me/Crimznbot', '_blank')">Contact Me via Telegram</button>
     </div>
   </div>
 
   <div class="section">
     <h2>Documentation</h2>
     <p><a href="whitepaper.html" target="_blank">📄 View Whitepaper</a></p>
-    <p><a href="blog/blog.html" target="_blank">📰 View Daily Blog</a></p>
+    <p><a href="blog/blog.html" target="_blank">📰 View BTC Daily Blog</a></p>
   </div>
 
   <footer>
@@ -107,52 +96,6 @@
     <p>Built by Crimzn • All Rights Reserved © 2025</p>
   </footer>
 
-  <script>
-    document.getElementById('chat-form').addEventListener('submit', function(event) {
-      event.preventDefault();
-      sendMessage(event);
-    });
-
-    async function getSentiment() {
-      const topic = document.getElementById("sentiment-topic").value.trim();
-      if (!topic) return;
-
-      const res = await fetch("/api/sentiment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic })
-      });
-
-      const data = await res.json();
-      const sentiment = data.summary.toLowerCase();
-      let color = '<span class="indicator neutral"></span>';
-
-      if (sentiment.includes("cautious") || sentiment.includes("mixed")) {
-        color = '<span class="indicator neutral"></span>';
-      } else if (sentiment.includes("positive") || sentiment.includes("bullish")) {
-        color = '<span class="indicator bullish"></span>';
-      } else if (sentiment.includes("negative") || sentiment.includes("bearish")) {
-        color = '<span class="indicator bearish"></span>';
-      }
-
-      document.getElementById("sentiment-result").innerHTML = `${color}${data.summary}`;
-    }
-
-    async function updatePrices() {
-      try {
-        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
-        const data = await res.json();
-        document.getElementById("btc-price").innerText = data.bitcoin.usd.toLocaleString();
-        document.getElementById("eth-price").innerText = data.ethereum.usd.toLocaleString();
-        document.getElementById("sol-price").innerText = data.solana.usd.toLocaleString();
-      } catch (error) {
-        console.error("Price fetch failed:", error);
-      }
-    }
-
-    updatePrices();
-    setInterval(updatePrices, 60000);
-  </script>
   <script src="script.js"></script>
 </body>
 </html>

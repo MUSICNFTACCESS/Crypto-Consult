@@ -1,9 +1,8 @@
-cat <<HTML > "$BLOG_FILE"
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>BTC Daily Blog - $TODAY</title>
+  <title>BTC Daily Blog - 2025-06-13</title>
   <style>
     body {
       background-color: #111;
@@ -28,12 +27,12 @@ cat <<HTML > "$BLOG_FILE"
 </head>
 <body>
   <h1>BTC Daily Blog</h1>
-  <h2>$TODAY</h2>
-  <p class="price">Current BTC Price: \$${BTC_PRICE}</p>
+  <h2>2025-06-13</h2>
+  <p class="price">Current BTC Price: $105645</p>
 
   <div class="summary">
     <strong>CrimznBot Summary:</strong>
-    <p>🧠 AI commentary will appear here soon. (e.g. "BTC is showing strength after ETF inflows...")</p>
+    <p>🧠 BTC is showing strength around $105645. Watch ETF flows, volume, and 00K support level.</p>
   </div>
 
   <div class="chart-container">
@@ -57,4 +56,3 @@ cat <<HTML > "$BLOG_FILE"
   </div>
 </body>
 </html>
-HTML

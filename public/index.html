@@ -68,13 +68,14 @@
 
   <div class="section" id="chat">
     <h2>Talk to CrimznBot</h2>
-    <p>What can Crimzn unlock for you today? Alpha, gains, or glory? 🧠📈</p>
-    <div id="chat-log"> </div>
+    <p>What can I unlock for you today? Alpha, gains, or glory? 🧠📈</p>
+    <div id="chat-log">Ask me anything...</div>
     <form id="chat-form" onsubmit="sendMessage(event)">
       <input type="text" id="user-input" placeholder="Ask me anything, degen-style..." />
-      <br />
+      <br /><br />
       <button type="submit">Send</button>
     </form>
+
     <div id="payment-options" style="display:none; margin-top:10px;">
       <p>You’ve hit your free limit. Please pay to continue:</p>
       <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Pay 99.99 USDC for Services Rendered</button>

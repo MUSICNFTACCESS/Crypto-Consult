@@ -1,31 +1,32 @@
+from dotenv import load_dotenv
+load_dotenv(dotenv_path="/data/data/com.termux/files/home/CryptoConsult/.env")
+
+
 import os
 import tweepy
-from datetime import datetime
 
-auth = tweepy.OAuth1UserHandler(
-    os.environ["API_KEY"],
-    os.environ["API_SECRET"],
-    os.environ["ACCESS_TOKEN"],
-    os.environ["ACCESS_SECRET"]
+# Auth using env vars from CrimznsKeys
+client = tweepy.Client(
+    consumer_key=os.environ["API_KEY"],
+    consumer_secret=os.environ["API_SECRET"],
+    access_token=os.environ["ACCESS_TOKEN"],
+    access_token_secret=os.environ["ACCESS_SECRET"]
 )
-api = tweepy.API(auth)
 
-today = datetime.utcnow().strftime('%Y-%m-%d')
-price = "105859"
-url = f"https://crypto-consult.onrender.com/blog/{today}.html"
-
+# Define the tweet thread content
 tweets = [
-    f"📰 BTC Daily Blog for {today} 🧵",
-    f"📈 BTC Price: ${price}",
-    "📊 ETF inflows still strong. Dominance holding. Here’s the full blog:",
-    f"🔗 {url}"
+    "BTC Daily Blog for June 14 🧵",
+    "BTC Price: $105,662",
+    "ETF inflows still strong. Dominance holding. Here’s the full blog:",
+    "🔗 https://crypto-consult.onrender.com/blog/2025-06-14.html"
 ]
 
-previous = api.update_status(tweets[0])
+# Post the thread
+response = client.create_tweet(text=tweets[0])
+thread_id = response.data["id"]
+
 for tweet in tweets[1:]:
-    previous = api.update_status(
-        tweet,
-        in_reply_to_status_id=previous.id,
-        auto_populate_reply_metadata=True
-    )
-print("✅ Thread posted.")
+    response = client.create_tweet(text=tweet, in_reply_to_tweet_id=thread_id)
+    thread_id = response.data["id"]
+
+print("✅ Tweet thread posted.")

@@ -85,8 +85,6 @@
     <a href="blog/blog.html" style="background-color:#f7931a; color:black; padding:10px; border-radius:10px;">📓 Read the BTC Daily Blog</a>
   </div>
 
-  <script src="script.js"></script>
-  <script>
     async function updatePrices() {
       try {
         const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");

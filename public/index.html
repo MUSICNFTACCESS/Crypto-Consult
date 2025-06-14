@@ -26,9 +26,7 @@
       cursor: pointer;
       text-decoration: none;
       margin: 0.4rem;
-    }
-    .payment-button {
-      margin: 0.3rem;
+      display: inline-block;
     }
     #chat-box {
       max-width: 600px;
@@ -45,6 +43,13 @@
       margin-top: 1rem;
       border-radius: 6px;
       border: none;
+    }
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
     }
   </style>
 </head>
@@ -66,12 +71,22 @@
     <li>🪙 Token + dApp Support</li>
   </ul>
 
+  <h3>Alpha Pulse Tracker+ 📊</h3>
+  <p>Loading default BTC sentiment...</p>
+  <form onsubmit="return false;">
+    <input type="text" id="sentiment-query" placeholder="Ethereum">
+    <button onclick="getSentiment()">Pulse It 🧠</button>
+  </form>
+  <p id="sentiment-result">Sentiment for "BTC": Neutral 🤔</p>
+
   <h3>Support & Payments:</h3>
-  <a class="button payment-button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8">Pay $99.99 for Services Rendered</a>
-  <a class="button payment-button" href="https://commerce.coinbase.com/checkout/1d7cd9cc-8e8a-45a2-93d2-411b410648a3">Tip 1 USDC</a>
-  <a class="button payment-button" href="https://cryptoconsult.onrender.com/whitepaper">📄 View Whitepaper</a>
-  <a class="button payment-button" href="https://cryptoconsult.onrender.com/public/blog/2025-06-13.html">📅 BTC Daily Blog</a>
-  <a class="button payment-button" href="https://t.me/Crimznbot" target="_blank">📬 Contact via Telegram</a>
+  <div class="button-group">
+    <a class="button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8">Pay $99.99 for Services Rendered</a>
+    <a class="button" href="https://commerce.coinbase.com/checkout/1d7cd9e2-835f-4903-9c36-c04f1a8d1652">Tip 1 USDC 💸</a>
+    <a class="button" href="https://cryptoconsult.onrender.com/whitepaper.html">📰 View Whitepaper</a>
+    <a class="button" href="https://cryptoconsult.onrender.com/public/blog/2025-06-13.html">📅 BTC Daily Blog</a>
+    <a class="button" href="https://t.me/Crimznbot" target="_blank">📬 Contact via Telegram</a>
+  </div>
 
   <h3>Talk to CrimznBot:</h3>
   <div id="chat-box"></div>
@@ -80,8 +95,8 @@
 
   <div id="payment-options" style="display:none;">
     <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Pay $99.99</button>
-    <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd9cc-8e8a-45a2-93d2-411b410648a3')">Tip 1 USDC</button>
-    <button onclick="window.open('https://cryptoconsult.onrender.com/whitepaper')">Whitepaper</button>
+    <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd9e2-835f-4903-9c36-c04f1a8d1652')">Tip 1 USDC</button>
+    <button onclick="window.open('https://cryptoconsult.onrender.com/whitepaper.html')">Whitepaper</button>
     <button onclick="window.open('https://cryptoconsult.onrender.com/public/blog/2025-06-13.html')">BTC Blog</button>
     <button onclick="window.open('https://t.me/Crimznbot')">📬 Contact</button>
   </div>

@@ -1,116 +1,97 @@
 const express = require("express");
-const path = require("path");
-const OpenAI = require("openai");
-require("dotenv").config();
+const cors = require("cors");
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const { OpenAI } = require("openai");
 
 const app = express();
-app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
-
-// 🏠 Serve Homepage
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-// 💰 Simulated Live Prices using GPT-4o
+const PORT = 3000;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+app.use(cors());
+app.use(express.json());
+
+// 🧠 CrimznBot Chat Endpoint
+app.post("/chat", async (req, res) => {
+  try {
+    const userMessage = req.body.message;
+
+    const chat = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: "You are CrimznBot, a strategic crypto expert with live market knowledge and a degen edge." },
+        { role: "user", content: userMessage }
+      ]
+    });
+
+    res.json({ reply: chat.choices[0].message.content });
+  } catch (err) {
+    console.error("❌ Chat error:", err.message);
+    res.status(500).json({ error: "Chat error" });
+  }
+});
+
+// 📈 Real-Time Prices with GPT Fallback
 app.get("/prices", async (req, res) => {
   try {
-    const gptResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You simulate a crypto price API. Respond only in JSON like this: {\"BTC\":12345,\"ETH\":2345,\"SOL\":145}. No extra text.",
-        },
-        {
-          role: "user",
-          content: "Return current USD prices for BTC, ETH, and SOL.",
-        },
-      ],
-    });
-
-    const text = gptResponse.choices[0].message.content;
-    const parsed = JSON.parse(text);
+    const cgResponse = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
+    const data = await cgResponse.json();
 
     res.json({
-      btc: parsed.BTC || "Error",
-      eth: parsed.ETH || "Error",
-      sol: parsed.SOL || "Error",
+      btc: data.bitcoin.usd,
+      eth: data.ethereum.usd,
+      sol: data.solana.usd
     });
   } catch (err) {
-    console.error("❌ GPT price fetch error:", err.message);
-    res.json({ btc: "Error", eth: "Error", sol: "Error" });
+    console.error("❌ CoinGecko API failed:", err.message);
+
+    try {
+      const fallback = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are a fallback price oracle. Return BTC, ETH, and SOL prices in realistic USD values as JSON." },
+          { role: "user", content: "What are the prices of BTC, ETH, and SOL right now?" }
+        ]
+      });
+
+      const parsed = JSON.parse(fallback.choices[0].message.content);
+      res.json({
+        btc: parsed.btc || "Error",
+        eth: parsed.eth || "Error",
+        sol: parsed.sol || "Error"
+      });
+    } catch (fallbackErr) {
+      console.error("❌ GPT Fallback failed:", fallbackErr.message);
+      res.json({ btc: "Error", eth: "Error", sol: "Error" });
+    }
   }
 });
 
-// 🤖 CrimznBot Chat
-app.post("/chat", async (req, res) => {
-  const userMessage = req.body.message;
-  if (!userMessage) return res.status(400).json({ error: "Missing message" });
-
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are CrimznBot, a confident, sharp crypto strategist inspired by Raoul Pal, Michael Saylor, and Cathie Wood. Provide clear, forward-thinking responses with insight and edge.",
-        },
-        {
-          role: "user",
-          content: userMessage,
-        },
-      ],
-    });
-
-    const reply = response.choices[0].message.content;
-    res.json({ reply });
-  } catch (err) {
-    console.error("❌ CrimznBot error:", err.message);
-    res.json({ reply: "⚠️ CrimznBot glitch – try again shortly." });
-  }
-});
-
-// 🧠 Sentiment via GPT-4o (with strict JSON + fallback)
+// 🧠 Sentiment Analyzer
 app.post("/api/sentiment", async (req, res) => {
-  const query = req.body.query;
-  if (!query) return res.status(400).json({ error: "Missing query" });
-
   try {
-    const gptResponse = await openai.chat.completions.create({
+    const query = req.body.query;
+
+    const sentiment = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content:
-            "You are a crypto sentiment analyst. Respond ONLY in this exact JSON format: {\"sentiment_score\": 7, \"summary\": \"...\", \"tags\": [\"Bullish\"]}. No intro, no markdown, no formatting.",
+          content: `You are an expert crypto sentiment analyst. Return a JSON object with:
+- sentiment_score (1–10),
+- summary (1 sentence),
+- tags (1–3 keywords).`
         },
-        {
-          role: "user",
-          content: `Analyze sentiment for ${query}. Respond only as JSON.`,
-        },
-      ],
+        { role: "user", content: `Analyze market sentiment on: ${query}` }
+      ]
     });
 
-    const raw = gptResponse.choices[0].message.content.trim();
-    const cleaned = raw.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(cleaned);
-
-    res.json({
-      sentiment_score: parsed.sentiment_score || "N/A",
-      summary: parsed.summary || "N/A",
-      tags: parsed.tags || ["Uncertain"],
-    });
+    res.json(JSON.parse(sentiment.choices[0].message.content));
   } catch (err) {
-    console.error("❌ GPT sentiment error:", err.message);
-    res.json({ error: "GPT sentiment failed." });
+    console.error("❌ GPT sentiment failed:", err.message);
+    res.status(500).json({ error: "GPT sentiment failed." });
   }
 });
 
-// ✅ Start Server
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 CrimznBot backend running on http://localhost:${PORT}`);
 });

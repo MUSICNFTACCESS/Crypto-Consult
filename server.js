@@ -1,50 +1,54 @@
 const express = require("express");
-const fetch = require("node-fetch");
 const path = require("path");
 const OpenAI = require("openai");
+require("dotenv").config();
 
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// 🚀 Serve frontend
+// 🏠 Serve Homepage
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// 📈 Live price API
+// 💰 Simulated Live Prices using GPT-4o
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
 app.get("/prices", async (req, res) => {
   try {
-    const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd", {
-      headers: {
-        Accept: "application/json",
-        "User-Agent": "Mozilla/5.0",
-      },
+    const gptResponse = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You simulate a crypto price API. Respond only in JSON like this: {\"BTC\":12345,\"ETH\":2345,\"SOL\":145}. No extra text.",
+        },
+        {
+          role: "user",
+          content: "Return current USD prices for BTC, ETH, and SOL.",
+        },
+      ],
     });
-    const data = await response.json();
+
+    const text = gptResponse.choices[0].message.content;
+    const parsed = JSON.parse(text);
+
     res.json({
-      btc: data.bitcoin?.usd || "Error",
-      eth: data.ethereum?.usd || "Error",
-      sol: data.solana?.usd || "Error",
+      btc: parsed.BTC || "Error",
+      eth: parsed.ETH || "Error",
+      sol: parsed.SOL || "Error",
     });
   } catch (err) {
-    console.error("⚠️ CoinGecko fetch failed:", err.message);
+    console.error("❌ GPT price fetch error:", err.message);
     res.json({ btc: "Error", eth: "Error", sol: "Error" });
   }
 });
 
-// 🧠 OpenAI Setup
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// 🤖 CrimznBot chat route
+// 🤖 CrimznBot Chat
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
-
-  if (!userMessage) {
-    return res.status(400).json({ error: "Missing message" });
-  }
+  if (!userMessage) return res.status(400).json({ error: "Missing message" });
 
   try {
     const response = await openai.chat.completions.create({
@@ -52,7 +56,7 @@ app.post("/chat", async (req, res) => {
       messages: [
         {
           role: "system",
-          content: "You are CrimznBot, a crypto-native strategist with a confident tone, deep knowledge of Bitcoin, altcoins, and macro market trends. Respond in short, bold insights unless asked to elaborate.",
+          content: "You are CrimznBot, a confident, sharp crypto strategist inspired by Raoul Pal, Michael Saylor, and Cathie Wood. Provide clear, forward-thinking responses with insight and edge.",
         },
         {
           role: "user",
@@ -65,42 +69,48 @@ app.post("/chat", async (req, res) => {
     res.json({ reply });
   } catch (err) {
     console.error("❌ CrimznBot error:", err.message);
-    res.json({ reply: "⚠️ CrimznBot glitch – check back in a few. If urgent, contact Crimzn directly." });
+    res.json({ reply: "⚠️ CrimznBot glitch – try again shortly." });
   }
 });
 
-// ✅ Start the server
-const PORT = process.env.PORT || 3000;
-// ✅ Pulse Sentiment Route
+// 🧠 Sentiment via GPT-4o (with strict JSON + fallback)
 app.post("/api/sentiment", async (req, res) => {
-  const { query } = req.body;
-
-  if (!query) {
-    return res.status(400).json({ error: "Missing sentiment query" });
-  }
+  const query = req.body.query;
+  if (!query) return res.status(400).json({ error: "Missing query" });
 
   try {
-    const response = await fetch("https://api.coinstats.app/public/v1/news?skip=0&limit=30");
-    const data = await response.json();
-    const articles = data.news.filter(n => n.title.toLowerCase().includes(query.toLowerCase()));
-
-    let score = 0;
-    articles.forEach(n => {
-      const title = n.title.toLowerCase();
-      if (title.includes("up") || title.includes("gain")) score++;
-      if (title.includes("down") || title.includes("drop")) score--;
+    const gptResponse = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a crypto sentiment analyst. Respond ONLY in this exact JSON format: {\"sentiment_score\": 7, \"summary\": \"...\", \"tags\": [\"Bullish\"]}. No intro, no markdown, no formatting.",
+        },
+        {
+          role: "user",
+          content: `Analyze sentiment for ${query}. Respond only as JSON.`,
+        },
+      ],
     });
 
-    let sentiment = "Neutral 🤔";
-    if (score > 1) sentiment = "Bullish 🟢";
-    else if (score < -1) sentiment = "Bearish 🔴";
+    const raw = gptResponse.choices[0].message.content.trim();
+    const cleaned = raw.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(cleaned);
 
-    res.json({ sentiment });
+    res.json({
+      sentiment_score: parsed.sentiment_score || "N/A",
+      summary: parsed.summary || "N/A",
+      tags: parsed.tags || ["Uncertain"],
+    });
   } catch (err) {
-    console.error("❌ Sentiment error:", err.message);
-    res.status(500).json({ error: "Failed to fetch sentiment" });
+    console.error("❌ GPT sentiment error:", err.message);
+    res.json({ error: "GPT sentiment failed." });
   }
 });
+
+// ✅ Start Server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 CryptoConsult running on http://localhost:${PORT}`);
+  console.log(`🚀 CrimznBot backend running on http://localhost:${PORT}`);
 });

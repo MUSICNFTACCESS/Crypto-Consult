@@ -62,6 +62,21 @@
     <p>SOL: <span id="sol-price">Loading...</span> USD</p>
   </div>
 
+<!-- 🧠 Sentiment Analysis Section -->
+<section style="margin-top: 20px;">
+  <h2 style="color:#f7931a;">🧠 Sentiment Intelligence</h2>
+  <div id="sentiment-today" style="margin-bottom: 10px;">
+    <strong>Today’s BTC Sentiment:</strong> <span id="sentiment-score">Loading...</span>
+  </div>
+
+  <div>
+    <input id="sentiment-query" type="text" placeholder="Enter coin or topic (e.g. SOL)" style="padding:6px; font-family:monospace; border-radius:5px;">
+    <button onclick="searchSentiment()" style="padding:6px 10px; background-color:#f7931a; color:black; font-weight:bold; border:none; border-radius:5px;">Check Sentiment</button>
+  </div>
+
+  <p id="sentiment-result" style="margin-top:10px;"></p>
+</section>
+
   <div class="section">
     <h2>Available Services</h2>
     <p>Technical Analysis, Wallet Setup, On/Off-Ramping, Risk Management</p>

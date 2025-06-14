@@ -64,3 +64,55 @@ async function fetchPrices() {
 
 fetchPrices();
 setInterval(fetchPrices, 60000);
+
+// 🔄 Load default BTC sentiment
+async function loadBTCSentiment() {
+  try {
+    const res = await fetch("https://api.coinstats.app/public/v1/news?skip=0&limit=5&category=crypto");
+    const news = await res.json();
+    const btcNews = news.news.filter(n => n.title.toLowerCase().includes("bitcoin") || n.description.toLowerCase().includes("bitcoin"));
+
+    let score = 0;
+    btcNews.forEach(n => {
+      if (n.title.toLowerCase().includes("up") || n.title.toLowerCase().includes("bullish")) score++;
+      if (n.title.toLowerCase().includes("down") || n.title.toLowerCase().includes("bearish")) score--;
+    });
+
+    let sentiment = "Neutral 🤔";
+    if (score > 1) sentiment = "Bullish 🟢";
+    else if (score < -1) sentiment = "Bearish 🔴";
+
+    document.getElementById("sentiment-score").innerText = sentiment;
+  } catch (e) {
+    document.getElementById("sentiment-score").innerText = "Error fetching sentiment";
+  }
+}
+
+// 🧠 Custom Sentiment Search
+async function searchSentiment() {
+  const query = document.getElementById("sentiment-query").value.toLowerCase();
+  const resultEl = document.getElementById("sentiment-result");
+
+  try {
+    const res = await fetch("https://api.coinstats.app/public/v1/news?skip=0&limit=10&category=crypto");
+    const news = await res.json();
+    const relevant = news.news.filter(n => n.title.toLowerCase().includes(query) || n.description.toLowerCase().includes(query));
+
+    let score = 0;
+    relevant.forEach(n => {
+      if (n.title.toLowerCase().includes("up") || n.title.toLowerCase().includes("bullish")) score++;
+      if (n.title.toLowerCase().includes("down") || n.title.toLowerCase().includes("bearish")) score--;
+    });
+
+    let sentiment = "Neutral 🤔";
+    if (score > 1) sentiment = "Bullish 🟢";
+    else if (score < -1) sentiment = "Bearish 🔴";
+
+    resultEl.innerText = `Sentiment for "${query}": ${sentiment}`;
+  } catch (e) {
+    resultEl.innerText = "Error fetching sentiment.";
+  }
+}
+
+// 🔁 Auto-load BTC sentiment on page load
+loadBTCSentiment();

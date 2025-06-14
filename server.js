@@ -83,6 +83,25 @@ app.post("/api/sentiment", async (req, res) => {
       return res.status(400).json({ error: "Missing 'topic' in request body." });
     }
 
+app.get("/api/sentiment", async (req, res) => {
+  const topic = "Bitcoin"; // Default fallback
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{
+        role: "user",
+        content: `In 1 paragraph, summarize the current market sentiment for ${topic} crypto based on macro, ETF flows, on-chain trends, and recent headlines.`
+      }]
+    });
+
+    res.json({ topic, summary: completion.choices[0].message.content });
+  } catch (error) {
+    console.error("Error fetching sentiment:", error);
+    res.status(500).json({ error: "Failed to fetch sentiment." });
+  }
+});
+
     const prompt = `
       Analyze the current sentiment in the crypto market about "${topic}". 
       Include macro factors, news tone, and emotional signals from traders.

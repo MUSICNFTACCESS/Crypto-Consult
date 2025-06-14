@@ -22,9 +22,6 @@
       font-weight: bold;
       border-radius: 8px;
     }
-    button:hover {
-      background-color: #ffa940;
-    }
     .section {
       margin-top: 40px;
     }
@@ -35,19 +32,19 @@
     }
     .bot {
       color: lightgreen;
-      margin-top: 5px;
+      background-color: #111;
+      padding: 8px;
+      margin: 10px auto;
+      width: 90%;
+      border: 1px solid #f7931a;
+      border-radius: 8px;
     }
     .user {
       color: orange;
       margin-bottom: 5px;
     }
     #chat-log {
-      max-height: 300px;
-      overflow-y: auto;
-      padding: 10px;
-      border: 1px solid #f7931a;
-      border-radius: 8px;
-      margin-bottom: 10px;
+      margin-top: 15px;
     }
   </style>
 </head>
@@ -61,8 +58,9 @@
     <p>SOL: <span id="sol-price">Loading...</span> USD</p>
   </div>
 
-  <div class="section">
+  <div class="section" id="sentiment">
     <h2>Alpha Pulse Tracker+</h2>
+    <p id="sentiment-score">Loading default BTC sentiment...</p>
     <input type="text" id="sentiment-query" placeholder="Enter a crypto topic..." />
     <button onclick="searchSentiment()">Pulse It 🔍</button>
     <p id="sentiment-result"></p>
@@ -71,13 +69,12 @@
   <div class="section" id="chat">
     <h2>Talk to CrimznBot</h2>
     <p>What can Crimzn unlock for you today? Alpha, gains, or glory? 🧠📈</p>
-    <div id="chat-log">Ask me anything...</div>
-    <form id="chat-form">
+    <div id="chat-log"> </div>
+    <form id="chat-form" onsubmit="sendMessage(event)">
       <input type="text" id="user-input" placeholder="Ask me anything, degen-style..." />
       <br />
       <button type="submit">Send</button>
     </form>
-
     <div id="payment-options" style="display:none; margin-top:10px;">
       <p>You’ve hit your free limit. Please pay to continue:</p>
       <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Pay 99.99 USDC for Services Rendered</button>

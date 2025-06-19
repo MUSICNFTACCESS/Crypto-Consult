@@ -1,4 +1,4 @@
-const express = require("express");
+uconst express = require("express");
 const cors = require("cors");
 const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
 require("dotenv").config();
@@ -47,16 +47,16 @@ app.post("/ask", async (req, res) => {
 
 //
 // 📈 Sentiment Analyzer (used by /api/sentiment)
-//
-app.post("/api/sentiment", async (req, res) => {
-  const { query } = req.body;
+
+app.post("/sentiment", async (req, res) => {
+  const query = req.body.query;
   if (!query) return res.status(400).json({ error: "Missing query" });
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -64,29 +64,38 @@ app.post("/api/sentiment", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: "You are a crypto sentiment analyst. Analyze sentiment for the term provided and respond in JSON format with a 1-10 score and short summary. Use: { \"sentiment_score\": 7, \"summary\": \"...\", \"tags\": [\"Bullish\"] }"
+            content: "You are a crypto sentiment analyst. Respond only with a clean JSON object using this format: { \"sentiment_score\": number between 0 and 1, \"summary\": short label like 'Bullish', 'Bearish', or 'Neutral' }"
           },
           {
             role: "user",
-            content: `Analyze sentiment for ${query}. Respond only with a clean JSON object.`
+            content: `Analyze sentiment for: ${query}.`
           }
         ]
       })
     });
 
     const raw = await response.json();
-    const content = raw.choices?.[0]?.message?.content?.trim();
+    const content = raw.choices?.[0]?.message?.content?.trim() || "";
 
-    const cleaned = content.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(cleaned);
+    // Remove markdown/code formatting if present
+    const cleaned = content.replace(/^```json|```$/g, "").trim();
+
+    // Attempt to parse it
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      console.error("❌ Failed to parse AI response:", cleaned);
+      return res.status(500).json({ sentiment_score: "N/A", summary: "Parsing failed" });
+    }
 
     res.json({
       sentiment_score: parsed.sentiment_score || "N/A",
-      summary: parsed.summary || "N/A",
-      tags: parsed.tags || ["Uncertain"]
+      summary: parsed.summary || "N/A"
     });
-  } catch (error) {
-    console.error("❌ GPT sentiment error:", error.message);
+
+  } catch (err) {
+    console.error("⚠️ GPT sentiment error:", err.message);
     res.status(500).json({ error: "Sentiment analysis failed" });
   }
 });

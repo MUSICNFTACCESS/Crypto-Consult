@@ -11,17 +11,37 @@ h1, h2, h3 {
   margin: 1rem 0 0.5rem;
 }
 
-button, a.button {
-  background-color: #f7931a;
-  color: #000;
-  border: none;
-  padding: 0.6rem 1rem;
-  border-radius: 6px;
+.button,
+.coinbase-button,
+.solana-button,
+a.button {
+  display: block;
+  margin: 10px auto;
+  padding: 12px 20px;
   font-weight: bold;
-  cursor: pointer;
+  font-family: Courier, monospace;
+  font-size: 1rem;
+  color: #fff;
+  text-align: center;
+  border-radius: 8px;
+  border: none;
   text-decoration: none;
-  margin: 0.3rem;
-  display: inline-block;
+  max-width: 280px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: transform 0.2s ease;
+}
+.button:hover,
+.coinbase-button:hover,
+.solana-button:hover {
+  transform: scale(1.04);
+}
+
+.coinbase-button {
+  background-color: #0052ff;
+}
+
+.solana-button {
+  background-color: purple;
 }
 
 #chat-box {

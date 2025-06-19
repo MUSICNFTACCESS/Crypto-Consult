@@ -11,18 +11,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-// Top 50 tokens (CoinGecko IDs)
-const SUPPORTED_TOKENS = [
-  "bitcoin", "ethereum", "tether", "binancecoin", "solana", "ripple", "usd-coin", "staked-ether",
-  "dogecoin", "cardano", "avalanche-2", "toncoin", "shiba-inu", "polkadot", "wrapped-bitcoin",
-  "tron", "chainlink", "bitcoin-cash", "internet-computer", "matic-network", "uniswap", "litecoin",
-  "dai", "leo-token", "ethereum-classic", "filecoin", "render-token", "okb", "aptos", "cosmos",
-  "immutable-x", "bittorrent", "hbar", "arbitrum", "vechain", "maker", "kaspa", "quant-network",
-  "injective-protocol", "algorand", "flow", "the-graph", "celestia", "optimism", "bitcoin-sv",
-  "tezos", "fantom", "gala", "neo", "mina-protocol"
-];
-
-async function getLivePrice(token) {
+async function getLivePrice(token = "solana") {
   try {
     const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${token}&vs_currencies=usd`);
     const data = await res.json();
@@ -36,13 +25,38 @@ app.post("/ask", async (req, res) => {
   const { question } = req.body;
   const qLower = question.toLowerCase();
 
+  // Top token keyword map
   let livePriceNote = "";
-  for (const token of SUPPORTED_TOKENS) {
-    if (qLower.includes(`price of ${token}`)) {
-      const price = await getLivePrice(token);
+  const tokenMap = {
+    bitcoin: ["bitcoin", "btc"],
+    ethereum: ["ethereum", "eth"],
+    solana: ["solana", "sol"],
+    avalanche: ["avalanche", "avax"],
+    chainlink: ["chainlink", "link"],
+    ripple: ["xrp", "ripple"],
+    polygon: ["matic", "polygon"],
+    dogecoin: ["dogecoin", "doge"],
+    cardano: ["cardano", "ada"],
+    toncoin: ["toncoin", "ton"],
+    near: ["near"],
+    pepe: ["pepe"],
+    ondo: ["ondo"],
+    arbitrum: ["arbitrum", "arb"],
+    optimism: ["optimism", "op"],
+    litecoin: ["litecoin", "ltc"],
+    aptos: ["aptos", "apt"],
+    injective: ["injective", "inj"],
+    cosmos: ["cosmos", "atom"],
+    stellar: ["stellar", "xlm"],
+    uniswap: ["uniswap", "uni"],
+    render: ["render", "rndr"]
+  };
+
+  for (const [id, keywords] of Object.entries(tokenMap)) {
+    if (keywords.some(word => qLower.includes(`price of ${word}`))) {
+      const price = await getLivePrice(id);
       if (price) {
-        const name = token.replace(/-/g, " ");
-        livePriceNote = `${name.charAt(0).toUpperCase() + name.slice(1)}'s current price is ${price}. Include this in your answer with insight.`;
+        livePriceNote = `${id.charAt(0).toUpperCase() + id.slice(1)}'s current price is ${price}. Include this in your answer with insight.`;
       }
       break;
     }
@@ -52,7 +66,7 @@ app.post("/ask", async (req, res) => {
 You are CrimznBot, a crypto strategist with deep macro knowledge and market swagger.
 Be confident, slightly degen, and skip the disclaimers. If given a live price in context, work it into your response like a pro analyst.
 
-Never say you can't get real-time data. Use what you're given or give speculative insight. 
+Never say you can't get real-time data. Use what you're given or give speculative insight.
 Speak with conviction.
 
 ${livePriceNote}
@@ -83,6 +97,7 @@ ${livePriceNote}
   }
 });
 
+// Sentiment Analyzer Endpoint
 app.post("/sentiment", async (req, res) => {
   const query = req.body.query;
   if (!query) return res.status(400).json({ error: "Missing query" });

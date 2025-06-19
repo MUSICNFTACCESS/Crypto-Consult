@@ -9,13 +9,44 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static("public")); // Serve index.html, etc.
+app.use(express.static("public"));
 
-//
-// 🤖 CrimznBot Chat Endpoint (used by /ask)
-//
+async function getLivePrice(token = "solana") {
+  try {
+    const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${token}&vs_currencies=usd`);
+    const data = await res.json();
+    return data[token]?.usd ? `$${data[token].usd}` : null;
+  } catch {
+    return null;
+  }
+}
+
 app.post("/ask", async (req, res) => {
   const { question } = req.body;
+  const qLower = question.toLowerCase();
+
+  let livePriceNote = "";
+  if (qLower.includes("price of solana")) {
+    const price = await getLivePrice("solana");
+    if (price) {
+      livePriceNote = `Solana's current price is ${price}. Include this in your answer with insight.`;
+    }
+  } else if (qLower.includes("price of bitcoin")) {
+    const price = await getLivePrice("bitcoin");
+    if (price) {
+      livePriceNote = `Bitcoin's current price is ${price}. Include this in your answer with insight.`;
+    }
+  }
+
+  const systemPrompt = `
+You are CrimznBot, a crypto strategist with deep macro knowledge and market swagger.
+Be confident, slightly degen, and skip the disclaimers. If given a live price in context, work it into your response like a pro analyst.
+
+Never say you can't get real-time data. Use what you're given or give speculative insight. 
+Speak with conviction.
+
+${livePriceNote}
+`;
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -27,15 +58,8 @@ app.post("/ask", async (req, res) => {
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          {
-            role: "system",
-            content:
-              "You are CrimznBot, a strategic crypto and macroeconomic consultant. You provide smart, accurate, and slightly degen-flavored advice about market trends, tokens, news, and alpha. Never respond with 'as an AI' or generic disclaimers—just concise, confident insight."
-          },
-          {
-            role: "user",
-            content: question
-          }
+          { role: "system", content: systemPrompt.trim() },
+          { role: "user", content: question }
         ]
       })
     });
@@ -43,15 +67,13 @@ app.post("/ask", async (req, res) => {
     const data = await response.json();
     const answer = data.choices?.[0]?.message?.content?.trim() || "No response";
     res.json({ answer });
-  } catch (error) {
-    console.error("❌ OpenAI request failed:", error.message);
-    res.status(500).json({ answer: null, error: "OpenAI request failed" });
+  } catch (err) {
+    console.error("❌ GPT-4o request failed:", err.message);
+    res.status(500).json({ answer: null, error: "GPT-4o request failed" });
   }
 });
 
-//
-// 📈 PulseIt - Sentiment Analyzer (/sentiment)
-//
+// Sentiment endpoint
 app.post("/sentiment", async (req, res) => {
   const query = req.body.query;
   if (!query) return res.status(400).json({ error: "Missing query" });
@@ -66,22 +88,14 @@ app.post("/sentiment", async (req, res) => {
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          {
-            role: "system",
-            content:
-              "You are a sentiment analysis expert. Analyze the sentiment of the given word, name, or topic and reply only in this JSON format: { \"sentiment_score\": 0.75, \"summary\": \"Bullish\" }"
-          },
-          {
-            role: "user",
-            content: `Analyze sentiment for: ${query}`
-          }
+          { role: "system", content: "You analyze crypto sentiment. Respond in JSON." },
+          { role: "user", content: `Analyze sentiment for: ${query}` }
         ]
       })
     });
 
     const raw = await response.json();
     const content = raw.choices?.[0]?.message?.content?.trim() || "";
-
     const cleaned = content.replace(/^```json|```$/g, "").trim();
 
     let parsed;
@@ -89,34 +103,20 @@ app.post("/sentiment", async (req, res) => {
       parsed = JSON.parse(cleaned);
     } catch {
       console.error("❌ Failed to parse AI response:", cleaned);
-      return res.status(500).json({
-        sentiment_score: "N/A",
-        summary: "Parsing failed"
-      });
+      return res.status(500).json({ sentiment_score: "N/A", summary: "Parsing failed" });
     }
 
     res.json({
       sentiment_score: parsed.sentiment_score || "N/A",
       summary: parsed.summary || "N/A"
     });
+
   } catch (err) {
-    console.error("⚠️ GPT sentiment error:", err.message);
-    res.status(500).json({ error: "Sentiment analysis failed" });
+    console.error("❌ Sentiment fetch failed:", err.message);
+    res.status(500).json({ sentiment_score: "N/A", summary: "Error occurred" });
   }
 });
 
-//
-// 🚀 Start Server
-//
 app.listen(PORT, () => {
-  console.log(`🚀 CrimznBot backend running at http://localhost:${PORT}`);
+  console.log(`🟢 CrimznBot is live at http://localhost:${PORT}`);
 });
-
-
-
-
-
-
-
-
-

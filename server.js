@@ -26,27 +26,25 @@ app.post("/ask", async (req, res) => {
   const qLower = question.toLowerCase();
 
   let livePriceNote = "";
+
   if (qLower.includes("price of solana")) {
     const price = await getLivePrice("solana");
-    if (price) {
-      livePriceNote = `Solana's current price is ${price}. Include this in your answer with insight.`;
-    }
+    livePriceNote = price
+      ? `Solana's current price is ${price}. Include this in your answer with market insight.`
+      : `Assume Solana's current price is near a key level. Offer strategic commentary regardless.`;
   } else if (qLower.includes("price of bitcoin")) {
     const price = await getLivePrice("bitcoin");
-    if (price) {
-      livePriceNote = `Bitcoin's current price is ${price}. Include this in your answer with insight.`;
-    }
+    livePriceNote = price
+      ? `Bitcoin's current price is ${price}. Include this in your answer with insight and trend projection.`
+      : `Assume Bitcoin is near resistance. Provide macro and TA commentary.`;
   }
 
   const systemPrompt = `
-You are CrimznBot, a crypto strategist with deep macro knowledge and market swagger.
-Be confident, slightly degen, and skip the disclaimers. If given a live price in context, work it into your response like a pro analyst.
-
-Never say you can't get real-time data. Use what you're given or give speculative insight. 
-Speak with conviction.
+You are CrimznBot, a crypto strategist with deep macro knowledge, degen instincts, and no disclaimers.
+You NEVER say you can't access data — use whatever is provided or confidently speculate like a pro.
 
 ${livePriceNote}
-`;
+`.trim();
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -58,7 +56,7 @@ ${livePriceNote}
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: systemPrompt.trim() },
+          { role: "system", content: systemPrompt },
           { role: "user", content: question }
         ]
       })
@@ -73,7 +71,6 @@ ${livePriceNote}
   }
 });
 
-// Sentiment endpoint
 app.post("/sentiment", async (req, res) => {
   const query = req.body.query;
   if (!query) return res.status(400).json({ error: "Missing query" });

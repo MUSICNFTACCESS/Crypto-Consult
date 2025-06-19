@@ -1,4 +1,4 @@
-const input = document.getElementById("user-input");
+const input = document.getElementById("user-input");x
 const chatBox = document.getElementById("chat-box");
 const sendBtn = document.getElementById("send-button");
 const sentimentResult = document.getElementById("sentiment-result");
@@ -8,7 +8,7 @@ const ethPrice = document.getElementById("eth-price");
 const solPrice = document.getElementById("sol-price");
 const paymentSection = document.getElementById("payment-options");
 
-let questionCount = 0;
+let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
 const maxFreeQuestions = 3;
 
 async function handleCrimznBot(question) {

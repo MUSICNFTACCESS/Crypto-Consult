@@ -11,7 +11,18 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-async function getLivePrice(token = "solana") {
+// Top 50 tokens (CoinGecko IDs)
+const SUPPORTED_TOKENS = [
+  "bitcoin", "ethereum", "tether", "binancecoin", "solana", "ripple", "usd-coin", "staked-ether",
+  "dogecoin", "cardano", "avalanche-2", "toncoin", "shiba-inu", "polkadot", "wrapped-bitcoin",
+  "tron", "chainlink", "bitcoin-cash", "internet-computer", "matic-network", "uniswap", "litecoin",
+  "dai", "leo-token", "ethereum-classic", "filecoin", "render-token", "okb", "aptos", "cosmos",
+  "immutable-x", "bittorrent", "hbar", "arbitrum", "vechain", "maker", "kaspa", "quant-network",
+  "injective-protocol", "algorand", "flow", "the-graph", "celestia", "optimism", "bitcoin-sv",
+  "tezos", "fantom", "gala", "neo", "mina-protocol"
+];
+
+async function getLivePrice(token) {
   try {
     const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${token}&vs_currencies=usd`);
     const data = await res.json();
@@ -26,25 +37,26 @@ app.post("/ask", async (req, res) => {
   const qLower = question.toLowerCase();
 
   let livePriceNote = "";
-
-  if (qLower.includes("price of solana")) {
-    const price = await getLivePrice("solana");
-    livePriceNote = price
-      ? `Solana's current price is ${price}. Include this in your answer with market insight.`
-      : `Assume Solana's current price is near a key level. Offer strategic commentary regardless.`;
-  } else if (qLower.includes("price of bitcoin")) {
-    const price = await getLivePrice("bitcoin");
-    livePriceNote = price
-      ? `Bitcoin's current price is ${price}. Include this in your answer with insight and trend projection.`
-      : `Assume Bitcoin is near resistance. Provide macro and TA commentary.`;
+  for (const token of SUPPORTED_TOKENS) {
+    if (qLower.includes(`price of ${token}`)) {
+      const price = await getLivePrice(token);
+      if (price) {
+        const name = token.replace(/-/g, " ");
+        livePriceNote = `${name.charAt(0).toUpperCase() + name.slice(1)}'s current price is ${price}. Include this in your answer with insight.`;
+      }
+      break;
+    }
   }
 
   const systemPrompt = `
-You are CrimznBot, a crypto strategist with deep macro knowledge, degen instincts, and no disclaimers.
-You NEVER say you can't access data — use whatever is provided or confidently speculate like a pro.
+You are CrimznBot, a crypto strategist with deep macro knowledge and market swagger.
+Be confident, slightly degen, and skip the disclaimers. If given a live price in context, work it into your response like a pro analyst.
+
+Never say you can't get real-time data. Use what you're given or give speculative insight. 
+Speak with conviction.
 
 ${livePriceNote}
-`.trim();
+`;
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -56,7 +68,7 @@ ${livePriceNote}
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: systemPrompt.trim() },
           { role: "user", content: question }
         ]
       })

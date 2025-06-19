@@ -9,10 +9,10 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static("public")); // Serve frontend
+app.use(express.static("public")); // Serve index.html, etc.
 
 //
-// 🤖 CrimznBot Chat Endpoint (GPT-4o w/ enforced tone)
+// 🤖 CrimznBot Chat Endpoint (used by /ask)
 //
 app.post("/ask", async (req, res) => {
   const { question } = req.body;
@@ -29,8 +29,8 @@ app.post("/ask", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: `You are CrimznBot, a strategic crypto and macroeconomic consultant. Respond like a top-tier market strategist—smart, accurate, and slightly degen. 
-NEVER say "I can't provide real-time data", "check an exchange", or "as an AI". Always provide bold insights, estimates, and confident takes. Speak with expert tone.`
+            content:
+              "You are CrimznBot, a strategic crypto and macroeconomic consultant. You provide smart, accurate, and slightly degen-flavored advice about market trends, tokens, news, and alpha. Never respond with 'as an AI' or generic disclaimers—just concise, confident insight."
           },
           {
             role: "user",
@@ -50,7 +50,7 @@ NEVER say "I can't provide real-time data", "check an exchange", or "as an AI". 
 });
 
 //
-// 📈 Alpha PulseIt Sentiment Analyzer (GPT-4o JSON output)
+// 📈 PulseIt - Sentiment Analyzer (/sentiment)
 //
 app.post("/sentiment", async (req, res) => {
   const query = req.body.query;
@@ -68,12 +68,8 @@ app.post("/sentiment", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: `You are a sentiment analysis expert. Return results in this exact JSON format:
-{
-  "sentiment_score": 0.85,
-  "summary": "Bullish"
-}
-No markdown, just the pure JSON.`
+            content:
+              "You are a sentiment analysis expert. Analyze the sentiment of the given word, name, or topic and reply only in this JSON format: { \"sentiment_score\": 0.75, \"summary\": \"Bullish\" }"
           },
           {
             role: "user",
@@ -86,10 +82,9 @@ No markdown, just the pure JSON.`
     const raw = await response.json();
     const content = raw.choices?.[0]?.message?.content?.trim() || "";
 
-    // Clean and parse the returned JSON
     const cleaned = content.replace(/^```json|```$/g, "").trim();
-    let parsed;
 
+    let parsed;
     try {
       parsed = JSON.parse(cleaned);
     } catch {
@@ -104,9 +99,8 @@ No markdown, just the pure JSON.`
       sentiment_score: parsed.sentiment_score || "N/A",
       summary: parsed.summary || "N/A"
     });
-
   } catch (err) {
-    console.error("⚠️ Sentiment error:", err.message);
+    console.error("⚠️ GPT sentiment error:", err.message);
     res.status(500).json({ error: "Sentiment analysis failed" });
   }
 });
@@ -116,4 +110,13 @@ No markdown, just the pure JSON.`
 //
 app.listen(PORT, () => {
   console.log(`🚀 CrimznBot backend running at http://localhost:${PORT}`);
-});});
+});
+
+
+
+
+
+
+
+
+

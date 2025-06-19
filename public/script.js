@@ -11,25 +11,22 @@ const paymentSection = document.getElementById("payment-options");
 let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
 const maxFreeQuestions = 3;
 
+// 🤖 CrimznBot Handler
 async function handleCrimznBot(question) {
   chatBox.innerHTML += `<div class="user">🙋‍♂️📘 ${question}</div>`;
   input.value = "";
 
-  questionCount++;
-  localStorage.setItem("questionCount", questionCount);
-
-  if (questionCount > maxFreeQuestions) {
+  if (questionCount >= maxFreeQuestions) {
     if (!localStorage.getItem("paywallTriggered")) {
-      chatBox.innerHTML += `
+      chatBox.innerHTML = `
         <div class="bot" id="paywall-message">⚠️ Free limit reached. Please<br/>
           <a class="button coinbase-button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8" target="_blank">💼 Pay $99.99 USDC</a>
           <a class="button coinbase-button" href="https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b70a-ee747b098b20" target="_blank">🫰 Tip 1 USDC</a>
-          <a class="button solana-button" href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CryptoConsult&message=Consultation+Unlock" target="_blank">👻 Pay with Solana</a>
+          <a class="button solana-button" href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CrimznConsult&message=Consultation%20Access" target="_blank">🔓 Unlock with Solana</a>
           <a class="button" href="mailto:crimzncipriano@gmail.com">📧 Contact Crimzn</a>
         </div>`;
       localStorage.setItem("paywallTriggered", "true");
     }
-
     input.disabled = true;
     sendBtn.disabled = true;
     return;
@@ -43,7 +40,14 @@ async function handleCrimznBot(question) {
     });
 
     const data = await res.json();
-    chatBox.innerHTML += `<div class="bot">🟢 ${data.answer}</div>`;
+
+    if (data.answer) {
+      chatBox.innerHTML += `<div class="bot">🟢 ${data.answer}</div>`;
+      questionCount++;
+      localStorage.setItem("questionCount", questionCount);
+    } else {
+      chatBox.innerHTML += `<div class="bot">❌ No answer returned. Try again.</div>`;
+    }
   } catch (err) {
     chatBox.innerHTML += `<div class="bot">❌ Error fetching CrimznBot response</div>`;
   }
@@ -51,6 +55,7 @@ async function handleCrimznBot(question) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+// 🟠 CrimznBot Send Button
 sendBtn.onclick = () => {
   const q = input.value.trim();
   if (q) handleCrimznBot(q);
@@ -63,6 +68,7 @@ input.addEventListener("keypress", (e) => {
   }
 });
 
+// 💰 Live Price Feed
 async function fetchPrices() {
   try {
     const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
@@ -77,6 +83,7 @@ async function fetchPrices() {
   }
 }
 
+// 📊 PulseIt Sentiment Tracker
 async function getSentiment() {
   const query = sentimentQuery.value.trim();
   if (!query) {
@@ -102,6 +109,7 @@ async function getSentiment() {
   sentimentQuery.value = "";
 }
 
+// ⏱️ Initial Load
 document.addEventListener("DOMContentLoaded", () => {
   fetchPrices();
   setInterval(fetchPrices, 60000);

@@ -1,1 +1,65 @@
-404: Not Found
+body {
+  margin: 0;
+  padding: 1rem;
+  background-color: #000;
+  color: #f7931a;
+  font-family: Courier, monospace;
+  text-align: center;
+}
+
+h1, h2, h3 {
+  margin: 1rem 0 0.5rem;
+}
+
+button, a.button {
+  background-color: #f7931a;
+  color: #000;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: none;
+  margin: 0.3rem;
+  display: inline-block;
+}
+
+#chat-box {
+  max-width: 600px;
+  margin: 1rem auto;
+  padding: 1rem;
+  background-color: #111;
+  border-radius: 8px;
+  min-height: 80px;
+}
+
+.user {
+  color: #f7931a;
+}
+.bot {
+  color: #0f0;
+  margin-top: 0.3rem;
+}
+
+input, textarea {
+  width: 90%;
+  padding: 0.5rem;
+  margin-top: 1rem;
+  border-radius: 6px;
+  border: none;
+}
+
+#payment-options {
+  display: none;
+  margin-top: 1rem;
+}
+
+#live-prices,
+#sentiment-result {
+  margin-bottom: 1rem;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}

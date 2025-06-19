@@ -1,4 +1,4 @@
-const input = document.getElementById("user-input");x
+const input = document.getElementById("user-input");
 const chatBox = document.getElementById("chat-box");
 const sendBtn = document.getElementById("send-button");
 const sentimentResult = document.getElementById("sentiment-result");
@@ -15,23 +15,25 @@ async function handleCrimznBot(question) {
   chatBox.innerHTML += `<div class="user">🙋‍♂️📘 ${question}</div>`;
   input.value = "";
 
-if (questionCount > maxFreeQuestions) {
-  // Only show the paywall if it hasn't already been shown
-  if (!localStorage.getItem("paywallTriggered")) {
-    chatBox.innerHTML += `
-      <div class="bot" id="paywall-message">⚠️ Free limit reached. Please<br/>
-        <a class="button coinbase-button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8" target="_blank">💼 Book</a>
-        <a class="button coinbase-button" href="https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b70a-ee747b098b20" target="_blank">🫰 Tip</a>
-        <a class="button solana-button" href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CryptoConsult&message=Consultation+Unlock" target="_blank">👻 Solana Pay</a>
-        <a class="button" href="mailto:crimzncipriano@gmail.com">📧 Contact Crimzn</a>
-      </div>`;
-    localStorage.setItem("paywallTriggered", "true");
-  }
+  questionCount++;
+  localStorage.setItem("questionCount", questionCount);
 
-  input.disabled = true;
-  sendBtn.disabled = true;
-  return;
-}
+  if (questionCount > maxFreeQuestions) {
+    if (!localStorage.getItem("paywallTriggered")) {
+      chatBox.innerHTML += `
+        <div class="bot" id="paywall-message">⚠️ Free limit reached. Please<br/>
+          <a class="button coinbase-button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664f">Pay $99.99 USDC</a>
+          <a class="button coinbase-button" href="https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b70a-ee747b09">Tip 1 USDC</a>
+          <a class="button solana-button" href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CrimznConsult">Pay with Solana</a>
+          <a class="button" href="mailto:crimzncipriano@gmail.com">📧 Contact Crimzn</a>
+        </div>`;
+      localStorage.setItem("paywallTriggered", "true");
+    }
+
+    input.disabled = true;
+    sendBtn.disabled = true;
+    return;
+  }
 
   try {
     const res = await fetch("https://crypto-consult.onrender.com/ask", {
@@ -119,15 +121,10 @@ async function getSentiment() {
     });
 
     const data = await res.json();
-    sentimentResult.innerText = `📈 Sentiment for "${query}": ${data.summary || "Neutral"} (${data.sentiment_score || "N/A"})`;
+    sentimentResult.innerText = `📈 Sentiment for "${query}": ${data.summary || "Neutral"} (${data.sentiment_score || "0"})`;
   } catch (err) {
     sentimentResult.innerText = "❌ Error analyzing sentiment.";
   }
-
-  sentimentQuery.value = "";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  fetchPrices();
-  setInterval(fetchPrices, 60000);
-});
+fetchPrices();

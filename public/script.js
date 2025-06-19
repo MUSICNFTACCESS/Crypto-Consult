@@ -78,3 +78,19 @@ async function getSentiment() {
   }
   sentimentQuery.value = "";
 }
+
+// 💰 Live Price Updater for BTC, ETH, SOL
+async function updateLivePrices() {
+  try {
+    const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
+    const data = await res.json();
+    document.getElementById("btc-price").textContent = `$${data.bitcoin.usd.toLocaleString()}`;
+    document.getElementById("eth-price").textContent = `$${data.ethereum.usd.toLocaleString()}`;
+    document.getElementById("sol-price").textContent = `$${data.solana.usd.toLocaleString()}`;
+  } catch (err) {
+    console.error("❌ Failed to fetch live prices:", err.message);
+  }
+}
+
+updateLivePrices();
+setInterval(updateLivePrices, 30000);

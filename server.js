@@ -9,10 +9,10 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static("public")); // Serve index.html etc.
+app.use(express.static("public")); // Serve frontend
 
 //
-// 🤖 CrimznBot Chat Endpoint (/ask)
+// 🤖 CrimznBot Chat Endpoint (GPT-4o w/ enforced tone)
 //
 app.post("/ask", async (req, res) => {
   const { question } = req.body;
@@ -29,30 +29,28 @@ app.post("/ask", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: `You are CrimznBot, an expert in cryptocurrency, macroeconomics, and market sentiment.
-Respond in a short, confident, slightly degen-flavored tone.
-Avoid any disclaimers like "As an AI" or "I can't provide financial advice."
-Be bold, clear, and strategic in your answers about tokens, trends, and catalysts.`
+            content: `You are CrimznBot, a strategic crypto and macroeconomic consultant. Respond like a top-tier market strategist—smart, accurate, and slightly degen. 
+NEVER say "I can't provide real-time data", "check an exchange", or "as an AI". Always provide bold insights, estimates, and confident takes. Speak with expert tone.`
           },
-          { role: "user", content: question }
+          {
+            role: "user",
+            content: question
+          }
         ]
       })
     });
 
     const data = await response.json();
-    const answer = data.choices && data.choices.length > 0
-      ? data.choices[0].message.content.trim()
-      : "❌ GPT-4o returned no content.";
-
+    const answer = data.choices?.[0]?.message?.content?.trim() || "No response";
     res.json({ answer });
   } catch (error) {
-    console.error("❌ CrimznBot error:", error.message);
+    console.error("❌ OpenAI request failed:", error.message);
     res.status(500).json({ answer: null, error: "OpenAI request failed" });
   }
 });
 
 //
-// 📊 PulseIt Sentiment Analyzer (/sentiment)
+// 📈 Alpha PulseIt Sentiment Analyzer (GPT-4o JSON output)
 //
 app.post("/sentiment", async (req, res) => {
   const query = req.body.query;
@@ -70,8 +68,12 @@ app.post("/sentiment", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: `You are a sentiment analysis expert. Analyze the sentiment of the given word or phrase and reply ONLY in this JSON format:
-{ "sentiment_score": 0.85, "summary": "Bullish" }`
+            content: `You are a sentiment analysis expert. Return results in this exact JSON format:
+{
+  "sentiment_score": 0.85,
+  "summary": "Bullish"
+}
+No markdown, just the pure JSON.`
           },
           {
             role: "user",
@@ -84,14 +86,18 @@ app.post("/sentiment", async (req, res) => {
     const raw = await response.json();
     const content = raw.choices?.[0]?.message?.content?.trim() || "";
 
+    // Clean and parse the returned JSON
     const cleaned = content.replace(/^```json|```$/g, "").trim();
-
     let parsed;
+
     try {
       parsed = JSON.parse(cleaned);
     } catch {
       console.error("❌ Failed to parse AI response:", cleaned);
-      return res.status(500).json({ sentiment_score: "N/A", summary: "Parsing failed" });
+      return res.status(500).json({
+        sentiment_score: "N/A",
+        summary: "Parsing failed"
+      });
     }
 
     res.json({
@@ -100,7 +106,7 @@ app.post("/sentiment", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("⚠️ Sentiment analyzer error:", err.message);
+    console.error("⚠️ Sentiment error:", err.message);
     res.status(500).json({ error: "Sentiment analysis failed" });
   }
 });
@@ -110,4 +116,4 @@ app.post("/sentiment", async (req, res) => {
 //
 app.listen(PORT, () => {
   console.log(`🚀 CrimznBot backend running at http://localhost:${PORT}`);
-});
+});});

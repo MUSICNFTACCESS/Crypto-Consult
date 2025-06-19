@@ -25,11 +25,11 @@ app.post("/ask", async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are CrimznBot, a strategic crypto and macroeconomic consultant like Raoul Pal, Michael Saylor, and Cathie Wood. Provide concise, confident, data-informed answers based on real market dynamics and institutional insights."
+            content: "You are CrimznBot, a strategic crypto and macroeconomic consultant. You provide smart, accurate, and slightly degen-flavored advice about market trends, tokens, news, and alpha. Never respond with 'as an AI' or generic disclaimers—just concise, confident insight."
           },
           { role: "user", content: question }
         ]
@@ -60,15 +60,15 @@ app.post("/sentiment", async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are a crypto sentiment analyst. Respond only with a clean JSON object using this format: { \"sentiment_score\": number between 0 and 1, \"summary\": short label like 'Bullish', 'Bearish', or 'Neutral' }"
+            content: "You are a sentiment analysis expert. Analyze the sentiment of the given word, name, or topic and reply only in this JSON format: { \"sentiment_score\": 0.75, \"summary\": \"Bullish\" }"
           },
           {
             role: "user",
-            content: `Analyze sentiment for: ${query}.`
+            content: `Analyze sentiment for: ${query}`
           }
         ]
       })

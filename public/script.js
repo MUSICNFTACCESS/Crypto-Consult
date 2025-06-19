@@ -96,8 +96,6 @@ async function fetchPrices() {
   }
 }
 
-const sentimentQuery = document.getElementById("sentiment-query");
-
 async function getSentiment() {
   const query = sentimentQuery.value.trim();
   if (!query) {

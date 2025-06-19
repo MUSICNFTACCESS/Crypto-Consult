@@ -22,9 +22,9 @@ async function handleCrimznBot(question) {
     if (!localStorage.getItem("paywallTriggered")) {
       chatBox.innerHTML += `
         <div class="bot" id="paywall-message">⚠️ Free limit reached. Please<br/>
-          <a class="button coinbase-button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664f">Pay $99.99 USDC</a>
-          <a class="button coinbase-button" href="https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b70a-ee747b09">Tip 1 USDC</a>
-          <a class="button solana-button" href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CrimznConsult">Pay with Solana</a>
+          <a class="button coinbase-button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8" target="_blank">💼 Pay $99.99 USDC</a>
+          <a class="button coinbase-button" href="https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b70a-ee747b098b20" target="_blank">🫰 Tip 1 USDC</a>
+          <a class="button solana-button" href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CryptoConsult&message=Consultation+Unlock" target="_blank">👻 Pay with Solana</a>
           <a class="button" href="mailto:crimzncipriano@gmail.com">📧 Contact Crimzn</a>
         </div>`;
       localStorage.setItem("paywallTriggered", "true");
@@ -43,33 +43,6 @@ async function handleCrimznBot(question) {
     });
 
     const data = await res.json();
-    const answer = data.answer?.toLowerCase() || "";
-
-    const fallback = answer.includes("i'm unable to provide real-time data");
-    const isPriceQuestion = question.toLowerCase().includes("price") || question.toLowerCase().includes("marketcap");
-
-    if (fallback && isPriceQuestion) {
-      if (question.toLowerCase().includes("solana")) {
-        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd");
-        const data = await res.json();
-        const price = data.solana.usd.toLocaleString();
-        chatBox.innerHTML += `<div class="bot">🟢 The current price of Solana is $${price}</div>`;
-        return;
-      } else if (question.toLowerCase().includes("ethereum")) {
-        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd");
-        const data = await res.json();
-        const price = data.ethereum.usd.toLocaleString();
-        chatBox.innerHTML += `<div class="bot">🟢 The current price of Ethereum is $${price}</div>`;
-        return;
-      } else if (question.toLowerCase().includes("bitcoin")) {
-        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
-        const data = await res.json();
-        const price = data.bitcoin.usd.toLocaleString();
-        chatBox.innerHTML += `<div class="bot">🟢 The current price of Bitcoin is $${price}</div>`;
-        return;
-      }
-    }
-
     chatBox.innerHTML += `<div class="bot">🟢 ${data.answer}</div>`;
   } catch (err) {
     chatBox.innerHTML += `<div class="bot">❌ Error fetching CrimznBot response</div>`;
@@ -121,10 +94,15 @@ async function getSentiment() {
     });
 
     const data = await res.json();
-    sentimentResult.innerText = `📈 Sentiment for "${query}": ${data.summary || "Neutral"} (${data.sentiment_score || "0"})`;
+    sentimentResult.innerText = `📈 Sentiment for "${query}": ${data.summary || "Neutral"} (${data.sentiment_score || "N/A"})`;
   } catch (err) {
     sentimentResult.innerText = "❌ Error analyzing sentiment.";
   }
+
+  sentimentQuery.value = "";
 }
 
-fetchPrices();
+document.addEventListener("DOMContentLoaded", () => {
+  fetchPrices();
+  setInterval(fetchPrices, 60000);
+});

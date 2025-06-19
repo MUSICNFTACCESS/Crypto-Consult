@@ -15,17 +15,23 @@ async function handleCrimznBot(question) {
   chatBox.innerHTML += `<div class="user">🙋‍♂️📘 ${question}</div>`;
   input.value = "";
 
-  if (++questionCount >= maxFreeQuestions) {
+if (questionCount > maxFreeQuestions) {
+  // Only show the paywall if it hasn't already been shown
+  if (!localStorage.getItem("paywallTriggered")) {
     chatBox.innerHTML += `
-      <div class="bot">⚠️ Free limit reached. Please
-        <a class="button coinbase-button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbd8f" target="_blank">💼 Book Consultation</a>
-        <a class="button coinbase-button" href="https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b" target="_blank">🫰 Tip 1 USDC</a>
-        <a class="button solana-button" href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CryptoConsult&message=Consultation+Support">👻 Pay with Solana</a>
-        <a class="button white-link-button" href="mailto:crimzncipriano@gmail.com">📩 Contact Crimzn</a>
+      <div class="bot" id="paywall-message">⚠️ Free limit reached. Please<br/>
+        <a class="button coinbase-button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8" target="_blank">💼 Book</a>
+        <a class="button coinbase-button" href="https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b70a-ee747b098b20" target="_blank">🫰 Tip</a>
+        <a class="button solana-button" href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CryptoConsult&message=Consultation+Unlock" target="_blank">👻 Solana Pay</a>
+        <a class="button" href="mailto:crimzncipriano@gmail.com">📧 Contact Crimzn</a>
       </div>`;
-    paymentSection.style.display = "block";
-    return;
+    localStorage.setItem("paywallTriggered", "true");
   }
+
+  input.disabled = true;
+  sendBtn.disabled = true;
+  return;
+}
 
   try {
     const res = await fetch("https://crypto-consult.onrender.com/ask", {

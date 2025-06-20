@@ -1,2 +1,9 @@
 .env
 node_modules/
+node_modules/
+*.log
+*.tmp
+*.sj
+.DS_Store
+.env
+force-redeploy.txt

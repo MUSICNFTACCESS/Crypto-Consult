@@ -158,7 +158,23 @@ Include real insight. Reference market structure, social buzz, ETF flows, develo
     res.status(500).json({ sentiment_score: "N/A", summary: "Error occurred" });
   }
 });
+// 🧭 Cycle Top Radar API
+app.get("/api/cycle-top-status", async (req, res) => {
+  try {
+    const rsi = 75.8;
+    const btcDominance = 54.2;
+    const etfFlow = 194000000;
 
+    let status = "🟢 Safe";
+    if (rsi > 75 && btcDominance > 53) status = "🟡 Topping Risk";
+    if (rsi > 70 && etfFlow < 0 && btcDominance > 55) status = "🔴 Bear Warning";
+
+    res.json({ rsi, btcDominance, etfFlow, status });
+  } catch (err) {
+    console.error("Radar error:", err);
+    res.status(500).json({ error: "Radar API failed" });
+  }
+});
 app.listen(PORT, () => {
   console.log(`🟢 CrimznBot backend live at http://localhost:${PORT}`);
 });

@@ -175,6 +175,24 @@ app.get("/api/cycle-top-status", async (req, res) => {
     res.status(500).json({ error: "Radar API failed" });
   }
 });
+const { fetchBTCdominance, fetchRSI } = require('./helpers/cycleData');
+
+app.get("/api/cycle-top-status", async (req, res) => {
+  try {
+    const rsi = await fetchRSI();
+    const btcDominance = await fetchBTCdominance();
+    const etfFlow = 194000000; // placeholder for now
+
+    let status = "🟢 Safe";
+    if (rsi > 75 && btcDominance > 53) status = "🟡 Topping Risk";
+    if (rsi > 70 && etfFlow < 0 && btcDominance > 55) status = "🔴 Bear Warning";
+
+    res.json({ rsi, btcDominance, etfFlow, status });
+  } catch (err) {
+    console.error("Radar error:", err);
+    res.status(500).json({ error: "Radar API failed" });
+  }
+});
 app.listen(PORT, () => {
   console.log(`🟢 CrimznBot backend live at http://localhost:${PORT}`);
 });

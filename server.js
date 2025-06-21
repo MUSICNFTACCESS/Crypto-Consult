@@ -151,4 +151,4 @@ app.get("/ping", (req, res) => {
 // 🚀 Start Server
 app.listen(PORT, () => {
   console.log(`✅ CrimznBot backend live @ http://localhost:${PORT}`);
-});});
+});

@@ -11,61 +11,57 @@
       padding: 20px;
       text-align: center;
     }
+
     .chart-container {
       display: none;
     }
+
     .chart-container.active {
       display: block;
     }
+
     .status-box {
       font-size: 1.2em;
-      padding: 10px;
       background-color: #333;
-      margin-bottom: 20px;
+      padding: 10px;
       border-radius: 8px;
-    }
-    .button-tabs {
       margin-bottom: 20px;
     }
+
+    .button-tabs {
+      margin-top: 20px;
+    }
+
     .chart-btn {
       background: #f7931a;
-      color: black;
       border: none;
+      color: #000;
+      font-weight: bold;
       padding: 10px 15px;
       margin: 5px;
-      font-weight: bold;
       border-radius: 5px;
+      cursor: pointer;
     }
+
     .heatmap {
       margin-top: 40px;
     }
-    .heatmap-cards div {
+
+    .message-cards div {
       display: inline-block;
-      padding: 10px;
+      padding: 8px;
       margin: 5px;
-      border-radius: 8px;
-      font-weight: bold;
+      border-radius: 5px;
     }
+
     .back-link {
       display: block;
-      margin-top: 30px;
-      text-decoration: none;
+      margin: 20px auto;
+      font-weight: bold;
       color: #f7931a;
-      font-weight: bold;
-    }
-    .etf-links {
-      margin: 40px auto;
-    }
-    .etf-links a {
-      display: inline-block;
-      margin: 10px;
-      padding: 10px 15px;
-      background: #f7931a;
-      color: #000;
-      border-radius: 8px;
       text-decoration: none;
-      font-weight: bold;
     }
+
     .etf-note {
       font-size: 0.95em;
       color: gray;
@@ -74,11 +70,12 @@
   </style>
 </head>
 <body>
-  <h1>📈 Cycle Top Radar</h1>
+  <h1>📡 Cycle Top Radar</h1>
 
   <div class="status-box" id="status">Loading...</div>
+
   <p><strong>BTC Dominance:</strong> <span id="btc-dom">--</span></p>
-  <p><strong>Fear & Greed Index:</strong> <span id="fg">--</span></p>
+  <p><strong>Fear & Greed Index:</strong> <span id="fear-greed">--</span></p>
 
   <div class="button-tabs">
     <button class="chart-btn" onclick="switchTab('btc')">BTC</button>
@@ -87,33 +84,31 @@
   </div>
 
   <div class="chart-container active" id="btc">
-    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=btc" width="100%" height="400" frameborder="0" allowtransparency="true"></iframe>
+    <iframe src="https://s.tradingview.com/embed-widget/heatmap/?frameElementId=btc" width="100%" height="400" frameborder="0" allowtransparency="true"></iframe>
   </div>
   <div class="chart-container" id="eth">
-    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=eth" width="100%" height="400" frameborder="0" allowtransparency="true"></iframe>
+    <iframe src="https://s.tradingview.com/embed-widget/heatmap/?frameElementId=eth" width="100%" height="400" frameborder="0" allowtransparency="true"></iframe>
   </div>
   <div class="chart-container" id="sol">
-    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=sol" width="100%" height="400" frameborder="0" allowtransparency="true"></iframe>
+    <iframe src="https://s.tradingview.com/embed-widget/heatmap/?frameElementId=sol" width="100%" height="400" frameborder="0" allowtransparency="true"></iframe>
   </div>
 
   <div class="heatmap">
-    <h2>🔥 Altcoin Heatmap</h2>
-    <div class="heatmap-cards" id="heatmap"></div>
+    <h2>🟧 Altcoin Heatmaps</h2>
+    <div id="heatmap" class="message-cards"></div>
   </div>
 
-  <a href="/" class="back-link">⬅️ Back to Homepage</a>
+  <a href="/" class="back-link">🔙 Back to Homepage</a>
 
-  <div class="etf-links">
-    <h2>📊 ETF Flow Dashboards</h2>
-    <a href="https://blockworks.co/analytics/bitcoin-etf/tracker" target="_blank">🟠 BTC ETF Tracker</a>
-    <a href="https://blockworks.co/analytics/ethereum-etf/tracker" target="_blank">🟣 ETH ETF Tracker</a>
-    <p class="etf-note">Links open Blockworks – updated daily with live ETF inflows.</p>
-  </div>
+  <h3>🧠 ETF Flow Dashboards</h3>
+  <a href="https://farside.co.uk/metrics/bitcoin-etf-tracker/" target="_blank">🔸 BTC ETF Tracker</a><br>
+  <a href="https://dune.com/basile/eth-etf-tracker" target="_blank">🔹 ETH ETF Tracker</a>
+  <p class="etf-note">*Links open Blockworks + updated daily with live ETF inflows</p>
 
   <script>
-    function switchTab(tab) {
-      document.querySelectorAll(".chart-container").forEach(c => c.classList.remove("active"));
-      document.getElementById(tab).classList.add("active");
+    function switchTab(tabId) {
+      document.querySelectorAll('.chart-container').forEach(c => c.classList.remove("active"));
+      document.getElementById(tabId).classList.add("active");
     }
 
     async function fetchStatus() {
@@ -122,7 +117,7 @@
         const data = await res.json();
         document.getElementById("status").textContent = data.status;
         document.getElementById("status").style.backgroundColor = data.color;
-      } catch {
+      } catch (e) {
         document.getElementById("status").textContent = "Error fetching status";
         document.getElementById("status").style.backgroundColor = "#660000";
       }
@@ -130,57 +125,50 @@
 
     async function fetchMetrics() {
       try {
-        const globalRes = await fetch('https://api.coingecko.com/api/v3/global');
+        const globalRes = await fetch("https://api.coingecko.com/api/v3/global");
         const globalData = await globalRes.json();
         const btcDom = globalData.data.market_cap_percentage.btc.toFixed(1);
         document.getElementById("btc-dom").textContent = btcDom + "%";
-        document.getElementById("btc-dominance").textContent = btcDom + "%";
-      } catch {
+      } catch (e) {
         document.getElementById("btc-dom").textContent = "N/A";
-        document.getElementById("btc-dominance").textContent = "N/A";
       }
 
       try {
-        const fgRes = await fetch("https://api.alternative.me/fng/?limit=1");
+        const fgRes = await fetch("https://api.alternativ.me/fng/?limit=1");
         const fgData = await fgRes.json();
         const fgIndex = fgData.data[0].value_classification;
-        document.getElementById("fg").textContent = fgIndex;
         document.getElementById("fear-greed").textContent = fgIndex;
-      } catch {
-        document.getElementById("fg").textContent = "N/A";
+      } catch (e) {
         document.getElementById("fear-greed").textContent = "N/A";
       }
     }
 
-    const tickers = ['ETH', 'SOL', 'AVAX', 'LINK', 'ONDO', 'PEPE'];
-    const heatmapDiv = document.getElementById("heatmap");
+    function updateHeatmap() {
+      const tickers = ['ETH', 'SOL', 'AVAX', 'LINK', 'ONDO', 'PEPE'];
+      const heatmap = document.getElementById("heatmap");
+      heatmap.innerHTML = "";
 
-    async function updateHeatmap() {
-      heatmapDiv.innerHTML = "";
-      for (const symbol of tickers) {
+      tickers.forEach(async symbol => {
         try {
           const res = await fetch(`https://api.coingecko.com/api/v3/coins/${symbol.toLowerCase()}`);
           const data = await res.json();
           const change = data.market_data.price_change_percentage_24h;
-          const color = change >= 0 ? "#00cc66" : "#ff0000";
-          const card = `<div style="background-color: ${color};">${symbol} ${change.toFixed(2)}%</div>`;
-          heatmapDiv.innerHTML += card;
+          const color = change >= 0 ? "#00ff00" : "#ff0000";
+          const div = `<div style="background-color: ${color}">${symbol} ${change.toFixed(2)}%</div>`;
+          heatmap.innerHTML += div;
         } catch {
-          const card = `<div style="background-color: gray;">${symbol} N/A</div>`;
-          heatmapDiv.innerHTML += card;
+          heatmap.innerHTML += `<div style="background-color: gray">${symbol} N/A</div>`;
         }
-      }
+      });
     }
 
     fetchStatus();
     fetchMetrics();
     updateHeatmap();
-
     setInterval(fetchStatus, 60000);
     setInterval(fetchMetrics, 60000);
-    setInterval(updateHeatmap, 10000);
+    setInterval(updateHeatmap, 60000);
   </script>
 </body>
 </html>
-
 

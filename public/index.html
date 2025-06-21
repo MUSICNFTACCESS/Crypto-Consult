@@ -11,9 +11,18 @@
   <h1>CryptoConsult by Crimzn</h1>
 
   <h3>Live Prices:</h3>
-  <div>BTC: <span id="btc-price">Loading...</span></div>
-  <div>ETH: <span id="eth-price">Loading...</span></div>
-  <div>SOL: <span id="sol-price">Loading...</span></div>
+  <div id="live-prices">
+  <h3>💸 Live Prices</h3>
+  <p>₿ BTC: <span id="btc-price">Loading...</span></p>
+  <p>Ξ ETH: <span id="eth-price">Loading...</span></p>
+  <p>◎ SOL: <span id="sol-price">Loading...</span></p>
+</div>
+
+<div>
+  <h3>📊 Market Metrics</h3>
+  <p><strong>🧠 Fear & Greed Index:</strong> <span id="fear-greed">Loading...</span></p>
+  <p><strong>👑 BTC Dominance:</strong> <span id="btc-dominance">Loading...</span></p>
+</div>
 
 <h3>🔒 Wallet Status: <span id="wallet-address">❌ Not connected</span></h3>
 <button class="wallet-button" id="connect-btn" onclick="connectWallet()">🔗 Connect Wallet</button>

@@ -5,22 +5,19 @@
   <title>CryptoConsult by Crimzn</title>
   <link rel="stylesheet" href="style.css?v=crimzn1" />
 </head>
-  </style>
-</head>
 <body>
   <h1>CryptoConsult by Crimzn</h1>
 
-  <h3>Live Prices:</h3>
-  <div id="live-prices">
   <h3>💸 Live Prices</h3>
-  <p>₿ BTC: <span id="btc-price">Loading...</span></p>
-  <p>Ξ ETH: <span id="eth-price">Loading...</span></p>
-  <p>◎ SOL: <span id="sol-price">Loading...</span></p>
-</div>
+  <div id="live-prices">
+    <p>₿ BTC: <span id="btc-price">Loading...</span></p>
+    <p>Ξ ETH: <span id="eth-price">Loading...</span></p>
+    <p>◎ SOL: <span id="sol-price">Loading...</span></p>
+  </div>
 
-<h3>🔒 Wallet Status: <span id="wallet-address">❌ Not connected</span></h3>
-<button class="wallet-button" id="connect-btn" onclick="connectWallet()">🔗 Connect Wallet</button>
-<button class="button" id="disconnect-btn" onclick="disconnectWallet()" style="display: none;">❌ Disconnect</button>
+  <h3>🔒 Wallet Status: <span id="wallet-address">❌ Not connected</span></h3>
+  <button class="wallet-button" id="connect-btn" onclick="connectWallet()">🔗 Connect Wallet</button>
+  <button class="button" id="disconnect-btn" onclick="disconnectWallet()" style="display: none;">❌ Disconnect Wallet</button>
 
   <h3>Available Services:</h3>
   <ul>
@@ -31,36 +28,30 @@
     <li>🪙 Token + dApp Support</li>
   </ul>
 
-<h3>Support & Payments:</h3>
+  <h3>Support & Payments:</h3>
+  <button class="coinbase-button" onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">
+    💼 Book Consultation
+  </button>
 
-<!-- 💳 Book Consultation -->
-<button class="coinbase-button" onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">
-  💼 Book Consultation
-</button>
+  <button class="coinbase-button" onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')">
+    🫰 Tip 1 USDC
+  </button>
 
-<!-- 💰 Tip 1 USDC -->
-<button class="coinbase-button" onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')">
-  🫰 Tip 1 USDC
-</button>
+  <button class="solana-button" onclick="window.open('solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.02&label=CrimznConsult')">
+    👻 Pay with Solana (Phantom)
+  </button>
 
-<!-- 👻 Solana Pay -->
-<button class="solana-button" onclick="window.open('solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CryptoConsult&message=Consultation%20Payment')">
-  👻 Pay with Solana (Phantom)
-</button>
+  <button class="white-link-button" onclick="window.open('https://crypto-consult.onrender.com/whitepaper.pdf')">
+    📘 CryptoConsult Whitepaper
+  </button>
 
-<!-- 📘 Whitepaper -->
-<button class="white-link-button" onclick="window.open('https://crypto-consult.onrender.com/whitepaper.html', '_blank')">
-📘 CryptoConsult Whitepaper
-</button>
-
-<!-- 💬 Telegram -->
-<button class="white-link-button" onclick="window.open('https://t.me/CrimznBot', '_blank')">
-💬 Message Crimzn on Telegram
-</button>
+  <button class="white-link-button" onclick="window.open('https://t.me/CrimznBot', '_blank')">
+    💬 Message Crimzn on Telegram
+  </button>
 
   <h3>Talk to CrimznBot:</h3>
   <div id="chat-box"></div>
-  <input type="text" id="user-input" placeholder="Ask a crypto question..." />
+  <input type="text" id="chat-input" placeholder="Ask a crypto question..." />
   <button id="send-button" class="button">Send</button>
 
   <h3>Alpha Pulse Tracker+</h3>
@@ -68,9 +59,9 @@
   <button onclick="getSentiment()" class="button">🔍 Pulse It</button>
   <div id="sentiment-result"></div>
 
-<a href="radar.html" style="display:inline-block;padding:12px 24px;margin:20px auto;background:#f7931a;color:#000;text-decoration:none;border-radius:8px;font-weight:bold;display:block;text-align:center;max-width:300px;">🧭 Visit Cycle Top Radar</a>
+  <a href="radar.html" style="display:inline-block;padding:12px 24px;margin:20px auto;background:#f7931a;color:#000;text-decoration:none;border-radius:8px;">📡 View Radar</a>
 
   <script src="script.js?v=crimzn1"></script>
-<script src="wallet.js?v=crimzn1"></script>
+  <script src="wallet.js?v=crimzn1"></script>
 </body>
 </html>

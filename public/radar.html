@@ -80,5 +80,29 @@
     fetchData();
     setInterval(fetchData, 60000); // refresh every 60s
   </script>
+<!-- TradingView Chart -->
+<div style="margin-top: 40px;">
+  <h2 style="color: #f7931a;">📈 BTC/USDT Chart</h2>
+  <div class="tradingview-widget-container">
+    <div id="tradingview_f0e83"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script type="text/javascript">
+      new TradingView.widget({
+        "width": 350,
+        "height": 400,
+        "symbol": "BINANCE:BTCUSDT",
+        "interval": "60",
+        "timezone": "Etc/UTC",
+        "theme": "dark",
+        "style": "1",
+        "locale": "en",
+        "toolbar_bg": "#000",
+        "enable_publishing": false,
+        "allow_symbol_change": true,
+        "container_id": "tradingview_f0e83"
+      });
+    </script>
+  </div>
+</div>
 </body>
 </html>

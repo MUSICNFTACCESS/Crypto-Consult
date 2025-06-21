@@ -2,53 +2,83 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>🧭 Cycle Top Radar | CryptoConsult</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cycle Top Radar</title>
   <style>
     body {
       background-color: #000;
       color: #f7931a;
       font-family: 'Courier New', monospace;
-      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
       text-align: center;
     }
-    h1 {
+    .status {
       font-size: 2em;
-      margin-bottom: 10px;
-    }
-    .status-box {
-      border: 2px solid #f7931a;
-      border-radius: 12px;
+      margin: 20px 0;
       padding: 20px;
-      margin: 20px auto;
-      max-width: 400px;
-      background-color: #111;
+      border-radius: 10px;
+      width: 80%;
     }
-    .status-box span {
-      display: block;
+    .safe {
+      background-color: #003300;
+    }
+    .risk {
+      background-color: #332600;
+    }
+    .bear {
+      background-color: #330000;
+    }
+    .data {
+      margin-top: 20px;
       font-size: 1.2em;
-      margin: 10px 0;
     }
-    footer {
-      margin-top: 40px;
-      font-size: 0.9em;
-      color: #888;
+    a {
+      color: #f7931a;
+      margin-top: 30px;
+      display: inline-block;
+      font-size: 1em;
     }
   </style>
 </head>
 <body>
   <h1>🧭 Cycle Top Radar</h1>
-  <p>Live BTC Macro Trend Status</p>
+  <div id="status" class="status">Loading...</div>
+  <div class="data" id="details"></div>
+  <a href="index.html">⬅ Back to Homepage</a>
 
-  <div class="status-box">
-    <span><strong>📉 RSI (1M):</strong> 75.8</span>
-    <span><strong>📊 BTC Dominance:</strong> 54.2%</span>
-    <span><strong>💵 ETF Flows:</strong> +$194M (last 24h)</span>
-    <span><strong>🧠 Crimzn Status:</strong> 🟡 Topping Risk</span>
-  </div>
+  <script>
+    async function fetchData() {
+      try {
+        const res = await fetch("/api/cycle-top-status");
+        const data = await res.json();
+        const statusDiv = document.getElementById("status");
+        const detailsDiv = document.getElementById("details");
 
-  <footer>
-    Powered by CrimznBot · <a href="/" style="color:#f7931a;">Back to CryptoConsult</a>
-  </footer>
+        statusDiv.textContent = `${data.status}`;
+        if (data.status.includes("Safe")) {
+          statusDiv.classList.add("safe");
+        } else if (data.status.includes("Topping")) {
+          statusDiv.classList.add("risk");
+        } else {
+          statusDiv.classList.add("bear");
+        }
+
+        detailsDiv.innerHTML = `
+          <p><strong>RSI:</strong> ${data.rsi}</p>
+          <p><strong>BTC Dominance:</strong> ${data.btcDominance}%</p>
+          <p><strong>ETF Flows:</strong> $${Number(data.etfFlow).toLocaleString()}</p>
+        `;
+      } catch (err) {
+        document.getElementById("status").textContent = "⚠️ Error fetching data";
+      }
+    }
+
+    fetchData();
+    setInterval(fetchData, 60000); // refresh every 60s
+  </script>
 </body>
 </html>

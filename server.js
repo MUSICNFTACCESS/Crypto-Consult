@@ -49,7 +49,7 @@ async function getLivePrice(question) {
         const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coingeckoId}&vs_currencies=usd`);
         const data = await res.json();
         const price = data?.[coingeckoId]?.usd;
-        return price ? `The current price of ${alias.toUpperCase()} is $${price}. Inject this into your response naturally and build insight around it.` : "";
+        return price ? `The current price of ${alias.toUpperCase()} is $${price}.` : "";
       } catch {
         return "";
       }
@@ -64,11 +64,11 @@ app.post("/ask", async (req, res) => {
   const livePriceNote = await getLivePrice(question);
 
   const systemPrompt = `
-You are CrimznBot — a crypto strategist and macroeconomic analyst trained on the minds of Raoul Pal, Michael Saylor, Cathie Wood, Warren Buffett, and the greatest thinkers in financial history.
+You are CrimznBot — a crypto strategist and macroeconomic analyst trained on the minds of Raoul Pal, Michael Saylor, Cathie Wood, and Warren Buffett.
 
-You combine deep macro understanding with on-chain insight and geopolitical awareness. Your tone is confident, bold, and built for the edge. You don’t hedge. You don’t apologize. You deliver conviction, clarity, and signal — not noise.
+You combine deep macro understanding with on-chain insight and geopolitical awareness. Your tone is confident, bold, and built for the digital age.
 
-You speak like a professional who's seen every market cycle. Use any live price data provided. If none is given, infer the price direction and sentiment from macro trends, recent volatility, ETF flows, token-specific narratives, and CoinMarketCap, CoinGecko, or another reputable source.
+You speak like a professional who's seen every market cycle. Use any live price data provided. If none is given, infer price direction.
 
 You never say “I don’t have live data.” If it’s not explicitly provided, you triangulate it anyway like a market legend would.
 
@@ -139,61 +139,19 @@ Include real insight. Reference market structure, social buzz, ETF flows, develo
     const raw = await response.json();
     const content = raw.choices?.[0]?.message?.content?.trim() || "";
     const cleaned = content.replace(/^```json|```$/g, "").trim();
-
-    let parsed;
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch {
-      console.error("❌ Failed to parse AI response:", cleaned);
-      return res.status(500).json({ sentiment_score: "N/A", summary: "Parsing failed" });
-    }
-
-    res.json({
-      sentiment_score: parsed.sentiment_score || "N/A",
-      summary: parsed.summary || "N/A"
-    });
-
+    res.json(JSON.parse(cleaned));
   } catch (err) {
-    console.error("❌ Sentiment fetch failed:", err.message);
-    res.status(500).json({ sentiment_score: "N/A", summary: "Error occurred" });
+    console.error("❌ PulseIt sentiment request failed:", err.message);
+    res.status(500).json({ error: "Sentiment analysis failed" });
   }
 });
-// 🧭 Cycle Top Radar API
-app.get("/api/cycle-top-status", async (req, res) => {
-  try {
-    const rsi = 75.8;
-    const btcDominance = 54.2;
-    const etfFlow = 194000000;
 
-    let status = "🟢 Safe";
-    if (rsi > 75 && btcDominance > 53) status = "🟡 Topping Risk";
-    if (rsi > 70 && etfFlow < 0 && btcDominance > 55) status = "🔴 Bear Warning";
-
-    res.json({ rsi, btcDominance, etfFlow, status });
-  } catch (err) {
-    console.error("Radar error:", err);
-    res.status(500).json({ error: "Radar API failed" });
-  }
+// ✅ Optional ping route
+app.get("/ping", (req, res) => {
+  res.send("✅ CrimznBot backend is live.");
 });
-const { fetchBTCdominance, fetchRSI } = require('./helpers/cycleData');
 
-app.get("/api/cycle-top-status", async (req, res) => {
-  try {
-    const rsi = await fetchRSI();
-    const btcDominance = await fetchBTCdominance();
-    const etfFlow = 194000000; // placeholder for now
-
-    let status = "🟢 Safe";
-    if (rsi > 75 && btcDominance > 53) status = "🟡 Topping Risk";
-    if (rsi > 70 && etfFlow < 0 && btcDominance > 55) status = "🔴 Bear Warning";
-
-    res.json({ rsi, btcDominance, etfFlow, status });
-  } catch (err) {
-    console.error("Radar error:", err);
-    res.status(500).json({ error: "Radar API failed" });
-  }
-});
+// ✅ Start server
 app.listen(PORT, () => {
-  console.log(`🟢 CrimznBot backend live at http://localhost:${PORT}`);
+  console.log(`🚀 CrimznBot backend live at http://localhost:${PORT}`);
 });
-// force deploy

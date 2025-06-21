@@ -119,3 +119,23 @@ async function fetchBTCDominance() {
 updatePrices();
 fetchFearAndGreedIndex();
 fetchBTCDominance();
+
+// 🎯 Attach send button click handler
+document.querySelector('.send-button').addEventListener('click', () => {
+  const inputValue = input.value.trim();
+  if (inputValue) {
+    handleUserInput(inputValue);
+    input.value = '';
+  }
+});
+
+// 🟠 Optional: Also support "Enter" key on input box
+input.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    const inputValue = input.value.trim();
+    if (inputValue) {
+      handleUserInput(inputValue);
+      input.value = '';
+    }
+  }
+});

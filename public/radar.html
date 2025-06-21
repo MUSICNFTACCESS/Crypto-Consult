@@ -2,115 +2,97 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>🧭 Cycle Top Radar - CryptoConsult</title>
+  <title>📈 Cycle Top Radar - CryptoConsult</title>
   <style>
     body {
       background-color: #000;
       color: #f7931a;
       font-family: 'Courier New', monospace;
       text-align: center;
-      margin: 0;
       padding: 20px;
     }
-
     h1, h2 {
       margin-bottom: 0.5em;
     }
-
     .status-box {
       margin: 10px 0;
       font-size: 1.2em;
       font-weight: bold;
     }
-
     .button-tabs {
       margin: 20px 0;
     }
-
     .chart-btn {
-      margin: 0 10px;
+      margin: 10px;
       padding: 10px 20px;
       background-color: #f7931a;
       border: none;
-      color: #000;
+      color: black;
       font-weight: bold;
       border-radius: 10px;
       cursor: pointer;
     }
-
     .chart-container {
       display: none;
-      margin: 0 auto 20px;
-      width: 100%;
+      margin: 20px auto;
       max-width: 700px;
       height: 400px;
     }
-
     .chart-container.active {
       display: block;
     }
-
     .heatmap {
       margin-top: 30px;
     }
-
     .heatmap h2 {
       margin-bottom: 10px;
     }
-
     .heatmap-cards {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 10px;
-      margin-top: 10px;
     }
-
     .heatmap-cards div {
       padding: 12px;
       border-radius: 10px;
-      font-weight: bold;
+      border: 1px solid #f7931a;
       color: #000;
-      font-size: 1.1em;
-      min-width: 70px;
+      font-weight: bold;
+      min-width: 80px;
     }
-
-    a.back-link {
+    .back-link {
       display: block;
-      margin: 30px 0;
+      margin: 30px;
       color: #f7931a;
       text-decoration: underline;
       font-size: 1.2em;
     }
-
     .etf-links {
       margin: 40px auto;
     }
-
     .etf-links a {
       display: inline-block;
       margin: 10px;
       padding: 10px 15px;
       background: #f7931a;
       color: #000;
-      border-radius: 6px;
+      border-radius: 8px;
       text-decoration: none;
       font-weight: bold;
     }
-
     .etf-note {
-      font-size: 0.85em;
+      font-size: 0.95em;
       color: gray;
       margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <h1>🧭 Cycle Top Radar</h1>
+  <h1>📈 Cycle Top Radar</h1>
   <div class="status-box" id="status">Loading...</div>
-  <p><strong>RSI:</strong> <span id="rsi">...</span></p>
-  <p><strong>BTC Dominance:</strong> <span id="btcDom">...</span></p>
-  <p><strong>Fear & Greed Index:</strong> <span id="fng">Loading...</span></p>
+  <p><strong>BTC Dominance:</strong> <span id="btc-dom">--</span></p>
+  <p><strong>Fear & Greed Index:</strong> <span id="fg">--</span></p>
 
   <div class="button-tabs">
     <button class="chart-btn" onclick="switchTab('btc')">BTC</button>
@@ -120,15 +102,15 @@
 
   <div class="chart-container active" id="btc">
     <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tv_btc&symbol=BITSTAMP:BTCUSD&interval=D&theme=dark"
-            width="100%" height="400" frameborder="0"></iframe>
+            width="100%" height="400" frameborder="0" allowtransparency="true"></iframe>
   </div>
   <div class="chart-container" id="eth">
-    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tv_eth&symbol=BITSTAMP:ETHUSD&interval=D&theme=dark"
-            width="100%" height="400" frameborder="0"></iframe>
+    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tv_eth&symbol=BINANCE:ETHUSDT&interval=D&theme=dark"
+            width="100%" height="400" frameborder="0" allowtransparency="true"></iframe>
   </div>
   <div class="chart-container" id="sol">
-    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tv_sol&symbol=BINANCE:SOLUSD&interval=D&theme=dark"
-            width="100%" height="400" frameborder="0"></iframe>
+    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tv_sol&symbol=BINANCE:SOLUSDT&interval=D&theme=dark"
+            width="100%" height="400" frameborder="0" allowtransparency="true"></iframe>
   </div>
 
   <div class="heatmap">
@@ -136,13 +118,13 @@
     <div class="heatmap-cards" id="heatmap"></div>
   </div>
 
-  <a href="/" class="back-link">← Back to Homepage</a>
+  <a href="/" class="back-link">⬅️ Back to Homepage</a>
 
   <div class="etf-links">
     <h2>📊 ETF Flow Dashboards</h2>
     <a href="https://blockworks.co/analytics/bitcoin-etf/tracker" target="_blank">BTC ETF Tracker</a>
     <a href="https://blockworks.co/analytics/ethereum-etf/tracker" target="_blank">ETH ETF Tracker</a>
-    <p class="etf-note">Powered by Blockworks — updated daily with live fund flow data.</p>
+    <p class="etf-note">Links open Blockworks – updated daily with live fund flow data.</p>
   </div>
 
   <script>
@@ -153,44 +135,41 @@
 
         document.getElementById("status").textContent = data.status;
         document.getElementById("status").style.backgroundColor = data.status === "Topping Risk" ? "#f7931a" : "#00cc66";
-        document.getElementById("rsi").textContent = data.rsi ? data.rsi.toFixed(1) : "N/A";
-        document.getElementById("btcDom").textContent = data.btcDominance ? data.btcDominance.toFixed(1) + "%" : "N/A";
-        document.getElementById("fng").textContent = data.fngValue && data.fngLabel
-          ? data.fngValue + " (" + data.fngLabel + ")"
-          : "Unavailable";
-      } catch (err) {
-        document.getElementById("status").textContent = "⚠️ Error loading data!";
-        document.getElementById("fng").textContent = "Error";
+        document.getElementById("btc-dom").textContent = data.btcDominance?.toFixed(1) + "%";
+        document.getElementById("fg").textContent = data.fearGreedLabel || "N/A";
+      } catch (e) {
+        document.getElementById("status").textContent = "⚠️ Error loading data";
+        document.getElementById("status").classList.add("error");
       }
     }
 
-    function switchTab(tabId) {
+    function switchTab(tab) {
       document.querySelectorAll(".chart-container").forEach(c => c.classList.remove("active"));
-      document.getElementById(tabId).classList.add("active");
+      document.getElementById(tab).classList.add("active");
     }
 
-    function updateHeatmap() {
-      const alts = ['ETH', 'SOL', 'AVAX', 'LINK', 'ONDO', 'PEPE'];
-      const heatmap = document.getElementById("heatmap");
-      heatmap.innerHTML = "";
+    const tickers = ['ETH', 'SOL', 'AVAX', 'LINK', 'ONDO', 'PEPE'];
+    const heatmapDiv = document.getElementById("heatmap");
 
-      alts.forEach(symbol => {
-        const change = (Math.random() * 20 - 10).toFixed(2);
-        const color = change > 0 ? "#00ff00" : "#ff0000";
-        const div = `<div style="background-color:${color};">${symbol}: ${change}%</div>`;
-        heatmap.innerHTML += div;
-      });
+    async function updateHeatmap() {
+      heatmapDiv.innerHTML = "";
+      for (const symbol of tickers) {
+        const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${symbol.toLowerCase()}&vs_currencies=usd&include_24hr_change=true`);
+        const data = await res.json();
+        const change = data[symbol.toLowerCase()]?.usd_24h_change?.toFixed(2);
+        const color = change > 0 ? "#00cc66" : "#ff0000";
+        const card = `<div style="background-color: ${color}">${symbol}<br>${change}%</div>`;
+        heatmapDiv.innerHTML += card;
+      }
     }
 
     fetchStatus();
     updateHeatmap();
     setInterval(fetchStatus, 60000);
-    setInterval(updateHeatmap, 30000);
+    setInterval(updateHeatmap, 10000);
   </script>
 </body>
 </html>
-
-
 
 
 

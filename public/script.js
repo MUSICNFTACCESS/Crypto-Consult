@@ -94,3 +94,33 @@ async function updateLivePrices() {
 
 updateLivePrices();
 setInterval(updateLivePrices, 30000);
+
+// ✅ Fetch Fear & Greed Index
+async function fetchFearAndGreedIndex() {
+  try {
+    const res = await fetch("https://api.alternative.me/fng/");
+    const data = await res.json();
+    const value = data?.data?.[0]?.value_classification || "N/A";
+    document.getElementById("fear-greed").textContent = value;
+  } catch (err) {
+    document.getElementById("fear-greed").textContent = "N/A";
+    console.error("⚠️ Failed to fetch Fear & Greed Index:", err.message);
+  }
+}
+
+// ✅ Fetch BTC Dominance
+async function fetchBTCDominance() {
+  try {
+    const res = await fetch("https://api.coingecko.com/api/v3/global");
+    const data = await res.json();
+    const dominance = data?.data?.market_cap_percentage?.btc || 0;
+    document.getElementById("btc-dominance").textContent = dominance.toFixed(1) + "%";
+  } catch (err) {
+    document.getElementById("btc-dominance").textContent = "N/A";
+    console.error("⚠️ Failed to fetch BTC Dominance:", err.message);
+  }
+}
+
+// ✅ Run additional data fetchers on page load
+fetchFearAndGreedIndex();
+fetchBTCDominance();

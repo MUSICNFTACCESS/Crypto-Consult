@@ -29,7 +29,7 @@ async function handleUserInput(question) {
     const response = await fetch("https://crypto-consult.onrender.com/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: question })
+body: JSON.stringify({ question })
     });
 
     const data = await response.json();

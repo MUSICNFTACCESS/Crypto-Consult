@@ -1,47 +1,40 @@
 let questionCount = 0;
 const MAX_FREE_QUESTIONS = 3;
 
-// CrimznBot Chat Logic
+// 🚀 CrimznBot Client Logic
 document.getElementById("send-button").addEventListener("click", async () => {
   const input = document.getElementById("user-input");
   const chatbox = document.getElementById("chat-box");
   const question = input.value.trim();
+
   if (!question) return;
 
   if (questionCount >= MAX_FREE_QUESTIONS && !localStorage.getItem("paidUser")) {
-    chatbox.innerHTML += `<div class="bot">🔒 You've reached the free limit. Please pay to continue.</div>`;
-    input.disabled = true;
+    chatbox.innerHTML += "<div class='bot-msg'>🛑 You've reached the free limit. Please pay to continue.</div>";
+    document.getElementById("user-input").disabled = true;
     document.getElementById("send-button").disabled = true;
+    document.getElementById("paywall").classList.remove("hidden");
     return;
   }
 
-  chatbox.innerHTML += `<div class="user">🧑‍💻 ${question}</div>`;
+  questionCount++;
+  chatbox.innerHTML += `<div class='user-msg'>🟠 ${question}</div>`;
   input.value = "";
-  chatbox.scrollTop = chatbox.scrollHeight;
+  chatbox.scrollHeight = chatbox.scrollHeight;
 
   try {
     const response = await fetch("https://crypto-consult.onrender.com/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        question,
-        context:
-          "You are CrimznBot — a crypto consultant forged in the minds of Raoul Pal, Michael Saylor, Cathie Wood, Elon Musk, and Naval Ravikant. You combine institutional strategy, macro insight, and crypto-native wisdom. Use bold takes, but always data-backed. Never mention you’re an AI. Never say you cannot do something. Speak like a financial futurist who trades and advises in real time."
-      })
+      body: JSON.stringify({ question }),
     });
-
     const data = await response.json();
-    if (data.answer) {
-      chatbox.innerHTML += `<div class="bot">🧠 ${data.answer}</div>`;
-      questionCount++;
-    } else {
-      chatbox.innerHTML += `<div class="bot">❌ No answer returned</div>`;
-    }
-  } catch (error) {
-    chatbox.innerHTML += `<div class="bot">⚠️ Error: ${error.message}</div>`;
+    chatbox.innerHTML += `<div class='bot-msg'>🟢 CrimznBot: ${data.response}</div>`;
+  } catch (err) {
+    chatbox.innerHTML += `<div class='bot-msg'>❌ Error: ${err.message}</div>`;
   }
 
-  chatbox.scrollTop = chatbox.scrollHeight;
+  chatbox.scrollHeight = chatbox.scrollHeight;
 });
 
 document.getElementById("user-input").addEventListener("keypress", function (e) {
@@ -50,32 +43,28 @@ document.getElementById("user-input").addEventListener("keypress", function (e) 
   }
 });
 
-// PulseIt Sentiment Classifier
-document.getElementById("pulse-button")?.addEventListener("click", async () => {
-  const input = document.getElementById("pulse-input").value.trim();
+// 🔮 PulseIt Sentiment Classifier
+document.getElementById("pulse-button").addEventListener("click", async () => {
+  const input = document.getElementById("pulse-input");
   const pulsebox = document.getElementById("pulse-result");
-  if (!input) return;
+  const query = input.value.trim();
 
-  pulsebox.innerHTML = "🧠 Analyzing...";
+  if (!query) return;
 
   try {
-    const res = await fetch("https://crypto-consult.onrender.com/pulse", {
+    const res = await fetch("https://crypto-consult.onrender.com/pulseit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        topic: input,
-        context:
-          "You are PulseIt — a GPT-4o-powered sentiment engine trained on crypto, global finance, politics, and macroeconomics. For any word or phrase (crypto, political, or general), return sentiment in market terms as either: Bullish 📈, Bearish 📉, or Neutral ⚖️. Return only the sentiment with confidence."
-      })
+      body: JSON.stringify({ message: query }),
     });
     const data = await res.json();
-    pulsebox.innerHTML = `📡 Market Sentiment: <strong>${data.sentiment}</strong>`;
+    pulsebox.innerHTML = `🧠 Market Sentiment: <strong>${data.sentiment}</strong>`;
   } catch (err) {
     pulsebox.innerHTML = `⚠️ PulseIt Error: ${err.message}`;
   }
 });
 
-// Live Price Updates
+// 💵 Live Price Updates
 async function updatePrices() {
   try {
     const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
@@ -87,15 +76,16 @@ async function updatePrices() {
     console.error("Price fetch error:", error);
   }
 }
-updatePrices();
 setInterval(updatePrices, 60000);
 
-// Unlock access after payment
+// 🔓 Solana Unlock Check
 window.onload = () => {
+  updatePrices();
   const params = new URLSearchParams(window.location.search);
-  if (params.get("paid") === "true" || params.get("solunlock") === "true") {
+  if (params.get("solUnlock") === "true") {
     localStorage.setItem("paidUser", "true");
     document.getElementById("user-input").disabled = false;
     document.getElementById("send-button").disabled = false;
+    document.getElementById("paywall").classList.add("hidden");
   }
 };

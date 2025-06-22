@@ -3,7 +3,58 @@
 <head>
   <meta charset="UTF-8" />
   <title>CryptoConsult by Crimzn</title>
-  <link rel="stylesheet" href="style.css?v=crimzn1" />
+  <style>
+    body {
+      background-color: #000;
+      color: #f7931a;
+      font-family: Courier, monospace;
+      text-align: center;
+      padding: 20px;
+    }
+    h1, h2, h3 {
+      margin: 10px 0;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px 5px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #submit-button {
+      background-color: #f7931a;
+      color: black;
+    }
+    #pulse-button {
+      background-color: #00cec9;
+      color: white;
+    }
+    .user-message {
+      color: orange;
+      text-align: left;
+      margin: 10px;
+    }
+    .bot-message {
+      color: lightgreen;
+      text-align: left;
+      margin: 10px;
+    }
+    #connect-wallet {
+      background-color: #6c5ce7;
+      color: white;
+    }
+    a.button-link {
+      display: inline-block;
+      padding: 12px 24px;
+      margin: 12px;
+      background-color: #6c5ce7;
+      color: white;
+      font-weight: bold;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+  </style>
 </head>
 <body>
   <h1>🧠 CryptoConsult by Crimzn</h1>
@@ -13,12 +64,11 @@
   <p>ETH: <span id="eth-price">Loading...</span></p>
   <p>SOL: <span id="sol-price">Loading...</span></p>
 
-  <h3>🔐 Wallet Status: <span id="wallet-address">❌ Not connected</span></h3>
-  <button id="connectWallet" onclick="connectWallet()">👉 Connect Wallet</button>
-  <button id="disconnectWallet" onclick="disconnectWallet()" style="display:none;">❌ Disconnect Wallet</button>
+  <h3>🔐 Wallet Status: <span id="wallet-status">❌ Not connected</span></h3>
+  <button id="connect-wallet">👻 Connect Wallet</button>
 
   <h3>🧰 Available Services:</h3>
-  <ul>
+  <ul style="list-style: none; padding: 0;">
     <li>📊 Technical Analysis (Crypto/Stocks)</li>
     <li>🔑 Wallet Setup & Onramping</li>
     <li>📉 Risk Management</li>
@@ -26,29 +76,26 @@
   </ul>
 
   <h3>💸 Support & Payments:</h3>
-  <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8b5-c86f-407d-b5d7-6796661f0df8')">Pay for Consultation</button>
-  <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')">Tip Crimzn (1 USDC)</button>
-  <button onclick="window.open('solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.01&label=CrimznConsult')">Pay With Solana</button>
-  <button onclick="window.open('https://crypto-consult.onrender.com/whitepaper.pdf')">📄 CryptoConsult Whitepaper</button>
+  <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8', '_blank')">💳 Pay for Consultation</button>
+  <button onclick="window.open('https://commerce.coinbase.com/checkout/6e5ff5c3-6bc2-4c8e-874a-f39e877c9d10', '_blank')">🪙 Tip Crimzn (1 USDC)</button>
+  <button onclick="window.open('https://solana.com/pay', '_blank')">👻 Pay With Solana</button>
   <button onclick="window.open('https://t.me/CrimznBot', '_blank')">🤖 Chat with CrimznBot</button>
+  <button onclick="window.open('whitepaper.pdf', '_blank')">📄 CryptoConsult Whitepaper</button>
 
   <h3>💬 Talk to CrimznBot</h3>
-  <input id="user-input" placeholder="Ask a crypto question..." />
-<button id="submit-button">Send</button>
-  <button id="send-button">Send</button>
-  <div id="chat-box"></div>
+  <div id="chat-container" style="max-height:300px;overflow-y:auto;border:1px solid #f7931a;padding:10px;margin:10px auto;width:90%;max-width:500px;"></div>
+  <input type="text" id="user-input" placeholder="Ask me anything..." style="width:80%;padding:10px;margin-top:10px;" />
+  <button id="submit-button">Send</button>
 
   <h3>📡 PulseIt Sentiment Classifier</h3>
-  <input id="pulse-input" placeholder="Enter Token or Term..." />
-  <button id="pulse-button">🔍 PulseIt</button>
-  <div id="pulse-result"></div>
-
-  <h3>📎 ETF Flows</h3>
-  <a href="https://blockworks.co/analytics/bitcoin-etf/tracker" target="_blank">View BTC ETF Flows (Blockworks)</a><br>
-  <a href="https://blockworks.co/analytics/ethereum-etf/tracker" target="_blank">View ETH ETF Flows (Blockworks)</a>
+  <form id="pulse-form">
+    <input type="text" id="pulse-input" placeholder="Enter market message..." style="width:80%;padding:10px;" />
+    <button type="submit" id="pulse-button">🔍 PulseIt</button>
+  </form>
+  <p id="pulse-result"></p>
 
   <br><br>
-  <a href="radar.html" style="display:inline-block;padding:12px 24px;margin:20px auto;background:#f7931a;color:#000;text-decoration:none;border-radius:8px;">🚨 View Cycle Radar</a>
+  <a href="radar.html" class="button-link">🚨 Cycle Top Radar</a>
 
   <script src="script.js?v=crimznfixed1" defer></script>
   <script src="wallet.js?v=crimzn1"></script>

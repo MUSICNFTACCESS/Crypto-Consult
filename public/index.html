@@ -6,59 +6,62 @@
   <link rel="stylesheet" href="style.css?v=crimzn1" />
 </head>
 <body>
-  <h1>CryptoConsult by Crimzn</h1>
+  <h1>🧠 CryptoConsult by Crimzn</h1>
 
-  <h3>💸 Live Prices</h3>
-  <div id="live-prices">
-    <p>₿ BTC: <span id="btc-price">Loading...</span></p>
-    <p>Ξ ETH: <span id="eth-price">Loading...</span></p>
-    <p>◎ SOL: <span id="sol-price">Loading...</span></p>
-  </div>
+  <h3>📈 Live Prices:</h3>
+  <p>BTC: <span id="btc-price">Loading...</span></p>
+  <p>ETH: <span id="eth-price">Loading...</span></p>
+  <p>SOL: <span id="sol-price">Loading...</span></p>
 
-  <h3>🔒 Wallet Status: <span id="wallet-address">❌ Not connected</span></h3>
-  <button class="wallet-button" id="connect-btn" onclick="connectWallet()">🔗 Connect Wallet</button>
-  <button class="button" id="disconnect-btn" onclick="disconnectWallet()" style="display: none;">❌ Disconnect Wallet</button>
+  <h3>🔐 Wallet Status: <span id="wallet-address">❌ Not connected</span></h3>
+  <button id="connectWallet" onclick="connectWallet()">👉 Connect Wallet</button>
+  <button id="disconnectWallet" onclick="disconnectWallet()" style="display:none;">❌ Disconnect Wallet</button>
 
-  <h3>Available Services:</h3>
+  <h3>🧰 Available Services:</h3>
   <ul>
-    <li>🧠 Technical Analysis (Crypto/Stocks)</li>
-    <li>🔐 Wallet Setup & Onramping</li>
-    <li>⚖️ Risk Management</li>
-    <li>📩 Portfolio Strategy</li>
-    <li>🪙 Token + dApp Support</li>
+    <li>📊 Technical Analysis (Crypto/Stocks)</li>
+    <li>🔑 Wallet Setup & Onramping</li>
+    <li>📉 Risk Management</li>
+    <li>💼 Portfolio Strategy</li>
   </ul>
 
-  <h3>Support & Payments:</h3>
-  <button class="coinbase-button" onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">
-    💼 Book Consultation
-  </button>
+  <h3>💸 Support & Payments:</h3>
+  <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8b5-c86f-407d-b5d7-6796661f0df8')">Pay for Consultation</button>
+  <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')">Tip Crimzn (1 USDC)</button>
+  <button onclick="window.open('solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.01&label=CrimznConsult')">Pay With Solana</button>
+  <button onclick="window.open('https://crypto-consult.onrender.com/whitepaper.pdf')">📄 CryptoConsult Whitepaper</button>
+  <button onclick="window.open('https://t.me/CrimznBot', '_blank')">🤖 Chat with CrimznBot</button>
 
-  <button class="coinbase-button" onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')">
-    🫰 Tip 1 USDC
-  </button>
-
-  <button class="solana-button" onclick="window.open('solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.02&label=CrimznConsult')">
-    👻 Pay with Solana (Phantom)
-  </button>
-
-  <button class="white-link-button" onclick="window.open('https://crypto-consult.onrender.com/whitepaper.pdf')">
-    📘 CryptoConsult Whitepaper
-  </button>
-
-  <button class="white-link-button" onclick="window.open('https://t.me/CrimznBot', '_blank')">
-    💬 Message Crimzn on Telegram
-  </button>
-
-  <h3>Talk to CrimznBot:</h3>
+  <h3>💬 Talk to CrimznBot</h3>
+  <input id="user-input" placeholder="Ask a crypto question..." />
+  <button id="send-button">Send</button>
   <div id="chat-box"></div>
-  <input type="text" id="chat-input" placeholder="Ask a crypto question..." />
-  <button id="send-button" class="button">Send</button>
 
-  <h3>Alpha Pulse Tracker+</h3>
-  <input type="text" id="sentiment-query" placeholder="Enter token or term..." />
-  <div id="sentiment-result"></div>
+  <h3>📡 PulseIt Sentiment Classifier</h3>
+  <input id="pulse-input" placeholder="Enter token, idea, or keyword..." />
+  <button id="pulse-button">🔍 PulseIt</button>
+  <div id="pulse-result"></div>
 
-  <a href="radar.html" style="display:inline-block;padding:12px 24px;margin:20px auto;background:#f7931a;color:#000;text-decoration:none;border-radius:8px;">📡 View Radar</a>
+  <h3>📊 Cycle Top Radar</h3>
+  <iframe src="https://www.alternative.me/crypto/fear-and-greed-index/" width="100%" height="200" style="border:none;"></iframe>
+  <iframe src="https://www.tradingview.com/embed-widget/technical-analysis/?symbol=CRYPTOCAP:BTC.D" width="100%" height="400" style="border:none;"></iframe>
+
+  <h3>🔥 Altcoin Heatmap</h3>
+  <iframe src="https://coin360.com/crypto-heatmap" width="100%" height="500" style="border:none;"></iframe>
+
+  <h3>📈 BTC / ETH / SOL Charts</h3>
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <iframe src="https://www.tradingview.com/chart/?symbol=BTCUSD" width="100%" height="400" style="border:none;"></iframe>
+    <iframe src="https://www.tradingview.com/chart/?symbol=ETHUSD" width="100%" height="400" style="border:none;"></iframe>
+    <iframe src="https://www.tradingview.com/chart/?symbol=SOLUSD" width="100%" height="400" style="border:none;"></iframe>
+  </div>
+
+  <h3>📎 ETF Flows</h3>
+  <a href="https://blockworks.co/analytics/bitcoin-etf/tracker" target="_blank">View BTC ETF Flows (Blockworks)</a><br>
+  <a href="https://blockworks.co/analytics/ethereum-etf/tracker" target="_blank">View ETH ETF Flows (Blockworks)</a>
+
+  <br><br>
+  <a href="radar.html" style="display:inline-block;padding:12px 24px;margin:20px auto;background:#f7931a;color:#000;text-decoration:none;border-radius:8px;">🚨 View Cycle Radar</a>
 
   <script src="script.js?v=crimzn1"></script>
   <script src="wallet.js?v=crimzn1"></script>

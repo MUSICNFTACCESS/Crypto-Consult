@@ -23,3 +23,4 @@ trigger-1750611085
 // 🔥 Script.js fully fixed: live prices + paywall + bot + PulseIt Sun Jun 22 14:51:25 EDT 2025
 // 🎨 UI: CrimznBot layout, emoji fixes, and Solana pay styling Sun Jun 22 15:01:46 EDT 2025
 // 🚨 Manual redeploy trigger Sun Jun 22 16:17:30 EDT 2025
+// 🔧 Fix: Proper paywall timing + chat clear logic Sun Jun 22 16:23:34 EDT 2025

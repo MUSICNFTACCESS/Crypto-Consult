@@ -7,18 +7,23 @@
     body {
       background-color: #000;
       color: #f7931a;
-      font-family: Courier, monospace;
+      font-family: 'Courier New', Courier, monospace;
       text-align: center;
+      margin: 0;
       padding: 20px;
     }
-    h1, h2, h3 {
-      margin: 10px 0;
+    h1 {
+      font-size: 2em;
     }
-    button {
+    .price-bar {
+      margin: 20px 0;
+    }
+    .button-link, button {
+      display: inline-block;
+      margin: 8px;
       padding: 10px 20px;
-      margin: 10px 5px;
+      border-radius: 6px;
       border: none;
-      border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
     }
@@ -26,76 +31,75 @@
       background-color: #f7931a;
       color: black;
     }
-    #pulse-button {
-      background-color: #00cec9;
-      color: white;
-    }
     .user-message {
-      color: orange;
-      text-align: left;
-      margin: 10px;
+      color: #f7931a;
+      margin-top: 10px;
     }
     .bot-message {
-      color: lightgreen;
-      text-align: left;
-      margin: 10px;
+      color: #00ff99;
+      margin-top: 10px;
     }
-    #connect-wallet {
-      background-color: #6c5ce7;
+    .pay-button {
+      background-color: #3498db;
       color: white;
     }
-    a.button-link {
-      display: inline-block;
-      padding: 12px 24px;
-      margin: 12px;
-      background-color: #6c5ce7;
+    .solana-button {
+      background-color: #8e44ad;
       color: white;
-      font-weight: bold;
-      border-radius: 8px;
-      text-decoration: none;
+    }
+    .ghost {
+      font-size: 1.2em;
     }
   </style>
 </head>
 <body>
-  <h1>🧠 CryptoConsult by Crimzn</h1>
+  <h1>CryptoConsult by Crimzn</h1>
 
-  <h3>📈 Live Prices:</h3>
-  <p>BTC: <span id="btc-price">Loading...</span></p>
-  <p>ETH: <span id="eth-price">Loading...</span></p>
-  <p>SOL: <span id="sol-price">Loading...</span></p>
+  <div class="price-bar">
+    <p>BTC: <span id="btc-price">Loading...</span></p>
+    <p>ETH: <span id="eth-price">Loading...</span></p>
+    <p>SOL: <span id="sol-price">Loading...</span></p>
+  </div>
 
-  <h3>🔐 Wallet Status: <span id="wallet-status">❌ Not connected</span></h3>
-  <button id="connect-wallet">👻 Connect Wallet</button>
-
-  <h3>🧰 Available Services:</h3>
-  <ul style="list-style: none; padding: 0;">
-    <li>📊 Technical Analysis (Crypto/Stocks)</li>
-    <li>🔑 Wallet Setup & Onramping</li>
-    <li>📉 Risk Management</li>
-    <li>💼 Portfolio Strategy</li>
-  </ul>
-
-  <h3>💸 Support & Payments:</h3>
-  <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8', '_blank')">💳 Pay for Consultation</button>
-  <button onclick="window.open('https://commerce.coinbase.com/checkout/6e5ff5c3-6bc2-4c8e-874a-f39e877c9d10', '_blank')">🪙 Tip Crimzn (1 USDC)</button>
-  <button onclick="window.open('https://solana.com/pay', '_blank')">👻 Pay With Solana</button>
-  <button onclick="window.open('https://t.me/CrimznBot', '_blank')">🤖 Chat with CrimznBot</button>
-  <button onclick="window.open('whitepaper.pdf', '_blank')">📄 CryptoConsult Whitepaper</button>
-
-  <h3>💬 Talk to CrimznBot</h3>
-  <div id="chat-container" style="max-height:300px;overflow-y:auto;border:1px solid #f7931a;padding:10px;margin:10px auto;width:90%;max-width:500px;"></div>
-  <input type="text" id="user-input" placeholder="Ask me anything..." style="width:80%;padding:10px;margin-top:10px;" />
+  <p><strong>💬 Talk to CrimznBot</strong></p>
+  <div id="chat-container" style="border:1px solid #f7931a; padding:10px; height:200px; overflow-y:auto;"></div>
+  <input type="text" id="user-input" placeholder="Ask your crypto question..." />
   <button id="submit-button">Send</button>
 
-  <h3>📡 PulseIt Sentiment Classifier</h3>
-  <form id="pulse-form">
-    <input type="text" id="pulse-input" placeholder="Enter market message..." style="width:80%;padding:10px;" />
-    <button type="submit" id="pulse-button">🔍 PulseIt</button>
-  </form>
-  <p id="pulse-result"></p>
+  <br><br>
+
+  <button class="pay-button"
+    onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8', '_blank')">
+    💳 Pay for Consultation
+  </button>
+
+  <button class="pay-button"
+    onclick="window.open('https://commerce.coinbase.com/checkout/6e5ff5c3-6bc2-4c8e-874a-f39e877c9d10', '_blank')">
+    🙏 Tip Crimzn (1 USDC)
+  </button>
+
+  <button class="solana-button ghost"
+    onclick="window.open('https://phantom.app/ul/browse/www.solanapay.com/pay/Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025', '_blank')">
+    👻 Pay with Solana
+  </button>
+
+  <button class="button-link"
+    onclick="window.open('https://t.me/CrimznBot', '_blank')">
+    🤖 Chat with CrimznBot
+  </button>
 
   <br><br>
+
+  <form id="pulse-form">
+    <input type="text" id="pulse-input" placeholder="PulseIt sentiment..." />
+    <button type="submit">PulseIt</button>
+    <div id="pulse-result" style="margin-top:10px;"></div>
+  </form>
+
+  <br><br>
+
   <a href="radar.html" class="button-link">🚨 Cycle Top Radar</a>
+  <a href="whitepaper.html" class="button-link">📄 View Whitepaper</a>
 
   <script src="script.js?v=crimznfixed1" defer></script>
   <script src="wallet.js?v=crimzn1"></script>

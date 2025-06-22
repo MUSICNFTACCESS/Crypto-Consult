@@ -25,3 +25,4 @@ trigger-1750611085
 // 🚨 Manual redeploy trigger Sun Jun 22 16:17:30 EDT 2025
 // 🔧 Fix: Proper paywall timing + chat clear logic Sun Jun 22 16:23:34 EDT 2025
 // 📡 Cycle Top Radar: Switched to tabbed TradingView layout Sun Jun 22 16:38:53 EDT 2025
+// 🔁 Manual trigger: Sun Jun 22 17:13:24 EDT 2025

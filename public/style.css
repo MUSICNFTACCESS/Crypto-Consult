@@ -128,3 +128,42 @@ ul {
   background-color: #f7931a;
   color: #000;
 }
+
+/* ==========================
+   Cycle Top Radar Layout
+   ========================== */
+.radar-section {
+  background-color: #111;
+  color: white;
+  padding: 1rem;
+  margin: 1rem auto;
+  max-width: 800px;
+  border: 1px solid #f7931a;
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(247, 147, 26, 0.3);
+}
+
+.radar-section h2 {
+  color: #f7931a;
+  font-size: 1.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.radar-section p {
+  margin-bottom: 0.5rem;
+}
+
+.radar-section .score-bullish {
+  color: #00ff90;
+  font-weight: bold;
+}
+
+.radar-section .score-bearish {
+  color: red;
+  font-weight: bold;
+}
+
+.radar-section .score-neutral {
+  color: orange;
+  font-weight: bold;
+}

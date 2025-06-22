@@ -1,138 +1,101 @@
-// 🎛️ Full-site logic: CrimznBot + PulseIt + Cycle Radar + Heatmap + Charts
+let questionCount = 0;
+const MAX_FREE_QUESTIONS = 3;
 
-// ───────────────── CrimznBot (GPT‑4o) with paywall logic ──────────────────────
-let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
-const MAX_FREE = 3;
-const input = document.getElementById("user-input");
-const chatbox = document.getElementById("chat-box");
-const sendBtn = document.getElementById("send-button");
+// CrimznBot Chat Logic
+document.getElementById("send-button").addEventListener("click", async () => {
+  const input = document.getElementById("user-input");
+  const chatbox = document.getElementById("chat-box");
+  const question = input.value.trim();
+  if (!question) return;
 
-sendBtn.addEventListener("click", async () => {
-  let q = input.value.trim();
-  if (!q) return;
-
-  if (questionCount >= MAX_FREE && !localStorage.getItem("paidUser")) {
-    chatbox.innerHTML += `<div class="bot">🔒 Free limit reached — please pay or connect wallet.</div>`;
+  if (questionCount >= MAX_FREE_QUESTIONS && !localStorage.getItem("paidUser")) {
+    chatbox.innerHTML += `<div class="bot">🔒 You've reached the free limit. Please pay to continue.</div>`;
     input.disabled = true;
-    sendBtn.disabled = true;
-    localStorage.setItem("paywallTriggered", "true");
+    document.getElementById("send-button").disabled = true;
     return;
   }
 
-  chatbox.innerHTML += `<div class="user">🧑‍💻 ${q}</div>`;
+  chatbox.innerHTML += `<div class="user">🧑‍💻 ${question}</div>`;
   input.value = "";
   chatbox.scrollTop = chatbox.scrollHeight;
 
   try {
-    const res = await fetch("https://crypto-consult.onrender.com/ask", {
+    const response = await fetch("https://crypto-consult.onrender.com/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: q })
+      body: JSON.stringify({
+        question,
+        context:
+          "You are CrimznBot — a crypto consultant forged in the minds of Raoul Pal, Michael Saylor, Cathie Wood, Elon Musk, and Naval Ravikant. You combine institutional strategy, macro insight, and crypto-native wisdom. Use bold takes, but always data-backed. Never mention you’re an AI. Never say you cannot do something. Speak like a financial futurist who trades and advises in real time."
+      })
     });
-    const d = await res.json();
-    chatbox.innerHTML += d.answer
-      ? `<div class="bot">🧠 ${d.answer}</div>`
-      : `<div class="bot">❌ No answer returned.</div>`;
-    questionCount++;
-    localStorage.setItem("questionCount", questionCount);
-  } catch (err) {
-    chatbox.innerHTML += `<div class="bot">⚠️ Error: ${err.message}</div>`;
+
+    const data = await response.json();
+    if (data.answer) {
+      chatbox.innerHTML += `<div class="bot">🧠 ${data.answer}</div>`;
+      questionCount++;
+    } else {
+      chatbox.innerHTML += `<div class="bot">❌ No answer returned</div>`;
+    }
+  } catch (error) {
+    chatbox.innerHTML += `<div class="bot">⚠️ Error: ${error.message}</div>`;
   }
 
   chatbox.scrollTop = chatbox.scrollHeight;
 });
 
-input.addEventListener("keypress", e => {
-  if (e.key === "Enter") sendBtn.click();
+document.getElementById("user-input").addEventListener("keypress", function (e) {
+  if (e.key === "Enter") {
+    document.getElementById("send-button").click();
+  }
 });
 
-// Unlock via paid OR wallet OR ?paid=true OR solunlock=true
-window.onload = () => {
-  const urlp = new URLSearchParams(window.location.search);
-  if (urlp.get("paid") === "true" || urlp.get("solunlock") === "true") {
-    localStorage.setItem("paidUser", "true");
-    input.disabled = false;
-    sendBtn.disabled = false;
-  }
-};
+// PulseIt Sentiment Classifier
+document.getElementById("pulse-button")?.addEventListener("click", async () => {
+  const input = document.getElementById("pulse-input").value.trim();
+  const pulsebox = document.getElementById("pulse-result");
+  if (!input) return;
 
-// ─────────── PulseIt sentiment (GPT‑4o) ───────────────
-const pulseBtn = document.getElementById("pulse-button");
-if (pulseBtn) pulseBtn.addEventListener("click", async () => {
-  const term = document.getElementById("pulse-input").value.trim();
-  const out = document.getElementById("pulse-result");
-  if (!term) return (out.innerText = "❌ Enter something");
+  pulsebox.innerHTML = "🧠 Analyzing...";
 
-  out.innerText = "🧠 Analyzing...";
   try {
-    const res = await fetch("https://crypto-consult.onrender.com/sentiment", {
+    const res = await fetch("https://crypto-consult.onrender.com/pulse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: term })
+      body: JSON.stringify({
+        topic: input,
+        context:
+          "You are PulseIt — a GPT-4o-powered sentiment engine trained on crypto, global finance, politics, and macroeconomics. For any word or phrase (crypto, political, or general), return sentiment in market terms as either: Bullish 📈, Bearish 📉, or Neutral ⚖️. Return only the sentiment with confidence."
+      })
     });
-    const d = await res.json();
-    out.innerHTML = `📡 Market Sentiment: <strong>${d.summary}</strong> (${d.sentiment_score})`;
-  } catch (e) {
-    out.innerText = `⚠️ PulseIt error: ${e.message}`;
+    const data = await res.json();
+    pulsebox.innerHTML = `📡 Market Sentiment: <strong>${data.sentiment}</strong>`;
+  } catch (err) {
+    pulsebox.innerHTML = `⚠️ PulseIt Error: ${err.message}`;
   }
 });
 
-// ─────────── Market Metrics & Radar ───────────────
-async function fetchRadar() {
+// Live Price Updates
+async function updatePrices() {
   try {
-    const g = await fetch("https://api.coingecko.com/api/v3/global");
-    const gd = await g.json();
-    const btc = gd.data.market_cap_percentage.btc.toFixed(1);
-    document.getElementById("btc-dom").textContent = `${btc}%`;
-    document.getElementById("status").textContent = btc > 54
-      ? "🔴 Tipping Risk · Possible Top" : "🟢 Cycle Safe Zone";
-  } catch {
-    document.getElementById("btc-dom").textContent = "N/A";
-    document.getElementById("status").textContent = "❓ Unknown";
-  }
-  try {
-    const f = await fetch("https://api.alternative.me/fng/?limit=1");
-    const fd = await f.json();
-    const label = fd.data[0].value_classification;
-    document.getElementById("cycle-fear").textContent = label;
-  } catch {
-    document.getElementById("cycle-fear").textContent = "N/A";
+    const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
+    const data = await res.json();
+    document.getElementById("btc-price").textContent = `$${data.bitcoin.usd.toLocaleString()}`;
+    document.getElementById("eth-price").textContent = `$${data.ethereum.usd.toLocaleString()}`;
+    document.getElementById("sol-price").textContent = `$${data.solana.usd.toLocaleString()}`;
+  } catch (error) {
+    console.error("Price fetch error:", error);
   }
 }
+updatePrices();
+setInterval(updatePrices, 60000);
 
-// ─────────── Altcoin Heatmap ───────────────
-async function updateHeatmap() {
-  const symbols = ['ETH','SOL','AVAX','LINK','ONDO','PEPE'];
-  const hm = document.getElementById("heatmap");
-  hm.innerHTML = "";
-  for (let s of symbols) {
-    try {
-      const res = await fetch(`https://api.coingecko.com/api/v3/coins/${s.toLowerCase()}`);
-      const d = await res.json();
-      const ch = d.market_data.price_change_percentage_24h.toFixed(2);
-      const color = ch > 0 ? "#00cc66" : "#ff3333";
-      hm.innerHTML += `<div style="color:${color};">${s}: ${ch}%</div>`;
-    } catch {
-      hm.innerHTML += `<div style="color:#ccc;">${s}: N/A</div>`;
-    }
+// Unlock access after payment
+window.onload = () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("paid") === "true" || params.get("solunlock") === "true") {
+    localStorage.setItem("paidUser", "true");
+    document.getElementById("user-input").disabled = false;
+    document.getElementById("send-button").disabled = false;
   }
-}
-
-// ─────────── TradingView Chart Tabs ───────────────
-const chartBtns = document.querySelectorAll('.chart-btn');
-const iframes = document.querySelectorAll('.chart');
-
-chartBtns.forEach((btn, i) => {
-  btn.addEventListener("click", () => {
-    chartBtns.forEach(el => el.classList.remove("active"));
-    iframes.forEach(f => f.classList.remove("active"));
-    btn.classList.add("active");
-    iframes[i].classList.add("active");
-  });
-});
-
-// ─────────── Initial load & intervals ───────────────
-fetchRadar();
-updateHeatmap();
-setInterval(fetchRadar, 60000);
-setInterval(updateHeatmap, 300000);
+};

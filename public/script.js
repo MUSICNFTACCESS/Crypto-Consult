@@ -1,91 +1,87 @@
 let questionCount = 0;
-const MAX_FREE_QUESTIONS = 3;
 
-// 🚀 CrimznBot Client Logic
-document.getElementById("send-button").addEventListener("click", async () => {
-  const input = document.getElementById("user-input");
-  const chatbox = document.getElementById("chat-box");
-  const question = input.value.trim();
+const chatContainer = document.getElementById("chat-container");
+const userInput = document.getElementById("user-input");
+const submitButton = document.getElementById("submit-button");
 
+submitButton.addEventListener("click", async () => {
+  const question = userInput.value.trim();
   if (!question) return;
 
-  if (questionCount >= MAX_FREE_QUESTIONS && !localStorage.getItem("paidUser")) {
-    chatbox.innerHTML += "<div class='bot-msg'>🛑 You've reached the free limit. Please pay to continue.</div>";
-    document.getElementById("user-input").disabled = true;
-    document.getElementById("send-button").disabled = true;
-    document.getElementById("paywall").classList.remove("hidden");
+  // Add user message
+  const userMessage = document.createElement("div");
+  userMessage.className = "user-message";
+  userMessage.innerText = `🟠 ${question}`;
+  chatContainer.appendChild(userMessage);
+
+  // Clear input
+  userInput.value = "";
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  questionCount++;
+
+  if (questionCount >= 3) {
+    const limitMessage = document.createElement("div");
+    limitMessage.className = "bot-message";
+    limitMessage.innerHTML = `
+      🛑 You've reached the free limit. Please pay to continue.<br/><br/>
+      <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8', '_blank')">Pay for Consultation</button>
+      <button onclick="window.open('https://commerce.coinbase.com/checkout/6e5ff5c3-6bc2-4c8e-874a-f39e877c9d10', '_blank')">Tip Crimzn (1 USDC)</button>
+      <button onclick="window.open('https://solana.com/pay', '_blank')">Pay With Solana</button>
+      <button onclick="window.open('https://t.me/CrimznBot', '_blank')">Chat with CrimznBot</button>
+    `;
+    chatContainer.appendChild(limitMessage);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
     return;
   }
 
-  questionCount++;
-  chatbox.innerHTML += `<div class='user-msg'>🟠 ${question}</div>`;
-  input.value = "";
-  chatbox.scrollHeight = chatbox.scrollHeight;
+  // Add bot loading placeholder
+  const botMessage = document.createElement("div");
+  botMessage.className = "bot-message";
+  botMessage.innerText = "🧠 CrimznBot is thinking...";
+  chatContainer.appendChild(botMessage);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 
   try {
-    const response = await fetch("https://crypto-consult.onrender.com/ask", {
+    const res = await fetch("/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question }),
     });
-    const data = await response.json();
-    chatbox.innerHTML += `<div class='bot-msg'>🟢 CrimznBot: ${data.response}</div>`;
+
+    const data = await res.json();
+    botMessage.innerText = `🟢 CrimznBot: ${data.response || "No response from CrimznBot."}`;
   } catch (err) {
-    chatbox.innerHTML += `<div class='bot-msg'>❌ Error: ${err.message}</div>`;
+    botMessage.innerText = "❌ Error: Unable to get response from CrimznBot.";
+    console.error(err);
   }
 
-  chatbox.scrollHeight = chatbox.scrollHeight;
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 });
 
-document.getElementById("user-input").addEventListener("keypress", function (e) {
-  if (e.key === "Enter") {
-    document.getElementById("send-button").click();
-  }
-});
 
-// 🔮 PulseIt Sentiment Classifier
-document.getElementById("pulse-button").addEventListener("click", async () => {
-  const input = document.getElementById("pulse-input");
-  const pulsebox = document.getElementById("pulse-result");
-  const query = input.value.trim();
-
-  if (!query) return;
+// 💡 PulseIt Sentiment
+const pulseForm = document.getElementById("pulse-form");
+pulseForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const input = document.getElementById("pulse-input").value;
 
   try {
-    const res = await fetch("https://crypto-consult.onrender.com/pulseit", {
+    const res = await fetch("/pulseit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: query }),
+      body: JSON.stringify({ message: input })
     });
+
     const data = await res.json();
-    pulsebox.innerHTML = `🧠 Market Sentiment: <strong>${data.sentiment}</strong>`;
+    document.getElementById("pulse-result").innerText =
+      data.response || "⚠️ No sentiment detected.";
   } catch (err) {
-    pulsebox.innerHTML = `⚠️ PulseIt Error: ${err.message}`;
+    document.getElementById("pulse-result").innerText = "❌ Error fetching sentiment.";
+    console.error(err);
   }
 });
 
-// 💵 Live Price Updates
-async function updatePrices() {
-  try {
-    const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
-    const data = await res.json();
-    document.getElementById("btc-price").textContent = `$${data.bitcoin.usd.toLocaleString()}`;
-    document.getElementById("eth-price").textContent = `$${data.ethereum.usd.toLocaleString()}`;
-    document.getElementById("sol-price").textContent = `$${data.solana.usd.toLocaleString()}`;
-  } catch (error) {
-    console.error("Price fetch error:", error);
-  }
-}
-setInterval(updatePrices, 60000);
 
-// 🔓 Solana Unlock Check
-window.onload = () => {
-  updatePrices();
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("solUnlock") === "true") {
-    localStorage.setItem("paidUser", "true");
-    document.getElementById("user-input").disabled = false;
-    document.getElementById("send-button").disabled = false;
-    document.getElementById("paywall").classList.add("hidden");
-  }
-};
+
+

@@ -20,3 +20,4 @@ trigger-1750611085
 // 🔁 Force deploy: Sun Jun 22 13:45:40 EDT 2025
 // 🧼 Cleanup: remove duplicate send button
 // 🔄 Wallet.js updated with 👻 Phantom emoji + improved UX Sun Jun 22 14:41:46 EDT 2025
+// 🔥 Script.js fully fixed: live prices + paywall + bot + PulseIt Sun Jun 22 14:51:25 EDT 2025

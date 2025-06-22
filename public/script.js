@@ -30,6 +30,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const question = userInput.value.trim();
     if (!question) return;
 
+    // Clear previous messages before posting new question
+    chatContainer.innerHTML = "";
+
     const userMessage = document.createElement("div");
     userMessage.className = "user-message";
     userMessage.innerText = `🟠 ${question}`;
@@ -39,23 +42,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     questionCount++;
 
-    if (questionCount >= 3) {
-      const limitMessage = document.createElement("div");
-      limitMessage.className = "bot-message";
-      limitMessage.innerHTML = `
+    const botMessage = document.createElement("div");
+    botMessage.className = "bot-message";
+
+    if (questionCount > 3) {
+      botMessage.innerHTML = `
         🛑 You've reached the free limit. Please pay to continue.<br><br>
         <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8', '_blank')">💸 Pay for Consultation</button>
         <button onclick="window.open('https://commerce.coinbase.com/checkout/6e5ff5c3-6bc2-4c8e-874a-f39e877c9d10', '_blank')">🙏 Tip Crimzn (1 USDC)</button>
         <button onclick="window.open('https://phantom.app/ul/browse/www.solanapay.com/pay/Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025', '_blank')">👻 Pay with Solana</button>
         <button onclick="window.open('https://t.me/CrimznBot', '_blank')">🤖 Chat with CrimznBot</button>
       `;
-      chatContainer.appendChild(limitMessage);
+      chatContainer.appendChild(botMessage);
       chatContainer.scrollTop = chatContainer.scrollHeight;
       return;
     }
 
-    const botMessage = document.createElement("div");
-    botMessage.className = "bot-message";
     botMessage.innerText = "🧠 CrimznBot is thinking...";
     chatContainer.appendChild(botMessage);
     chatContainer.scrollTop = chatContainer.scrollHeight;

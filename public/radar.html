@@ -3,37 +3,98 @@
 <head>
   <meta charset="UTF-8" />
   <title>📡 Cycle Top Radar</title>
-  <link rel="stylesheet" href="style.css?v=crimzn1" />
+  <style>
+    body {
+      background-color: black;
+      color: orange;
+      font-family: Courier, monospace;
+      text-align: center;
+    }
+    h1, h2 {
+      margin-top: 20px;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .tabs button {
+      background-color: #222;
+      color: orange;
+      border: 1px solid orange;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+    .tabs button.active {
+      background-color: orange;
+      color: black;
+    }
+    iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
+      display: none;
+    }
+    iframe.active {
+      display: block;
+    }
+    .etf-links a {
+      color: #3399ff;
+      display: block;
+      margin: 5px;
+    }
+    .back-button {
+      background-color: orange;
+      color: black;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 5px;
+      display: inline-block;
+      margin-top: 30px;
+    }
+  </style>
 </head>
 <body>
   <h1>📡 Cycle Top Radar</h1>
   <p>This dashboard helps visualize potential crypto market cycle tops using key metrics, charts, and ETF flows.</p>
 
-  <h3>📈 BTC Dominance</h3>
-  <iframe src="https://www.tradingview.com/embed-widget/technical-analysis/?symbol=CRYPTOCAP:BTC.D" width="100%" height="400" frameborder="0"></iframe>
+  <h2>📉 BTC Dominance</h2>
+  <iframe src="https://www.tradingview.com/widgetembed/?frameElementId=tv_embed_dominance&symbol=CRYPTOCAP:BTC.D&interval=D&theme=dark&style=1"></iframe>
 
-  <h3>🔥 Altcoin Heatmap</h3>
-  <iframe src="https://coin360.com/crypto-heatmap" width="100%" height="500" style="border:none;"></iframe>
+  <h2>🔥 Altcoin Heatmap</h2>
+  <iframe src="https://coin360.com/"></iframe>
 
-  <h3>📊 BTC / ETH / SOL Charts</h3>
-  <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-    <iframe src="https://www.tradingview.com/chart/?symbol=BTCUSD" width="100%" height="400" frameborder="0"></iframe>
-    <iframe src="https://www.tradingview.com/chart/?symbol=ETHUSD" width="100%" height="400" frameborder="0"></iframe>
-    <iframe src="https://www.tradingview.com/chart/?symbol=SOLUSD" width="100%" height="400" frameborder="0"></iframe>
+  <h2>📊 BTC / ETH / SOL Charts</h2>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showChart('btc')">BTC</button>
+    <button class="tab-btn" onclick="showChart('eth')">ETH</button>
+    <button class="tab-btn" onclick="showChart('sol')">SOL</button>
   </div>
 
-  <h3>📎 ETF Flows</h3>
-  <p><a href="https://blockworks.co/analytics/bitcoin-etf/tracker" target="_blank">BTC ETF Tracker (Blockworks)</a></p>
-  <p><a href="https://blockworks.co/analytics/ethereum-etf/tracker" target="_blank">ETH ETF Tracker (Blockworks)</a></p>
+  <iframe id="btc" class="active" src="https://www.tradingview.com/widgetembed/?frameElementId=btc&symbol=COINBASE:BTCUSD&interval=60&theme=dark&style=1"></iframe>
+  <iframe id="eth" src="https://www.tradingview.com/widgetembed/?frameElementId=eth&symbol=COINBASE:ETHUSD&interval=60&theme=dark&style=1"></iframe>
+  <iframe id="sol" src="https://www.tradingview.com/widgetembed/?frameElementId=sol&symbol=COINBASE:SOLUSD&interval=60&theme=dark&style=1"></iframe>
 
-  <br><br>
-  <a href="index.html" style="display:inline-block;padding:12px 24px;margin:20px auto;background:#f7931a;color:#000;text-decoration:none;border-radius:8px;">⬅️ Back to Main Page</a>
+  <div class="etf-links">
+    <h2>📎 ETF Flows</h2>
+    <a href="https://blockworks.co/etf/bitcoin" target="_blank">BTC ETF Tracker (Blockworks)</a>
+    <a href="https://blockworks.co/etf/ethereum" target="_blank">ETH ETF Tracker (Blockworks)</a>
+  </div>
+
+  <a class="back-button" href="/">🔙 Back to Main Page</a>
+
+  <script>
+    function showChart(chartId) {
+      const charts = document.querySelectorAll('iframe[id]');
+      const buttons = document.querySelectorAll('.tab-btn');
+
+      charts.forEach(c => c.classList.remove('active'));
+      buttons.forEach(b => b.classList.remove('active'));
+
+      document.getElementById(chartId).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
 </body>
 </html>
-
-
-
-
-
-
-

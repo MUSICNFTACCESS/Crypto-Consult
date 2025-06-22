@@ -24,3 +24,4 @@ trigger-1750611085
 // 🎨 UI: CrimznBot layout, emoji fixes, and Solana pay styling Sun Jun 22 15:01:46 EDT 2025
 // 🚨 Manual redeploy trigger Sun Jun 22 16:17:30 EDT 2025
 // 🔧 Fix: Proper paywall timing + chat clear logic Sun Jun 22 16:23:34 EDT 2025
+// 📡 Cycle Top Radar: Switched to tabbed TradingView layout Sun Jun 22 16:38:53 EDT 2025

@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-// 🔁 Complete token aliases
+// 🔁 Token aliases for live price fetching
 const tokenMap = {
   bitcoin: "bitcoin", btc: "bitcoin",
   ethereum: "ethereum", eth: "ethereum",
@@ -42,14 +42,14 @@ const tokenMap = {
   frax: "frax", fx: "frax-share"
 };
 
-// 💰 Live Price Checker
+// 💰 Live price fetcher
 async function getLivePrice(question) {
   for (const [alias, coingeckoId] of Object.entries(tokenMap)) {
     if (question.toLowerCase().includes(alias)) {
       try {
         const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coingeckoId}&vs_currencies=usd`);
         const data = await res.json();
-        const price = data[coingeckoId].usd;
+        const price = data[coingeckoId]?.usd;
         return `The current price of ${alias.toUpperCase()} is $${price}.`;
       } catch (err) {
         return null;
@@ -65,12 +65,12 @@ app.post("/ask", async (req, res) => {
   const livePriceNote = await getLivePrice(question);
 
   const systemPrompt = `
-You are CrimznBot – a crypto strategist and macroeconomic analyst trained on the minds of Raoul Pal, Michael Saylor, Cathie Wood, and Warren Buffett.
-You combine deep macro understanding with on-chain insight and geopolitical awareness. Your tone is confident, bold, and built for the digital age.
+You are CrimznBot – a crypto strategist and macroeconomic analyst trained on the minds of Raoul Pal, Michael Saylor, Cathie Wood, and Elon Musk.
+You combine deep macro understanding with on-chain insight and geopolitical awareness. Your tone is sharp, confident, and grounded in real-world market structure.
 
-You speak like a professional who’s seen every market cycle. Use any live price data provided. If none is given, infer price direction.
+You speak like a professional who’s seen every market cycle. Use any live price data provided. If none, triangulate from macro cues.
 
-If a user says “I don’t have live data,” it’s not explicitly provided, you triangulate it anyway like a market legend would.
+Avoid saying "as an AI..." — instead, deliver with authority like Raoul would in a Real Vision interview.
 
 This is not financial advice — this is Crimzn-level alpha.
 
@@ -95,27 +95,28 @@ ${livePriceNote ? `Live price: ${livePriceNote}` : ""}
 
     const data = await response.json();
     const content = data?.choices?.[0]?.message?.content?.trim() || "No response";
-    res.json({ answer: content });
+    res.json({ response: content });
+
   } catch (err) {
-    console.error("❌ GPT-4o request failed:", err.message);
-    res.status(500).json({ error: "GPT-4o request failed" });
+    console.error("CrimznBot error:", err.message);
+    res.status(500).json({ error: "CrimznBot failed." });
   }
 });
 
-// 🧠 PulseIt Alpha Tracker — Sentiment & Insights
-app.post("/pulse", async (req, res) => {
-  const { query } = req.body;
-  if (!query) return res.status(400).json({ error: "Missing query" });
+// 📊 PulseIt+ — Market Sentiment Analyzer
+app.post("/pulseit", async (req, res) => {
+  const { message } = req.body;
 
   const pulsePrompt = `
-Sentiment summary of recent market patterns for alpha hunters. Your job is to break down any crypto asset or macro trend with conviction.
-Include real insight. Reference market structure, social buzz, ETF flows, developer momentum, or on-chain metrics when relevant.
+You are PulseIt+, a market sentiment classifier. Analyze the user input and reply with one of:
+🟢 Bullish
+🔴 Bearish
+⚪️ Neutral
 
-Output MUST use this JSON format:
-{ "sentiment": "[numeric range from -10 to +10]",
-  "summary": "Brief insight that captures market mood and key factors"
-}
-`;
+NO explanations. Just sentiment.
+
+Message: "${message}"
+  `;
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -127,28 +128,23 @@ Output MUST use this JSON format:
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          { role: "system", content: pulsePrompt },
-          { role: "user", content: `Analyze sentiment for: ${query}` },
+          { role: "system", content: pulsePrompt }
         ],
+        temperature: 0,
       }),
     });
 
-    const raw = await response.json();
-    const content = raw.choices?.[0]?.message?.content?.trim() || "";
-    const cleaned = content.replace(/```json|```/g, "").trim();
-    res.json(JSON.parse(cleaned));
+    const data = await response.json();
+    const sentiment = data?.choices?.[0]?.message?.content?.trim() || "⚪️ Neutral";
+    res.json({ response: sentiment });
+
   } catch (err) {
-    console.error("❌ PulseIt sentiment request failed:", err.message);
-    res.status(500).json({ error: "Sentiment analysis failed" });
+    console.error("PulseIt+ error:", err.message);
+    res.status(500).json({ error: "PulseIt+ failed." });
   }
 });
 
-// 🔂 Optional Ping Route
-app.get("/ping", (req, res) => {
-  res.send("CrimznBot backend is live");
-});
-
-// 🚀 Start Server
+// ✅ Launch server
 app.listen(PORT, () => {
-  console.log(`✅ CrimznBot backend live @ http://localhost:${PORT}`);
+  console.log(`CryptoConsult backend running on port ${PORT}`);
 });

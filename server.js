@@ -145,6 +145,9 @@ Message: "${message}"
 });
 
 // ✅ Launch server
+app.get('/radar.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'radar.html'));
+});
 app.listen(PORT, () => {
   console.log(`CryptoConsult backend running on port ${PORT}`);
 });

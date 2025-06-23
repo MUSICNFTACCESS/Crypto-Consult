@@ -3,9 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <title>CryptoConsult by Crimzn</title>
+
+  <!-- Phantom Wallet Adapter -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.10.3/lib/cjs/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.13.10/lib/index.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.9.15/lib/cjs/index.umd.js"></script>
+
   <style>
     body {
       background-color: #000;
@@ -22,46 +25,55 @@
     }
     .button-link, .pay-button, .solana-button, .submit-button {
       font-family: monospace;
-      padding: 10px 18px;
-      margin: 8px;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .pay-button {
-      background-color: #3498db;
-      color: #fff;
-    }
-    .solana-button {
-      background-color: #551bf9;
-      color: white;
       font-weight: bold;
+      font-size: 16px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin: 8px;
       transition: background-color 0.2s ease;
-    }
-    .solana-button:hover {
-      background-color: #7d38f7;
     }
     .submit-button {
       background-color: #f7931a;
       color: black;
     }
-    #wallet-address {
-      color: #fff;
-      font-size: 14px;
-      margin-top: 5px;
+    .pay-button {
+      background-color: #0275d8;
+      color: white;
     }
-    .pulse-form {
-      margin-top: 20px;
+    .tip-button {
+      background-color: #ffcc00;
+      color: black;
+    }
+    .solana-button {
+      background-color: #551bf9;
+      color: white;
+    }
+    .solana-button:hover {
+      background-color: #7d38f7;
+    }
+    .pulse-button {
+      background-color: orange;
+      color: black;
+      font-weight: bold;
+    }
+    .bot-response {
+      color: #0f0;
+      margin-top: 10px;
+    }
+    .user-message {
+      color: #f7931a;
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-
   <h1>CryptoConsult by Crimzn</h1>
 
   <div id="wallet-connect">
-    <button id="connect-wallet">Connect Wallet</button>
+    <button id="connect-wallet" class="solana-button">Connect Wallet</button>
+    <button id="disconnect-wallet" class="solana-button" style="display:none;">Disconnect</button>
     <div id="wallet-address"></div>
   </div>
 
@@ -71,68 +83,95 @@
     <p>SOL: <span id="sol-price">Loading...</span></p>
   </div>
 
-  <p><strong>💬 Talk to CrimznBot</strong></p>
+  <strong>💬 Talk to CrimznBot</strong>
   <div id="chat-container" style="border: 1px solid #f7931a; padding: 10px; height: 200px; overflow-y: auto;"></div>
   <input type="text" id="user-input" placeholder="Ask your crypto question..." />
-  <button class="submit-button">Send</button>
+  <button class="submit-button" onclick="sendMessage()">Send</button>
 
-  <div>
-    <button class="pay-button" onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8', '_blank')">💵 Pay for Consultation</button>
-    <button class="pay-button" onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b', '_blank')">⚠️ Tip Crimzn (1 USDC)</button>
-    <button class="solana-button" onclick="window.location.href='solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CryptoConsult&message=Consult+Tip'">🪙 Pay with Solana (0.025 SOL)</button>
-    <button class="button-link" onclick="window.open('https://t.me/Crimznbot', '_blank')">💬 Chat with CrimznBot</button>
-  </div>
+  <br/>
+  <button class="pay-button" onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f8964fudf8', '_blank')">🧠 Pay for Consultation</button>
+  <button class="tip-button" onclick="window.open('https://commerce.coinbase.com/checkout/ee5ff5c3-6bc2-4c0e-874a-f90eb787cd10', '_blank')">⚠️ Tip Crimzn (1 USDC)</button>
+  <button class="solana-button" onclick="window.location.href='solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CryptoConsult&message=Consult+Tip'">🟣 Pay with Solana (0.025 SOL)</button>
+  <button class="button-link" onclick="window.open('https://t.me/crimznbot', '_blank')">🤖 Chat with CrimznBot</button>
 
-  <div class="pulse-form">
-    <input type="text" id="pulse-input" placeholder="PulseIt sentiment..." />
-    <button class="submit-button">PulseIt</button>
-    <div id="pulse-result" style="margin-top:10px;"></div>
-  </div>
+  <br/><br/>
+  <input type="text" id="pulse-input" placeholder="PulseIt sentiment..." />
+  <button class="pulse-button">PulseIt</button>
 
-  <br />
-  <a href="radar.html" class="button-link">📉 Cycle Top Radar</a>
+  <br/><br/>
+  <a href="radar.html" class="button-link">🛰️ Cycle Top Radar</a>
   <a href="whitepaper.html" class="button-link">📄 View Whitepaper</a>
 
   <script>
-    const connectButton = document.getElementById('connect-wallet');
-    const addressDisplay = document.getElementById('wallet-address');
+    const connectBtn = document.getElementById('connect-wallet');
+    const disconnectBtn = document.getElementById('disconnect-wallet');
+    const walletDiv = document.getElementById('wallet-address');
 
-    connectButton.addEventListener('click', async () => {
+    let provider = null;
+
+    connectBtn.addEventListener('click', async () => {
       try {
-        const resp = await window.solana.connect();
-        const pubKey = resp.publicKey.toString();
-        const short = pubKey.slice(0, 4) + '...' + pubKey.slice(-4);
-        connectButton.innerText = "Connected";
-        addressDisplay.innerText = short;
+        provider = window.solana;
+        if (!provider || !provider.isPhantom) throw new Error("Phantom wallet not found");
+        const resp = await provider.connect();
+        walletDiv.innerText = 'Connected: ' + resp.publicKey.toString().slice(-4);
+        connectBtn.style.display = 'none';
+        disconnectBtn.style.display = 'inline-block';
       } catch (err) {
-        console.error("Wallet connection failed", err);
+        console.error('Wallet connect failed:', err);
       }
     });
 
-    window.addEventListener('load', () => {
-      if (window.solana && window.solana.isPhantom) {
-        connectButton.style.display = 'inline-block';
-      } else {
-        connectButton.style.display = 'none';
+    disconnectBtn.addEventListener('click', async () => {
+      try {
+        if (provider && provider.disconnect) await provider.disconnect();
+        walletDiv.innerText = '';
+        connectBtn.style.display = 'inline-block';
+        disconnectBtn.style.display = 'none';
+      } catch (err) {
+        console.error('Wallet disconnect failed:', err);
       }
     });
 
     // Live prices
     async function fetchPrices() {
       try {
-        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd');
+        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
         const data = await res.json();
-        document.getElementById('btc-price').innerText = `$${data.bitcoin.usd.toLocaleString()}`;
-        document.getElementById('eth-price').innerText = `$${data.ethereum.usd.toLocaleString()}`;
-        document.getElementById('sol-price').innerText = `$${data.solana.usd.toLocaleString()}`;
+        document.getElementById("btc-price").innerText = "$" + data.bitcoin.usd.toLocaleString();
+        document.getElementById("eth-price").innerText = "$" + data.ethereum.usd.toLocaleString();
+        document.getElementById("sol-price").innerText = "$" + data.solana.usd.toLocaleString();
       } catch (error) {
-        console.error('Price fetch error:', error);
+        console.error("Price fetch error:", error);
       }
     }
 
     fetchPrices();
     setInterval(fetchPrices, 30000);
-  </script>
 
+    // CrimznBot (Simple Echo)
+    function sendMessage() {
+      const input = document.getElementById("user-input");
+      const chat = document.getElementById("chat-container");
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      chat.innerHTML += `<div class="user-message">🧍 ${msg}</div>`;
+      input.value = "";
+
+      // Mock bot reply
+      setTimeout(() => {
+        chat.innerHTML += `<div class="bot-response">🤖 ${msg.includes("price") ? "Check live prices above ⬆️" : "CrimznBot here. Let's talk crypto."}</div>`;
+        chat.scrollTop = chat.scrollHeight;
+      }, 500);
+    }
+
+    // Autoplay audio on first click
+    document.body.addEventListener('click', function playMusicOnce() {
+      const audio = new Audio("autoplay.mp3");
+      audio.play();
+      document.body.removeEventListener('click', playMusicOnce);
+    });
+  </script>
 </body>
 </html>

@@ -59,15 +59,6 @@
   <h1>📡 Cycle Top Radar</h1>
   <p>This dashboard helps visualize potential crypto market cycle tops using key metrics, charts, and ETF flows.</p>
 
-  <!-- BTC Dominance -->
-  <h2>📈 BTC Dominance</h2>
-<iframe src="https://www.tradingview.com/widgetembed/?frameElementId=tradingview_btc_dominance&symbol=CRYPTOCAP:BTC.D&interval=D&theme=dark&style=1&toolbar_bg=f1f3f6&locale=en" width="100%" height="500" frameborder="0"></iframe>
-
-<h2>🔥 Altcoin Screener</h2>
-<iframe src="https://s.tradingview.com/embed-widget/screener/?locale=en#%7B%22defaultColumn%22%3A%22overview%22%2C%22defaultScreen%22%3A%22crypto_mkt%22%2C%22market%22%3A%22crypto%22%2C%22colorTheme%22%3A%22dark%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A400%2C%22isTransparent%22%3Afalse%2C%22showToolbar%22%3Afalse%7D" width="100%" height="400" frameborder="0"></iframe>
-
-<h2>😨 Fear & Greed Index</h2>
-<iframe src="https://fear-and-greed-index.com/embed?type=single&currency=btc&theme=dark" width="100%" height="200" frameborder="0"></iframe>
 
   <!-- Chart Tabs -->
   <h2>📊 BTC / ETH / SOL Charts</h2>
@@ -76,6 +67,18 @@
     <button class="tab-btn" onclick="showChart('eth')">ETH</button>
     <button class="tab-btn" onclick="showChart('sol')">SOL</button>
   </div>
+
+<!-- BTC Dominance -->
+<h2>📈 BTC Dominance</h2>
+<iframe src="https://www.tradingview.com/widgetembed/?frameElementId=tradingview_btc_dominance&symbol=CRYPTOCAP:BTC.D&interval=D&theme=dark&style=1&locale=en" width="100%" height="400" frameborder="0"></iframe>
+
+<!-- Altcoin Heatmap -->
+<h2>🧊 Altcoin Heatmap</h2>
+<iframe src="https://www.tradingview.com/embed-widget/screener/?locale=en#%7B%22defaultColumn%22%3A%22overview%22%2C%22defaultScreen%22%3A%22crypto_mkt%22%2C%22market%22%3A%22crypto%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22400%22%2C%22colorTheme%22%3A%22dark%22%7D" width="100%" height="400" frameborder="0"></iframe>
+
+<!-- Fear & Greed Index -->
+<h2>😱 Fear & Greed Index</h2>
+<iframe src="https://fear-and-greed-index.com/embed/?type=single&currency=btc&theme=dark" width="100%" height="200" frameborder="0"></iframe>
 
   <iframe id="btc" class="active" src="https://www.tradingview.com/widgetembed/?frameElementId=btc&symbol=COINBASE:BTCUSD&interval=60&theme=dark&style=1" width="100%" height="500"></iframe>
   <iframe id="eth" src="https://www.tradingview.com/widgetembed/?frameElementId=eth&symbol=COINBASE:ETHUSD&interval=60&theme=dark&style=1" width="100%" height="500"></iframe>
@@ -103,4 +106,3 @@
 </body>
 </html>
 <!-- cache-bust-Sun_Jun_22_19_46_49_EDT_2025 -->
-// redeploy trigger 20250622195601

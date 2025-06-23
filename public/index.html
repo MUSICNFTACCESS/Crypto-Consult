@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <title>CryptoConsult by Crimzn</title>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.10.3/lib/cjs/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.9.15/lib/cjs/index.umd.js"></script>
   <style>
     body {
       background-color: #000;
       color: #f7931a;
       font-family: 'Courier New', Courier, monospace;
       text-align: center;
-      margin: 0;
       padding: 20px;
     }
     h1 {
@@ -18,42 +20,50 @@
     .price-bar {
       margin: 20px 0;
     }
-    .button-link, button {
-      display: inline-block;
+    .button-link, .pay-button, .solana-button, .submit-button {
+      font-family: monospace;
+      padding: 10px 18px;
       margin: 8px;
-      padding: 10px 20px;
-      border-radius: 6px;
       border: none;
-      font-weight: bold;
+      border-radius: 12px;
       cursor: pointer;
-    }
-    #submit-button {
-      background-color: #f7931a;
-      color: black;
-    }
-    .user-message {
-      color: #f7931a;
-      margin-top: 10px;
-    }
-    .bot-message {
-      color: #00ff99;
-      margin-top: 10px;
+      font-size: 16px;
     }
     .pay-button {
       background-color: #3498db;
-      color: white;
+      color: #fff;
     }
     .solana-button {
-      background-color: #8e44ad;
+      background-color: #551bf9;
       color: white;
+      font-weight: bold;
+      transition: background-color 0.2s ease;
     }
-    .ghost {
-      font-size: 1.2em;
+    .solana-button:hover {
+      background-color: #7d38f7;
+    }
+    .submit-button {
+      background-color: #f7931a;
+      color: black;
+    }
+    #wallet-address {
+      color: #fff;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+    .pulse-form {
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
+
   <h1>CryptoConsult by Crimzn</h1>
+
+  <div id="wallet-connect">
+    <button id="connect-wallet">Connect Wallet</button>
+    <div id="wallet-address"></div>
+  </div>
 
   <div class="price-bar">
     <p>BTC: <span id="btc-price">Loading...</span></p>
@@ -62,46 +72,67 @@
   </div>
 
   <p><strong>💬 Talk to CrimznBot</strong></p>
-  <div id="chat-container" style="border:1px solid #f7931a; padding:10px; height:200px; overflow-y:auto;"></div>
+  <div id="chat-container" style="border: 1px solid #f7931a; padding: 10px; height: 200px; overflow-y: auto;"></div>
   <input type="text" id="user-input" placeholder="Ask your crypto question..." />
-  <button id="submit-button">Send</button>
+  <button class="submit-button">Send</button>
 
-  <br><br>
+  <div>
+    <button class="pay-button" onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8', '_blank')">💵 Pay for Consultation</button>
+    <button class="pay-button" onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b', '_blank')">⚠️ Tip Crimzn (1 USDC)</button>
+    <button class="solana-button" onclick="window.location.href='solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CryptoConsult&message=Consult+Tip'">🪙 Pay with Solana (0.025 SOL)</button>
+    <button class="button-link" onclick="window.open('https://t.me/Crimznbot', '_blank')">💬 Chat with CrimznBot</button>
+  </div>
 
-  <button class="pay-button"
-    onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8', '_blank')">
-    💳 Pay for Consultation
-  </button>
-
-  <button class="pay-button"
-    onclick="window.open('https://commerce.coinbase.com/checkout/6e5ff5c3-6bc2-4c8e-874a-f39e877c9d10', '_blank')">
-    🙏 Tip Crimzn (1 USDC)
-  </button>
-
-  <button class="solana-button ghost"
-    onclick="window.open('https://phantom.app/ul/browse/www.solanapay.com/pay/Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025', '_blank')">
-    👻 Pay with Solana
-  </button>
-
-  <button class="button-link"
-    onclick="window.open('https://t.me/CrimznBot', '_blank')">
-    🤖 Chat with CrimznBot
-  </button>
-
-  <br><br>
-
-  <form id="pulse-form">
+  <div class="pulse-form">
     <input type="text" id="pulse-input" placeholder="PulseIt sentiment..." />
-    <button type="submit">PulseIt</button>
+    <button class="submit-button">PulseIt</button>
     <div id="pulse-result" style="margin-top:10px;"></div>
-  </form>
+  </div>
 
-  <br><br>
-
-  <a href="radar.html" class="button-link">🚨 Cycle Top Radar</a>
+  <br />
+  <a href="radar.html" class="button-link">📉 Cycle Top Radar</a>
   <a href="whitepaper.html" class="button-link">📄 View Whitepaper</a>
 
-  <script src="script.js?v=crimznfixed1" defer></script>
-  <script src="wallet.js?v=crimzn1"></script>
+  <script>
+    const connectButton = document.getElementById('connect-wallet');
+    const addressDisplay = document.getElementById('wallet-address');
+
+    connectButton.addEventListener('click', async () => {
+      try {
+        const resp = await window.solana.connect();
+        const pubKey = resp.publicKey.toString();
+        const short = pubKey.slice(0, 4) + '...' + pubKey.slice(-4);
+        connectButton.innerText = "Connected";
+        addressDisplay.innerText = short;
+      } catch (err) {
+        console.error("Wallet connection failed", err);
+      }
+    });
+
+    window.addEventListener('load', () => {
+      if (window.solana && window.solana.isPhantom) {
+        connectButton.style.display = 'inline-block';
+      } else {
+        connectButton.style.display = 'none';
+      }
+    });
+
+    // Live prices
+    async function fetchPrices() {
+      try {
+        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd');
+        const data = await res.json();
+        document.getElementById('btc-price').innerText = `$${data.bitcoin.usd.toLocaleString()}`;
+        document.getElementById('eth-price').innerText = `$${data.ethereum.usd.toLocaleString()}`;
+        document.getElementById('sol-price').innerText = `$${data.solana.usd.toLocaleString()}`;
+      } catch (error) {
+        console.error('Price fetch error:', error);
+      }
+    }
+
+    fetchPrices();
+    setInterval(fetchPrices, 30000);
+  </script>
+
 </body>
 </html>

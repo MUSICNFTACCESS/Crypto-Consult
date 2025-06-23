@@ -144,10 +144,12 @@ Message: "${message}"
   }
 });
 
-// ✅ Launch server
+// ✅ Serve radar.html without caching
 app.get('/radar.html', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store'); // 🔁 Disable cache
   res.sendFile(path.join(__dirname, 'public', 'radar.html'));
 });
+
 app.listen(PORT, () => {
   console.log(`CryptoConsult backend running on port ${PORT}`);
 });

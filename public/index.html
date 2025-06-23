@@ -102,11 +102,34 @@
   <a href="radar.html" class="button-link">🛰️ Cycle Top Radar</a>
   <a href="whitepaper.html" class="button-link">📄 View Whitepaper</a>
 
+  <!-- 🔥 BTC Dominance Chart -->
+  <h2>📊 BTC Dominance</h2>
+  <iframe
+    src="https://www.tradingview.com/widgetembed/?frameElementId=tradingview_btc_dominance&symbol=CRYPTOCAP:BTC.D&interval=D&theme=dark&style=1&toolbar_bg=f1f3f6&locale=en"
+    width="100%"
+    height="500"
+    frameborder="0">
+  </iframe>
+
+  <!-- 🌡️ Altcoin Heatmap -->
+  <h2>🧊 Altcoin Heatmap</h2>
+  <iframe
+    src="https://s.tradingview.com/embed-widget/screener/?locale=en#%7B%22defaultColumn%22%3A%22overview%22%2C%22defaultScreen%22%3A%22crypto_mkt%22%2C%22market%22%3A%22crypto%22%2C%22colorTheme%22%3A%22dark%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A400%2C%22isTransparent%22%3Afalse%2C%22showToolbar%22%3Afalse%7D"
+    width="100%"
+    height="400"
+    frameborder="0">
+  </iframe>
+
+  <!-- ❌ Remove deploy number footer -->
+  <script>
+    const unwantedText = [...document.body.querySelectorAll('p')].find(p => p.textContent.toLowerCase().includes('deploy #'));
+    if (unwantedText) unwantedText.remove();
+  </script>
+
   <script>
     const connectBtn = document.getElementById('connect-wallet');
     const disconnectBtn = document.getElementById('disconnect-wallet');
     const walletDiv = document.getElementById('wallet-address');
-
     let provider = null;
 
     connectBtn.addEventListener('click', async () => {
@@ -133,7 +156,6 @@
       }
     });
 
-    // Live prices
     async function fetchPrices() {
       try {
         const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
@@ -149,7 +171,6 @@
     fetchPrices();
     setInterval(fetchPrices, 30000);
 
-    // CrimznBot (Simple Echo)
     function sendMessage() {
       const input = document.getElementById("user-input");
       const chat = document.getElementById("chat-container");
@@ -159,19 +180,11 @@
       chat.innerHTML += `<div class="user-message">🧍 ${msg}</div>`;
       input.value = "";
 
-      // Mock bot reply
       setTimeout(() => {
         chat.innerHTML += `<div class="bot-response">🤖 ${msg.includes("price") ? "Check live prices above ⬆️" : "CrimznBot here. Let's talk crypto."}</div>`;
         chat.scrollTop = chat.scrollHeight;
       }, 500);
     }
-
-    // Autoplay audio on first click
-    document.body.addEventListener('click', function playMusicOnce() {
-      const audio = new Audio("autoplay.mp3");
-      audio.play();
-      document.body.removeEventListener('click', playMusicOnce);
-    });
   </script>
 </body>
 </html>

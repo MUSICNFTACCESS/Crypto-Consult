@@ -1,14 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>CryptoConsult by Crimzn</title>
-
-  <!-- Phantom Wallet Adapter -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.19.10/lib/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.18.10/lib/index.umd.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.9.15/lib/cjs/index.umd.js"></script>
-
   <style>
     body {
       background-color: #000;
@@ -17,43 +14,22 @@
       text-align: center;
       padding: 20px;
     }
-    .price-bar {
-      font-size: 20px;
-    }
+    .price-bar { font-size: 20px; margin-bottom: 10px; }
     .pay-button, .tip-button, .solana-button, .submit-button {
       font-family: monospace;
       font-size: 14px;
-      margin: 10px;
       padding: 10px;
+      margin: 10px;
       border: none;
       border-radius: 10px;
       cursor: pointer;
       transition: background-color 0.2s ease;
+      background-color: #7b3fe4;
+      color: white;
     }
-    .pay-button {
-      background-color: #f7931a;
-    }
-    .tip-button {
-      background-color: #0075ff;
-    }
-    .solana-button {
-      background-color: green;
-    }
-    .submit-button {
-      background-color: #f7931a;
-      color: #000;
-    }
-    .submit-button:hover {
-      background-color: #c87617;
-    }
-    .bot-response {
-      color: #0f0;
-      margin-top: 10px;
-    }
-    .user-message {
-      color: #f7931a;
-      margin-bottom: 10px;
-    }
+    .bot-response { color: #00ff73; }
+    .user-message { color: #f7931a; margin-bottom: 10px; }
+    .button-link { text-decoration: none; color: white; }
   </style>
 </head>
 <body>
@@ -71,44 +47,39 @@
     <p>SOL: <span id="sol-price">Loading...</span></p>
   </div>
 
-  <strong>💬 Talk to CrimznBot</strong>
+  <strong>🧠 Talk to CrimznBot</strong>
   <div id="chat-container" style="border: 1px solid #f7931a; padding: 10px; height: 200px; overflow-y: auto;"></div>
   <input type="text" id="user-input" placeholder="Ask your crypto question..." />
-  <button class="submit-button" onclick="sendMessage()">Send</button>
+  <button class="submit-button" onclick="sendMessage()">🔐 Send</button>
 
-  <br/><br/>
-  <button class="pay-button" onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f896d67fdf8', '_blank')">💰 Pay for Consult</button>
-  <button class="tip-button" onclick="window.open('https://commerce.coinbase.com/checkout/ee5f73e0-5ecf-4754-b700-b032ba1e4ed2', '_blank')">🪙 Tip (1 USDC)</button>
-  <button class="solana-button" onclick="window.location.href='solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=1&reference=CryptoConsult&spl-token=So11111111111111111111111111111111111111112'">⚡ Pay with Solana</button>
+  <br><br>
+
+  <button class="solana-button" onclick="window.open('https://commerce.coinbase.com/checkout/0193ba85-c86f-407d-b5d7-6f896d67d70f', '_blank')">💳 Pay for Consultation</button>
+  <button class="solana-button" onclick="window.open('https://commerce.coinbase.com/checkout/e57a50a8-26cf-4d75-b70d-b03aa5b555ae', '_blank')">💸 Tip (1 USDC)</button>
   <button class="solana-button" onclick="window.open('https://t.me/crimznbot', '_blank')">💬 Chat with CrimznBot</button>
 
-  <br/><br/>
-  <input type="text" id="pulse-input" placeholder="PulseIt sentiment..." />
-  <button class="submit-button">PulseIt</button>
+  <br><br>
 
-  <br/><br/>
-  <a href="radar.html" class="button-link">📈 Cycle Top Radars</a>
+  <input id="pulse-input" class="solana-button" placeholder="PulseIt sentiment..." />
+  <button class="solana-button">📊 PulseIt</button>
+
+  <br><br>
+  <a href="radar.html" class="button-link">📈 Cycle Top Radars</a> |
   <a href="whitepaper.html" class="button-link">📄 View Whitepaper</a>
 
-<!-- ❌ Remove deploy number footer -->
   <script>
-    const unwantedText = [...document.body.querySelectorAll("p")]
-      .find(p => p.textContent.toLowerCase().includes('deploy '));
+    const unwantedText = [...document.body.querySelectorAll("*")].find(n => n.textContent?.toLowerCase()?.includes("deploy"));
     if (unwantedText) unwantedText.remove();
-  </script>
 
-  <script>
     const connectBtn = document.getElementById('connect-wallet');
     const disconnectBtn = document.getElementById('disconnect-wallet');
-    const walletDiv = document.getElementById('wallet-address');
-    let provider = null;
+    const walletAddress = document.getElementById('wallet-address');
 
     connectBtn.addEventListener('click', async () => {
       try {
-        provider = window.solana;
-        if (!provider || !provider.isPhantom) throw new Error("Phantom wallet not found");
-        const resp = await provider.connect();
-        walletDiv.innerText = 'Connected: ' + resp.publicKey.toString().slice(-4);
+        if (!window.solana || !window.solana.isPhantom) throw new Error("Phantom wallet not found");
+        const resp = await window.solana.connect();
+        walletAddress.innerText = '🔗 ' + resp.publicKey.toString().slice(-4);
         connectBtn.style.display = 'none';
         disconnectBtn.style.display = 'inline-block';
       } catch (err) {
@@ -118,8 +89,8 @@
 
     disconnectBtn.addEventListener('click', async () => {
       try {
-        if (provider && provider.disconnect) await provider.disconnect();
-        walletDiv.innerText = '';
+        if (window.solana?.disconnect) await window.solana.disconnect();
+        walletAddress.innerText = '';
         connectBtn.style.display = 'inline-block';
         disconnectBtn.style.display = 'none';
       } catch (err) {
@@ -138,31 +109,33 @@
         console.error("Price fetch error:", error);
       }
     }
-
     fetchPrices();
     setInterval(fetchPrices, 30000);
-  </script>
 
-  <script>
     let questionCount = 0;
     const maxFreeQuestions = 3;
 
     async function sendMessage() {
       const input = document.getElementById("user-input");
       const chat = document.getElementById("chat-container");
-      const msg = input.value.trim();
-      if (!msg) return;
-
-      chat.innerHTML += `<div class="user-message">🧍 ${msg}</div>`;
+      const question = input.value;
       input.value = "";
 
-      questionCount++;
-      if (questionCount > maxFreeQuestions) {
+      chat.innerHTML += `<div class="user-message">🧍‍♂️ ${question}</div>`;
+
+      if (questionCount >= maxFreeQuestions) {
         chat.innerHTML += `
-          <div class="bot-response">⚠️ You've reached the free question limit.<br>
-            <a href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f896df6d7df" class="button-link" target="_blank">💵 Pay $99.99 USDC</a><br>
-            <a href="https://commerce.coinbase.com/checkout/eef55b74-70d2-4e67-975a-7000ba35c5ab" class="button-link" target="_blank">☕ Tip 1 USDC</a><br>
-            <a href="https://t.me/crimznbot" class="button-link" target="_blank">📲 Contact on Telegram</a>
+          <div class="bot-response">
+            🚧 You've reached the free question limit.<br>
+            <a href="https://commerce.coinbase.com/checkout/0193ba85-c86f-407d-b5d7-6f896d67d70f" class="button-link" target="_blank">
+              <button class="solana-button">💳 Pay $99.99 USDC</button>
+            </a>
+            <a href="https://commerce.coinbase.com/checkout/e57a50a8-26cf-4d75-b70d-b03aa5b555ae" class="button-link" target="_blank">
+              <button class="solana-button">💸 Tip 1 USDC</button>
+            </a>
+            <a href="https://t.me/crimznbot" class="button-link" target="_blank">
+              <button class="solana-button">💬 Contact on Telegram</button>
+            </a>
           </div>`;
         return;
       }
@@ -171,15 +144,15 @@
         const res = await fetch("/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: msg })
+          body: JSON.stringify({ question })
         });
         const data = await res.json();
-        const reply = data.response || "CrimznBot is having connection issues...";
+        const reply = data.reply || "⚠️ CrimznBot is having connection issues...";
         chat.innerHTML += `<div class="bot-response">🤖 ${reply}</div>`;
+        questionCount++;
         chat.scrollTop = chat.scrollHeight;
       } catch (err) {
-        chat.innerHTML += `<div class="bot-response">🤖 Error contacting CrimznBot.</div>`;
-        console.error(err);
+        chat.innerHTML += `<div class="bot-response">⚠️ Error contacting CrimznBot.</div>`;
       }
     }
   </script>

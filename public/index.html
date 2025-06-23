@@ -90,9 +90,10 @@
   <a href="radar.html" class="button-link">📈 Cycle Top Radars</a>
   <a href="whitepaper.html" class="button-link">📄 View Whitepaper</a>
 
-  <!-- ❌ Remove deploy number footer -->
+<!-- ❌ Remove deploy number footer -->
   <script>
-    const unwantedText = [...document.body.querySelectorAll("p")].find(p => p.textContent.toLowerCase().includes('deploy '));
+    const unwantedText = [...document.body.querySelectorAll("p")]
+      .find(p => p.textContent.toLowerCase().includes('deploy '));
     if (unwantedText) unwantedText.remove();
   </script>
 
@@ -143,27 +144,37 @@
   </script>
 
   <script>
+    let questionCount = 0;
+    const maxFreeQuestions = 3;
+
     async function sendMessage() {
       const input = document.getElementById("user-input");
       const chat = document.getElementById("chat-container");
       const msg = input.value.trim();
       if (!msg) return;
 
-      // Show user message
       chat.innerHTML += `<div class="user-message">🧍 ${msg}</div>`;
       input.value = "";
+
+      questionCount++;
+      if (questionCount > maxFreeQuestions) {
+        chat.innerHTML += `
+          <div class="bot-response">⚠️ You've reached the free question limit.<br>
+            <a href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f896df6d7df" class="button-link" target="_blank">💵 Pay $99.99 USDC</a><br>
+            <a href="https://commerce.coinbase.com/checkout/eef55b74-70d2-4e67-975a-7000ba35c5ab" class="button-link" target="_blank">☕ Tip 1 USDC</a><br>
+            <a href="https://t.me/crimznbot" class="button-link" target="_blank">📲 Contact on Telegram</a>
+          </div>`;
+        return;
+      }
 
       try {
         const res = await fetch("/ask", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ question: msg })
         });
         const data = await res.json();
         const reply = data.response || "CrimznBot is having connection issues...";
-
         chat.innerHTML += `<div class="bot-response">🤖 ${reply}</div>`;
         chat.scrollTop = chat.scrollHeight;
       } catch (err) {

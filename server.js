@@ -58,9 +58,19 @@ async function getLivePrice(question) {
   }
   return null;
 }
+// 👥 Alias route for frontend/chatbot compatibility
+app.post('/api/chat', (req, res) => {
+  req.url = '/ask';
+  app._router.handle(req, res);
+});
 
 // 🤖 CrimznBot — GPT-4o Macro Crypto Strategist
 app.post("/ask", async (req, res) => {
+  const { question } = req.body;
+  const livePriceNote = await getLivePrice(question);
+  ...
+
+
   const { question } = req.body;
   const livePriceNote = await getLivePrice(question);
 

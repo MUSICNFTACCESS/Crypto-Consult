@@ -144,9 +144,9 @@ Message: "${message}"
   }
 });
 
-// ✅ Serve radar.html without caching
-app.get('/radar.html', (req, res) => {
-  res.setHeader('Cache-Control', 'no-store'); // 🔁 Disable cache
+// ✅ Serve radar dashboard on /radar path
+app.get('/radar', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   res.sendFile(path.join(__dirname, 'public', 'radar.html'));
 });
 

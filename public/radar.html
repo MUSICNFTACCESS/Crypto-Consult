@@ -64,11 +64,27 @@
   <h2>📉 BTC Dominance</h2>
   <iframe src="https://www.tradingview.com/embed-widget/single-quote/?symbol=CRYPTOCAP:BTC.D" height="250"></iframe>
 
-  <h2>🧊 Altcoin Heatmap</h2>
-  <iframe src="https://coin360.com/widget" height="450"></iframe>
+<h2>📊 Altcoin Market Screener</h2>
+<div class="tradingview-widget-container">
+  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-screener.js" async>
+  {
+    "width": "100%",
+    "height": 500,
+    "defaultColumn": "performance",
+    "defaultScreen": "crypto_mkt_cap",
+    "market": "crypto",
+    "showToolbar": true,
+    "colorTheme": "dark",
+    "locale": "en"
+  }
+  </script>
+</div>
 
-  <h2>😱 Fear & Greed Index</h2>
-  <iframe src="https://alternative.me/crypto/fear-and-greed-index/" height="200"></iframe>
+<h2>🧠 Fear & Greed Index</h2>
+<p>This gauge shows the current market sentiment in crypto, ranging from Extreme Fear (0) to Extreme Greed (100).</p>
+<a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank">
+  <img src="https://alternative.me/crypto/fear-and-greed-index.png" alt="Fear and Greed Index" width="100%">
+</a>
 
   <h2>📎 ETF Flows</h2>
   <p><a href="https://farside.co.uk/etf/gbtc" target="_blank">BTC ETF Tracker (Farside)</a></p>
@@ -90,3 +106,4 @@
   </script>
 </body>
 </html>
+

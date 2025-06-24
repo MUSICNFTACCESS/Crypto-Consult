@@ -2,3 +2,4 @@
 // 🛠️ Force redeploy Mon Jun 23 12:26:45 EDT 2025
 // 🔄 Revert to June stable version: Mon Jun 23 14:16:36 EDT 2025
 // 🛠️ Fix: ETH price fallback, PulseIt button, Solana Pay in Paywall - Tue Jun 24 10:17:23 EDT 2025
+// 🔁 Trigger redeploy after server.js fix: Tue Jun 24 10:24:14 EDT 2025

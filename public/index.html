@@ -1,1 +1,110 @@
-404: Not Found
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CryptoConsult by Crimzn</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #f7931a;
+      font-family: 'Courier New', monospace;
+      text-align: center;
+      padding: 20px;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 5px;
+      font-family: inherit;
+    }
+    #response, #pulse {
+      white-space: pre-wrap;
+      margin-top: 20px;
+    }
+    .solana-button {
+      background-color: #a259ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .paywall {
+      display: none;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>CryptoConsult by Crimzn</h1>
+
+  <div>
+    <h3>Live Prices</h3>
+    <p id="prices">Loading...</p>
+  </div>
+
+  <div>
+    <h3>Ask CrimznBot</h3>
+    <input id="msg" placeholder="Ask me something..." />
+    <button onclick="send()">Send</button>
+    <div id="response"></div>
+  </div>
+
+  <div>
+    <h3>PulseIt Sentiment</h3>
+    <input id="pulseInput" placeholder="News or event..." />
+    <button onclick="pulse()">Analyze</button>
+    <div id="pulse"></div>
+  </div>
+
+  <div class="paywall" id="paywall">
+    <h3>🔒 You've hit the free question limit!</h3>
+    <button class="solana-button" onclick="window.open('https://solana.com/pay')">Pay with Solana</button>
+    <button class="solana-button" onclick="window.open('https://commerce.coinbase.com/checkout/your-checkout-id')">Pay with Coinbase</button>
+  </div>
+
+  <script>
+    let count = 0;
+    async function send() {
+      if (count >= 3) {
+        document.getElementById('paywall').style.display = 'block';
+        return;
+      }
+
+      const msg = document.getElementById('msg').value;
+      const res = await fetch('/api/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+      const data = await res.json();
+      document.getElementById('response').innerText = data.response;
+      count++;
+    }
+
+    async function pulse() {
+      const msg = document.getElementById('pulseInput').value;
+      const res = await fetch('/api/pulse/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+      const data = await res.json();
+      document.getElementById('pulse').innerText = data.response;
+    }
+
+    async function loadPrices() {
+      try {
+        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
+        const data = await res.json();
+        document.getElementById("prices").innerText =
+          `BTC: $${data.bitcoin.usd} | ETH: $${data.ethereum.usd} | SOL: $${data.solana.usd}`;
+      } catch (e) {
+        document.getElementById("prices").innerText = "Error loading prices.";
+      }
+    }
+
+    loadPrices();
+    setInterval(loadPrices, 30000);
+  </script>
+</body>
+</html>

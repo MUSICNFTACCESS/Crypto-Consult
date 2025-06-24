@@ -1,118 +1,122 @@
-// 🎯 CrimznBot + PulseIt server
+// 🧠 CrimznBot + 📣 PulseIt server
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 const path = require('path');
-const { Configuration, OpenAIApi } = require('openai');
 
-// 🔐 OpenAI Setup
-const configuration = new Configuration({
+// ✅ OpenAI setup (CommonJS-friendly)
+const OpenAI = require('openai');
+const configuration = {
   apiKey: process.env.OPENAI_API_KEY,
-});
-const openai = new OpenAIApi(configuration);
+};
+const openai = new OpenAI(configuration);
 
-// ⚙️ App Setup
+// ⚙️ App setup
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 🔧 Middleware
+// 🧱 Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// 📊 Live Price Fetcher
+// 📊 Live price fetcher
 const COINGECKO_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ondo&vs_currencies=usd';
 
 async function getPrice(token) {
   try {
     const res = await fetch(COINGECKO_URL);
     const data = await res.json();
-    return data[token]?.usd || 'N/A';
+    const tokenPrice = data[token.toLowerCase()];
+    if (tokenPrice && tokenPrice.usd) {
+      return `$${tokenPrice.usd}`;
+    }
   } catch (err) {
-    console.error('❌ Error fetching price:', err.message);
-    return 'N/A';
+    console.error("❌ Error fetching price:", err.message);
   }
+  return null;
 }
 
-// 🤖 CrimznBot - GPT Assistant + Price Queries
-app.post('/api/message', async (req, res) => {
+// 🤖 CrimznBot – GPT-powered assistant + live prices
+app.post('/api/ask', async (req, res) => {
   const msg = req.body.message?.toLowerCase() || '';
-  let response = "🤖 I'm not sure how to help with that yet.";
 
+  // Check for price question
   if (msg.includes('price')) {
-    if (msg.includes('btc')) {
-      const price = await getPrice('bitcoin');
-      response = `₿ Bitcoin (BTC) is currently $${price}`;
-    } else if (msg.includes('eth')) {
-      const price = await getPrice('ethereum');
-      response = `Ξ Ethereum (ETH) is sitting at $${price}`;
-    } else if (msg.includes('sol')) {
-      const price = await getPrice('solana');
-      response = `◎ Solana (SOL) is trading for $${price}`;
+    let response = '';
+    if (msg.includes('bitcoin') || msg.includes('btc')) {
+      const btc = await getPrice('bitcoin');
+      response = btc ? `🟠 BTC is currently trading at ${btc}` : `BTC price unavailable.`;
+    } else if (msg.includes('ethereum') || msg.includes('eth')) {
+      const eth = await getPrice('ethereum');
+      response = eth ? `🔵 ETH is currently trading at ${eth}` : `ETH price unavailable.`;
+    } else if (msg.includes('solana') || msg.includes('sol')) {
+      const sol = await getPrice('solana');
+      response = sol ? `🟣 SOL is trading around ${sol}` : `SOL price unavailable.`;
     } else if (msg.includes('ondo')) {
-      const price = await getPrice('ondo');
-      response = `💰 Ondo (ONDO) is valued at $${price}`;
+      const ondo = await getPrice('ondo');
+      response = ondo ? `💧 ONDO is at ${ondo} right now.` : `ONDO price unavailable.`;
     } else {
-      response = "⚠️ I can only pull prices for BTC, ETH, SOL, and ONDO for now.";
+      response = "⚠️ I can only fetch prices for BTC, ETH, SOL, and ONDO.";
     }
-  } else {
-    try {
-      const aiRes = await openai.createChatCompletion({
-        model: 'gpt-4',
-        messages: [
-          {
-            role: 'system',
-            content:
-              "You are CrimznBot, a crypto-native GPT assistant. You speak with confidence, edge, and a degen-savvy tone. You're bold, strategic, and always bring the alpha — but never give financial advice. Embrace meme culture, BTC maxis, macro trends, and market psychology. Keep it real.",
-          },
-          { role: 'user', content: msg },
-        ],
-        temperature: 0.7,
-      });
-
-      response = `🤖 ${aiRes.data.choices[0].message.content.trim()}`;
-    } catch (err) {
-      console.error('❌ OpenAI Error:', err.message);
-      response = "⚠️ CrimznBot couldn't reach the OpenAI server right now.";
-    }
+    return res.json({ response });
   }
 
-  res.json({ response });
-});
-
-// 📣 PulseIt - Rapid Market Reactor
-app.post('/api/pulse', async (req, res) => {
-  const input = req.body.message || '[No message]';
-
+  // CrimznBot default response (chat)
   try {
-    const pulseRes = await openai.createChatCompletion({
+    const aiRes = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: [
         {
           role: 'system',
-          content:
-            "You are PulseIt, a high-speed crypto hype announcer bot. Your role is to react instantly to crypto market news, war headlines, macro shocks, and political chaos like a live-streaming analyst. You're urgent, reactive, and have a sharp, no-BS tone.",
+          content: `You are CrimznBot – a crypto-native assistant with a bold, confident tone. You combine professional alpha with degen insights. Speak with clarity, fire, and purpose. Your job is to give sharp, no-BS answers to traders, investors, and crypto-curious users. Respond with swagger and real utility.`,
         },
-        { role: 'user', content: input },
+        { role: 'user', content: msg }
       ],
-      temperature: 0.85,
+      temperature: 0.7
     });
 
-    const reaction = pulseRes.data.choices[0].message.content.trim();
-    console.log(`📣 PulseIt: ${reaction}`);
-    res.json({ pulse: reaction });
+    const reply = aiRes.choices[0].message.content.trim();
+    res.json({ response: `🧠 ${reply}` });
+
   } catch (err) {
-    console.error('❌ PulseIt Error:', err.message);
-    res.json({ pulse: "⚠️ Pulse failed. Markets are eerily quiet..." });
+    console.error("OpenAI error:", err.message);
+    res.json({ response: "🚫 CrimznBot couldn't connect to OpenAI right now." });
   }
 });
 
-// 🧭 Serve Frontend
+// 📣 PulseIt – macro/news shock announcer
+app.post('/api/pulse', async (req, res) => {
+  const input = req.body.message || 'no message';
+
+  try {
+    const pulseRes = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: `You are PulseIt – a bold, rapid-fire crypto announcer bot. You react to market news, political chaos, macro shocks, and war headlines like a trader hopped on 3 espresso shots. No intro. No hesitation. Start with impact and end with fear or FOMO.`,
+        },
+        { role: 'user', content: input }
+      ],
+      temperature: 0.8
+    });
+
+    const reaction = pulseRes.choices[0].message.content.trim();
+    res.json({ response: `📣 PulseIt reaction: ${reaction}` });
+
+  } catch (err) {
+    console.error("PulseIt error:", err.message);
+    res.json({ response: "⚠️ Pulse failed. Chaos is quiet... for now." });
+  }
+});
+
+// 🏠 Fallback to index.html
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 🚀 Start Server
+// 🚀 Start server
 app.listen(PORT, () => {
   console.log(`🧠 CrimznBot + 📣 PulseIt server running on port ${PORT}`);
 });

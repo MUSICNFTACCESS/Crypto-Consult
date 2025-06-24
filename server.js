@@ -7,22 +7,19 @@ const { Configuration, OpenAIApi } = require('openai');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 🛡 Enable CORS for all routes
+// Middleware
 app.use(cors());
-
-// 🧱 Static files and JSON parsing
 app.use(express.static('public'));
 app.use(express.json());
 
-// 🔐 OpenAI setup
+// OpenAI setup (Render env var required)
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
 
-// 💸 CoinGecko live price fetcher
-const COINGECKO_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd';
-
+// Price fetcher
+const COINGECKO_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ondo&vs_currencies=usd';
 async function getPrice(token) {
   try {
     const res = await fetch(COINGECKO_URL);
@@ -34,7 +31,7 @@ async function getPrice(token) {
   }
 }
 
-// 🧠 CrimznBot — GPT-powered assistant
+// 🧠 CrimznBot — GPT-powered assistant + live prices
 app.post('/api/message', async (req, res) => {
   const msg = req.body.message?.toLowerCase() || '';
   let response = "🤖 I'm not sure how to help with that yet.";
@@ -49,8 +46,11 @@ app.post('/api/message', async (req, res) => {
     } else if (msg.includes('sol')) {
       const price = await getPrice('solana');
       response = `🧠 Solana (SOL) is $${price}`;
+    } else if (msg.includes('ondo')) {
+      const price = await getPrice('ondo');
+      response = `🧠 Ondo (ONDO) is $${price}`;
     } else {
-      response = "⚠️ I can only fetch BTC, ETH, and SOL prices for now.";
+      response = "⚠️ I can only fetch prices for BTC, ETH, SOL, and ONDO.";
     }
   } else {
     try {
@@ -60,7 +60,7 @@ app.post('/api/message', async (req, res) => {
           {
             role: 'system',
             content:
-              "You are CrimznBot — a crypto-native GPT assistant with a bold, confident tone. You answer with a mix of professional insight and degen energy. You specialize in Bitcoin, altcoins, macro trends, Solana, DeFi, and tokenomics. If the user asks about price, defer to real-time logic. Avoid saying 'as an AI'. Be sharp, concise, and always a little based.",
+              "You are CrimznBot — a crypto-native GPT assistant with a bold, confident tone. You combine professional alpha with degen insights. Speak concisely, skip filler, avoid robotic disclaimers like 'as an AI'. You're sharp, honest, and always a bit based. Specialize in Bitcoin, altcoins, macro trends, Solana, tokenomics, and real crypto knowledge.",
           },
           { role: 'user', content: msg },
         ],
@@ -87,7 +87,7 @@ app.post('/api/pulse', async (req, res) => {
         {
           role: 'system',
           content:
-            "You are PulseIt — an energetic, bold AI announcer that reacts to crypto, macro events, and power plays like a signal-sending insider. You never explain. You declare. Speak in short, sharp pulses. Use emojis if it fits. You’re not a chatbot. You’re a market whisperer with hype.",
+            "You are PulseIt — a bold, rapid-fire crypto announcer bot. You react to market news, political chaos, macro shocks, and war headlines like a signal-sending insider. Speak with intensity. Use emojis if it fits. No explaining — only reacting. Short, hypey, sharp, and slightly unhinged. Be memorable.",
         },
         { role: 'user', content: input },
       ],
@@ -103,12 +103,12 @@ app.post('/api/pulse', async (req, res) => {
   }
 });
 
-// 🧭 Fallback route for SPA
+// SPA fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 🚀 Launch the server
+// Start server
 app.listen(PORT, () => {
   console.log(`🧠 Crimzn + PulseIt server running on port ${PORT}`);
 });

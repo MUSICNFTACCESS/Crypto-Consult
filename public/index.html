@@ -3,108 +3,86 @@
 <head>
   <meta charset="UTF-8" />
   <title>CryptoConsult by Crimzn</title>
-  <style>
-    body {
-      background-color: #000;
-      color: #f7931a;
-      font-family: 'Courier New', monospace;
-      text-align: center;
-      padding: 20px;
-    }
-    input, button {
-      padding: 10px;
-      margin: 5px;
-      border-radius: 5px;
-      font-family: inherit;
-    }
-    #response, #pulse {
-      white-space: pre-wrap;
-      margin-top: 20px;
-    }
-    .solana-button {
-      background-color: #a259ff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .paywall {
-      display: none;
-      margin-top: 20px;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@1.10.10/lib/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.9.15/lib/index.umd.js"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1>CryptoConsult by Crimzn</h1>
 
-  <div>
-    <h3>Live Prices</h3>
-    <p id="prices">Loading...</p>
+  <div id="live-prices" class="sentiment-result">
+    <p>BTC: <span id="btc-price">Loading...</span></p>
+    <p>ETH: <span id="eth-price">Loading...</span></p>
+    <p>SOL: <span id="sol-price">Loading...</span></p>
   </div>
 
-  <div>
-    <h3>Ask CrimznBot</h3>
-    <input id="msg" placeholder="Ask me something..." />
-    <button onclick="send()">Send</button>
-    <div id="response"></div>
-  </div>
+  <section>
+    <h2>Talk to CrimznBot</h2>
+    <div class="chat-box" id="chat-box"></div>
+    <input id="user-input" type="text" placeholder="Ask me anything..." />
+    <button onclick="sendMessage()">Ask</button>
+    <div id="paywall" style="display: none;">
+      <p>You've hit your free limit. Unlock access:</p>
+      <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8', '_blank')">Pay 99.99 USDC</button>
+      <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b', '_blank')">Tip 1 USDC</button>
+      <button class="solana-button" onclick="connectSolana()">Pay with Solana</button>
+      <button onclick="window.open('https://t.me/Crimznbot', '_blank')">Contact via Telegram</button>
+    </div>
+  </section>
 
-  <div>
-    <h3>PulseIt Sentiment</h3>
-    <input id="pulseInput" placeholder="News or event..." />
-    <button onclick="pulse()">Analyze</button>
-    <div id="pulse"></div>
-  </div>
+  <section>
+    <h2>PulseIt Analyzer</h2>
+    <input id="pulse-input" type="text" placeholder="Enter a topic or headline..." />
+    <button onclick="analyzePulse()">Analyze</button>
+    <div id="pulse-output"></div>
+  </section>
 
-  <div class="paywall" id="paywall">
-    <h3>🔒 You've hit the free question limit!</h3>
-    <button class="solana-button" onclick="window.open('https://solana.com/pay')">Pay with Solana</button>
-    <button class="solana-button" onclick="window.open('https://commerce.coinbase.com/checkout/your-checkout-id')">Pay with Coinbase</button>
-  </div>
+  <section class="radar-section">
+    <h2 class="radar-section-h2">Cycle Top Radar</h2>
+    <div class="radar-section-content">
+      <p class="radar-section score-bullish">BTC dominance rising + ETF inflows strong = Bullish</p>
+      <p class="radar-section score-bearish">Bearish RSI divergence forming</p>
+      <p class="radar-section score-neutral">Funding rates are neutral</p>
+    </div>
+  </section>
 
-  <script>
-    let count = 0;
-    async function send() {
-      if (count >= 3) {
-        document.getElementById('paywall').style.display = 'block';
-        return;
-      }
+  <section>
+    <h2>Available Services</h2>
+    <ul class="service-list">
+      <li>📊 Technical Analysis</li>
+      <li>📁 Portfolio Reviews</li>
+      <li>🔐 Wallet Setup</li>
+      <li>💱 On/Off-Ramping</li>
+      <li>🪙 Token Allocation Strategy</li>
+    </ul>
+  </section>
 
-      const msg = document.getElementById('msg').value;
-      const res = await fetch('/api/message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg })
-      });
-      const data = await res.json();
-      document.getElementById('response').innerText = data.response;
-      count++;
-    }
+  <section class="payment-section">
+    <h2>Support & Payments</h2>
+    <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Pay $99.99 USDC</button>
+    <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')">Send Tip (1 USDC)</button>
+    <button class="solana-button" onclick="connectSolana()">Pay with Solana</button>
+    <button onclick="window.open('https://paypal.me/crimzn')">Pay with PayPal</button>
+  </section>
 
-    async function pulse() {
-      const msg = document.getElementById('pulseInput').value;
-      const res = await fetch('/api/pulse/news', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg })
-      });
-      const data = await res.json();
-      document.getElementById('pulse').innerText = data.response;
-    }
+  <section>
+    <h2>Contact</h2>
+    <button class="white-link-button" onclick="window.location.href='mailto:crimzncipriano@gmail.com'">Contact via Email</button>
+    <button class="white-link-button" onclick="window.open('https://t.me/Crimznbot')">Message on Telegram</button>
+  </section>
 
-    async function loadPrices() {
-      try {
-        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
-        const data = await res.json();
-        document.getElementById("prices").innerText =
-          `BTC: $${data.bitcoin.usd} | ETH: $${data.ethereum.usd} | SOL: $${data.solana.usd}`;
-      } catch (e) {
-        document.getElementById("prices").innerText = "Error loading prices.";
-      }
-    }
+<section>
+  <h2>ETF Inflows (BTC & ETH)</h2>
+  <button onclick="window.open('https://blockworks.co/bitcoin-etf-tracker')">BTC ETF Tracker (Blockworks)</button>
+  <button onclick="window.open('https://blockworks.co/ethereum-etf-tracker')">ETH ETF Tracker (Blockworks)</button>
+</section>
 
-    loadPrices();
-    setInterval(loadPrices, 30000);
-  </script>
+<section style="margin-top: 30px;">
+  <a href="radar.html" class="white-link-button">📡 Open Cycle Top Radar</a>
+</section>
+
+  <script src="script.js"></script>
 </body>
 </html>

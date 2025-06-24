@@ -7,6 +7,7 @@ async function sendMessage() {
 
   questionCount++;
   document.getElementById('chat-box').innerHTML = `<p class="user">You: ${message}</p>`;
+  input.value = ''; // Clear after send
 
   if (questionCount > 3) {
     document.getElementById('paywall').style.display = 'block';
@@ -14,39 +15,38 @@ async function sendMessage() {
   }
 
   try {
-    const res = await fetch('/ask', {
+    const res = await fetch('https://crimznbot.onrender.com/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question: message })
     });
 
     const data = await res.json();
-    const botReply = data.response || "🧠 CrimznBot couldn't process that. Try again.";
+    const botReply = data.response || "🧠 CrimznBot couldn’t process that.";
     document.getElementById('chat-box').innerHTML = `<p class="bot">${botReply}</p>`;
   } catch (err) {
     document.getElementById('chat-box').innerHTML = `<p class="bot">❌ CrimznBot error: ${err.message}</p>`;
   }
-
-  input.value = '';
 }
 
 async function analyzePulse() {
-  const input = document.getElementById('pulse-input').value;
+  const input = document.getElementById('pulse-input');
+  const topic = input.value.trim();
   const output = document.getElementById('pulse-output');
+  input.value = ''; // Clear after analyze
 
-  if (!input) return;
+  if (!topic) return;
 
   try {
     const res = await fetch('/api/pulse/news', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: input })
+      body: JSON.stringify({ message: topic })
     });
 
     const data = await res.json();
-    const response = data.response || "PulseIt could not interpret the sentiment.";
+    const response = data.response || "PulseIt could not determine sentiment.";
 
-    // Dynamically determine sentiment class
     let className = 'score-neutral';
     if (/bullish/i.test(response)) className = 'score-bullish';
     else if (/bearish/i.test(response)) className = 'score-bearish';
@@ -73,9 +73,8 @@ fetchPrices();
 setInterval(fetchPrices, 30000);
 
 function connectSolana() {
-  alert("⚠️ Solana Pay integration coming soon. Contact Crimzn directly to confirm payment.");
+  alert("⚠️ Solana Pay: 0.025 SOL required. This will open in your wallet.");
 }
-
 
 
 

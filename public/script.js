@@ -15,7 +15,7 @@ async function sendMessage() {
   }
 
   try {
-    const res = await fetch('https://crimznbot.onrender.com/ask', {
+const res = await fetch('https://crypto-consult.onrender.com/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question: message })

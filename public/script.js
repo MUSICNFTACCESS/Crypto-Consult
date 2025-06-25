@@ -1,4 +1,4 @@
-let questionCount = 0;
+[Blet questionCount = 0;
 
 async function sendMessage() {
   const input = document.getElementById('user-input');
@@ -72,7 +72,38 @@ async function fetchPrices() {
 fetchPrices();
 setInterval(fetchPrices, 30000);
 
-// --- Solana Wallet Connect Placeholder ---
+// --- Solana Wallet Connect / Disconnect ---
+let wallet = null;
+
+async function connectWallet() {
+  try {
+    const provider = window.solana;
+    if (!provider || !provider.isPhantom) {
+      alert("Phantom Wallet not found. Please install it.");
+      return;
+    }
+
+    const resp = await provider.connect();
+    wallet = resp.publicKey.toString();
+    alert(`✅ Connected wallet: ${wallet}`);
+    document.getElementById("connect-button").style.display = "none";
+    document.getElementById("disconnect-button").style.display = "inline-block";
+  } catch (err) {
+    console.error("Wallet connect error:", err);
+    alert("❌ Failed to connect wallet.");
+  }
+}
+
+function disconnectWallet() {
+  if (window.solana && window.solana.disconnect) {
+    window.solana.disconnect();
+    alert("👋 Wallet disconnected.");
+    wallet = null;
+    document.getElementById("connect-button").style.display = "inline-block";
+    document.getElementById("disconnect-button").style.display = "none";
+  }
+}
 function connectSolana() {
   alert('🪙 Solana Pay: 0.25 SOL required. This will open in your wallet.');
 }
+

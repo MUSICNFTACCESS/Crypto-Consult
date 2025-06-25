@@ -10,70 +10,74 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>CryptoConsult by Crimzn</h1>
+<!-- 🔗 Wallet Controls -->
+<div style="text-align: center; margin-bottom: 20px;">
+  <button id="connect-button" class="solana-button" onclick="connectWallet()">👛 Connect Wallet</button>
+  <button id="disconnect-button" class="solana-button" onclick="disconnectWallet()" style="display:none;">🚫 Disconnect</button>
+</div>
 
-  <div id="live-prices" class="sentiment-result">
-    <p>BTC: <span id="btc-price">Loading...</span></p>
-    <p>ETH: <span id="eth-price">Loading...</span></p>
-    <p>SOL: <span id="sol-price">Loading...</span></p>
-  </div>
+<h1>CryptoConsult by Crimzn</h1>
 
-  <section>
-    <h2>Talk to CrimznBot</h2>
-    <div class="chat-box" id="chat-box"></div>
-    <input id="user-input" type="text" placeholder="Ask me anything..." />
-    <button onclick="sendMessage()">Ask</button>
-    <div id="paywall" style="display: none;">
-      <p>You've hit your free limit. Unlock access:</p>
-      <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8', '_blank')">Pay 99.99 USDC</button>
-      <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b', '_blank')">Tip 1 USDC</button>
-      <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025" class="solana-button">Pay with Solana</a>
-      <button onclick="window.open('https://t.me/Crimznbot', '_blank')">Contact via Telegram</button>
-    </div>
-  </section>
+<div id="live-prices" class="sentiment-result">
+  <p>BTC: <span id="btc-price">Loading...</span></p>
+  <p>ETH: <span id="eth-price">Loading...</span></p>
+  <p>SOL: <span id="sol-price">Loading...</span></p>
+</div>
 
-  <section>
-    <h2>PulseIt Analyzer</h2>
-    <input id="pulse-input" type="text" placeholder="Enter a topic or headline..." />
-    <button onclick="analyzePulse()">Analyze</button>
-    <div id="pulse-output"></div>
-  </section>
-
-  <section class="radar-section">
-    <h2 class="radar-section-h2">Cycle Top Detector</h2>
-    <div class="radar-section-content">
-      <p class="radar-section score-bullish">BTC dominance rising + ETF inflows strong = Bullish</p>
-      <p class="radar-section score-bearish">Bearish RSI divergence forming</p>
-      <p class="radar-section score-neutral">Funding rates are neutral</p>
-    </div>
-  </section>
-
-  <section>
-    <h2>Available Services</h2>
-    <ul class="service-list">
-      <li>📊 Technical Analysis</li>
-      <li>📁 Portfolio Reviews</li>
-      <li>🔐 Wallet Setup</li>
-      <li>💱 On/Off-Ramping</li>
-      <li>🪙 Token Allocation Strategy</li>
-    </ul>
-  </section>
-
-  <section class="payment-section">
-    <h2>Support & Payments</h2>
-    <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Pay $99.99 USDC</button>
-    <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')">Send Tip (1 USDC)</button>
-
+<section>
+  <h2>Talk to CrimznBot</h2>
+  <div class="chat-box" id="chat-box"></div>
+  <input id="user-input" type="text" placeholder="Ask me anything..." />
+  <button onclick="sendMessage()">Ask</button>
+  <div id="paywall" style="display: none;">
+    <p>You've hit your free limit. Unlock access:</p>
+    <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8', '_blank')">Pay 99.99 USDC</button>
+    <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b', '_blank')">Tip 1 USDC</button>
     <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025" class="solana-button">Pay with Solana</a>
-   
-    <button onclick="window.open('https://paypal.me/crimzn')">Pay with PayPal</button>
-  </section>
+    <button onclick="window.open('https://t.me/Crimznbot', '_blank')">Contact via Telegram</button>
+  </div>
+</section>
 
-  <section>
-    <h2>Contact</h2>
-    <button class="white-link-button" onclick="window.location.href='mailto:crimzncipriano@gmail.com'">Contact via Email</button>
-    <button class="white-link-button" onclick="window.open('https://t.me/Crimznbot')">Message on Telegram</button>
-  </section>
+<section>
+  <h2>PulseIt Analyzer</h2>
+  <input id="pulse-input" type="text" placeholder="Enter a topic or headline..." />
+  <button onclick="analyzePulse()">Analyze</button>
+  <div id="pulse-output"></div>
+</section>
+
+<section class="radar-section">
+  <h2 class="radar-section-h2">Cycle Top Detector</h2>
+  <div class="radar-section-content">
+    <p class="radar-section score-bullish">BTC dominance rising + ETF inflows strong = Bullish</p>
+    <p class="radar-section score-bearish">Bearish RSI divergence forming</p>
+    <p class="radar-section score-neutral">Funding rates are neutral</p>
+  </div>
+</section>
+
+<section>
+  <h2>Available Services</h2>
+  <ul class="service-list">
+    <li>📊 Technical Analysis</li>
+    <li>📁 Portfolio Reviews</li>
+    <li>🔐 Wallet Setup</li>
+    <li>💱 On/Off-Ramping</li>
+    <li>🪙 Token Allocation Strategy</li>
+  </ul>
+</section>
+
+<section class="payment-section">
+  <h2>Support & Payments</h2>
+  <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Pay $99.99 USDC</button>
+  <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')">Send Tip (1 USDC)</button>
+  <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025" class="solana-button">Pay with Solana</a>
+  <button onclick="window.open('https://paypal.me/crimzn')">Pay with PayPal</button>
+</section>
+
+<section>
+  <h2>Contact</h2>
+  <button class="white-link-button" onclick="window.location.href='mailto:crimzncipriano@gmail.com'">Contact via Email</button>
+  <button class="white-link-button" onclick="window.open('https://t.me/Crimznbot')">Message on Telegram</button>
+</section>
 
 <section>
   <h2>ETF Inflows (BTC & ETH)</h2>
@@ -85,6 +89,6 @@
   <a href="radar.html" class="white-link-button">📡 Open Cycle Top Radar</a>
 </section>
 
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

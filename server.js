@@ -102,7 +102,8 @@ app.post("/api/pulse", async (req, res) => {
   }
 });
 
-// 🌐 Start server
+// 🌐 Start Crimzn AI Server
 app.listen(port, () => {
   console.log(`🚀 CrimznBot + PulseIt live at http://localhost:${port}`);
+  console.log("🧠 GPT-4o fully online. Awaiting your genius input...");
 });

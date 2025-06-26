@@ -107,3 +107,13 @@ function connectSolana() {
   alert('🪙 Solana Pay: 0.25 SOL required. This will open in your wallet.');
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("submit-button").addEventListener("click", sendMessage);
+  document.getElementById("pulse-button").addEventListener("click", analyzePulse);
+  document.getElementById("connect-button").addEventListener("click", connectWallet);
+  document.getElementById("disconnect-button").addEventListener("click", disconnectWallet);
+  document.getElementById("solana-pay-button").addEventListener("click", connectSolana);
+  
+  fetchPrices();
+  setInterval(fetchPrices, 30000);
+});

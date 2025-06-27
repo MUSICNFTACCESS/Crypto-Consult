@@ -117,3 +117,4 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchPrices();
   setInterval(fetchPrices, 30000);
 });
+document.body.insertAdjacentHTML('beforeend', '<p style="color:lime">✅ script.js is LIVE!</p>');

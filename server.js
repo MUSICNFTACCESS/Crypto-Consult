@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 app.use(express.static("public"));
 
 // 🤖 CrimznBot Route
-app.post("/api/chat", async (req, res) => {
+app.post("/api/ask", async (req, res) => {
   const { message } = req.body;
 
   if (!message) {
@@ -27,7 +27,7 @@ app.post("/api/chat", async (req, res) => {
       messages: [
         {
           role: "system",
-          content: "You are CrimznBot, a crypto consultant with real-time market knowledge. Keep answers sharp, insightful, and alpha-packed."
+          content: "You are CrimznBot, a crypto consultant with real-time market knowledge. Keep answers concise, actionable, and in a tone that’s smart, strategic, and a little degen. Always reply like Crimzn would. If asked about prices, fetch the current live price via your market logic and give updated numbers in USD."
         },
         {
           role: "user",

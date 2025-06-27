@@ -14,3 +14,4 @@
 // 🔁 Render bust + deploy trigger: Fri Jun 27 06:43:03 EDT 2025
 // 💥 Rename script cache-bust Fri Jun 27 07:12:00 EDT 2025
 // 💥 Rename script cache-bust Fri Jun 27 07:12:46 EDT 2025
+// ✅ Final script.js fix on Fri Jun 27 07:25:40 EDT 2025

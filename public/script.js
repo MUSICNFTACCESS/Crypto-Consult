@@ -43,21 +43,34 @@ document.querySelector("form").addEventListener("submit", async (e) => {
   }
 });
 
-// 🔹 PulseIt Analyzer
-document.getElementById("pulseit-btn").addEventListener("click", () => {
-  const input = document.getElementById("pulseit-input").value.toLowerCase();
-  const result = document.getElementById("pulseit-result");
-  if (!input) return (result.innerText = "❗ Please enter a topic.");
+// PulseIt Analyzer
+document.addEventListener("DOMContentLoaded", () => {
+  const pulseitBtn = document.getElementById("pulseit-btn");
+  const pulseitInput = document.getElementById("pulseit-input");
+  const pulseitResult = document.getElementById("pulseit-result");
 
-  const sentiment =
-    input.includes("war") || input.includes("hacks") ? "Bearish" :
-    input.includes("etf") || input.includes("adoption") ? "Bullish" :
-    "Neutral";
+  if (pulseitBtn && pulseitInput && pulseitResult) {
+    pulseitBtn.addEventListener("click", () => {
+      const input = pulseitInput.value.toLowerCase().trim();
 
-  result.innerHTML =
-    sentiment === "Bullish"
-      ? "<span style='color: lightgreen;'>📈 Bullish</span>"
-      : sentiment === "Bearish"
-      ? "<span style='color: red;'>📉 Bearish</span>"
-      : "<span style='color: gold;'>🟡 Neutral</span>";
+      if (!input) {
+        pulseitResult.innerText = "❗ Please enter a topic.";
+        return;
+      }
+
+      const sentiment =
+        input.includes("war") || input.includes("hacks")
+          ? "Bearish"
+          : input.includes("etf") || input.includes("adoption")
+          ? "Bullish"
+          : "Neutral";
+
+      pulseitResult.innerHTML =
+        sentiment === "Bullish"
+          ? "<span style='color: lightgreen;'>📈 Bullish</span>"
+          : sentiment === "Bearish"
+          ? "<span style='color: red;'>📉 Bearish</span>"
+          : "<span style='color: gold;'>🟡 Neutral</span>";
+    });
+  }
 });

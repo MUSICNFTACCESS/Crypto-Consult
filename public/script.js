@@ -60,3 +60,4 @@ document.getElementById("analyze-btn").onclick = () => {
 
   output.innerHTML = `<strong>PulseIt:</strong> ${sentiment}`;
 };
+// 🚀 Force redeploy Sat Jun 28 19:20:11 EDT 2025

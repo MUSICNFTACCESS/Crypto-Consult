@@ -50,29 +50,24 @@ app.post("/api/ask", async (req, res) => {
   if (bullish.some(w => lower.includes(w))) pulse = "Bullish 🟢";
   else if (bearish.some(w => lower.includes(w))) pulse = "Bearish 🔴";
 
-  // 💰 Real-time price check
-  const tokens = [ "bitcoin", "btc", "ethereum", "eth", "solana", "sol", "ondo", "link", "ena", "pepe", "doge", "dot", "avax", "matic", "ada", "ton", "xrp", "xlm", "shib", "uni", "ltc", "atom", "near", "apt", "arb", "op", "kaspa", "inj", "fet", "gala", "render", "snx", "pyth", "sui", "beam", "mina", "axl", "joe", "stx", "blur", "jup", "mantra", "celestia", "ocean", "zil", "metis", "radix", "hnt", "bsv", "fil", "zec", "ckb", "lrc", "yfi", "1inch", "comp", "bat", "enj", "woo", "cake", "chz", "bal", "band", "dydx", "nexo", "rune", "rndr", "lido", "sxp", "hbar", "icp", "egld", "grt", "dai", "usdt", "usdc", "fdusd", "tusd", "frax", "rai", "gusd" ];
-  const found = tokens.find(t => lower.includes(t) && lower.includes("price"));
+// ✅ Real-Time Price route
+app.get("/api/prices", async (req, res) => {
+  try {
+    const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
+    const data = await response.json();
 
-  if (found) {
-    try {
-      const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${found}&vs_currencies=usd`);
-      const priceData = await priceRes.json();
-      const price = priceData[found]?.usd;
-
-      if (price) {
-        return res.json({
-          response: `🔹 The current price of ${found.toUpperCase()} is **$${price.toLocaleString()} USD**.`,
-          pulse
-        });
-      } else {
-        throw new Error("Price not available");
-      }
-    } catch (err) {
-      console.error("❌ Price fetch failed:", err.message);
-      return res.json({ response: "Couldn’t fetch price right now. Try again shortly.", pulse });
-    }
+    res.json({
+      price: {
+        bitcoin: data.bitcoin.usd,
+        ethereum: data.ethereum.usd,
+        solana: data.solana.usd,
+      },
+    });
+  } catch (err) {
+    console.error("Price Fetch Error:", err);
+    res.status(500).json({ error: "Failed to fetch prices" });
   }
+});
 
   // 🎯 GPT-4o Fallback — Strategic Tone
   try {

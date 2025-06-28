@@ -50,19 +50,21 @@ app.post("/api/ask", async (req, res) => {
   if (bullish.some(w => lower.includes(w))) pulse = "Bullish 🟢";
   else if (bearish.some(w => lower.includes(w))) pulse = "Bearish 🔴";
 
-// ✅ Real-Time Price route
+// ✅ Real-Time Price route — now works with or without query params
 app.get("/api/prices", async (req, res) => {
+  const ids = req.query.ids || "bitcoin,ethereum,solana";
+  const vs = req.query.vs || "usd";
+
   try {
-    const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
+    const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=${vs}`);
     const data = await response.json();
 
-    res.json({
-      price: {
-        bitcoin: data.bitcoin.usd,
-        ethereum: data.ethereum.usd,
-        solana: data.solana.usd,
-      },
-    });
+    const price = {};
+    for (const key in data) {
+      price[key] = data[key][vs];
+    }
+
+    res.json({ price });
   } catch (err) {
     console.error("Price Fetch Error:", err);
     res.status(500).json({ error: "Failed to fetch prices" });

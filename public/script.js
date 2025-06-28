@@ -1,7 +1,6 @@
 let questionCount = 0;
 const maxFreeQuestions = 3;
 
-// ✅ CrimznBot Handler
 document.getElementById("ask-btn").onclick = async () => {
   const input = document.getElementById("user-input");
   const chat = document.getElementById("chat-output");
@@ -41,14 +40,13 @@ document.getElementById("ask-btn").onclick = async () => {
         <div style="font-size:0.9em;">📊 PulseIt Sentiment: ${data.pulse}</div>
       ` + chat.innerHTML;
     } else {
-      throw new Error(data.error || "No response from CrimznBot");
+      throw new Error("No response from CrimznBot.");
     }
   } catch (err) {
     chat.innerHTML = `<div style="color:red;"><strong>Error:</strong> ${err.message}</div>` + chat.innerHTML;
   }
 };
 
-// ✅ PulseIt Sentiment Analyzer (freeform input)
 document.getElementById("pulse-btn").onclick = async () => {
   const input = document.getElementById("pulse-input");
   const pulseOutput = document.getElementById("pulse-output");
@@ -78,14 +76,13 @@ document.getElementById("pulse-btn").onclick = async () => {
   }
 };
 
-// ✅ Realtime Price Fetcher
 async function fetchPrices() {
   try {
     const res = await fetch("/api/prices?ids=bitcoin,ethereum,solana&vs=usd");
     const data = await res.json();
-    document.getElementById("btc-price").textContent = "$" + data.price.bitcoin;
-    document.getElementById("eth-price").textContent = "$" + data.price.ethereum;
-    document.getElementById("sol-price").textContent = "$" + data.price.solana;
+    document.getElementById("btc-price").textContent = "$" + data.price.bitcoin.usd;
+    document.getElementById("eth-price").textContent = "$" + data.price.ethereum.usd;
+    document.getElementById("sol-price").textContent = "$" + data.price.solana.usd;
   } catch {
     document.getElementById("btc-price").textContent = "N/A";
     document.getElementById("eth-price").textContent = "N/A";

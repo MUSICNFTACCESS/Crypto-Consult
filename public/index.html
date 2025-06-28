@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>CryptoConsult by Crimzn</title>
-  <link rel="icon" href="favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
   <style>
     body {
       background-color: #000;
@@ -13,145 +14,138 @@
       padding: 20px;
     }
     h1, h2 {
-      margin-top: 30px;
+      color: #f7931a;
     }
-    button {
-      padding: 10px 20px;
-      margin: 6px;
-      border: none;
-      border-radius: 8px;
+    button, input {
       font-family: monospace;
-      cursor: pointer;
-    }
-    .coinbase { background-color: #1652f0; color: white; }
-    .solana { background-color: #a259ff; color: white; }
-    .paypal { background-color: #ffc439; color: black; }
-    .contact-btn { background-color: #333; color: #f7931a; }
-    .radar-btn { background-color: #f7931a; color: black; }
-    #chat-box, #pulseit-result {
-      margin-top: 20px;
-      min-height: 30px;
-    }
-    input {
-      padding: 8px;
-      font-family: monospace;
-      width: 250px;
+      padding: 10px;
       margin: 5px;
+      border-radius: 6px;
+    }
+    #chatbox, #pulsebox {
+      margin-top: 20px;
+    }
+    .bot {
+      color: lightgreen;
+    }
+    .user {
+      color: orange;
+    }
+    .solana-button {
+      background: linear-gradient(to right, #9945FF, #14F195);
+      color: white;
+      border: none;
+    }
+    .paypal-button {
+      background-color: #ffc439;
+      border: none;
+      color: black;
+    }
+    .price {
+      margin: 5px;
+      font-size: 1.2em;
     }
   </style>
 </head>
 <body>
   <h1>CryptoConsult by Crimzn</h1>
-  <p>Empowering you with real-time crypto insights, technical analysis, and raw degen truth. Talk to CrimznBot, get PulseIt sentiment, and book a session anytime.</p>
+
+  <p>Talk to CrimznBot, get PulseIt sentiment, and book a session anytime.</p>
 
   <h2>📈 Live Prices</h2>
-  <p>BTC: <span id="btc-price">Loading...</span></p>
-  <p>ETH: <span id="eth-price">Loading...</span></p>
-  <p>SOL: <span id="sol-price">Loading...</span></p>
+  <div class="price">BTC: $<span id="btc-price">N/A</span></div>
+  <div class="price">ETH: $<span id="eth-price">N/A</span></div>
+  <div class="price">SOL: $<span id="sol-price">N/A</span></div>
 
-  <h2>🛠 Available Services</h2>
-  <ul style="list-style: none; padding: 0;">
-    <li>✔ Technical & Fundamental Analysis</li>
-    <li>✔ Wallet Setup & Crypto Security</li>
-    <li>✔ Onboarding, Off-ramping & Capital Allocation</li>
-    <li>✔ Strategy Sessions, Project Deep Dives & More</li>
+  <h2>🛠️ Available Services</h2>
+  <ul style="list-style:none;padding-left:0;">
+    <li>✔️ Technical & Fundamental Analysis</li>
+    <li>✔️ Wallet Setup & Crypto Security</li>
+    <li>✔️ Onboarding, Off-ramping</li>
+    <li>✔️ Capital Allocation</li>
+    <li>✔️ Strategy Sessions, Project Dives & More</li>
   </ul>
 
   <h2>💳 Support & Payments</h2>
-  <button class="coinbase" onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8', '_blank')">Book a Consultation – 99.99 USDC</button><br>
-  <button class="coinbase" onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b', '_blank')">Send Tip – 1 USDC</button><br>
-  <button class="solana" onclick="window.open('solana:https://solana.com/pay?recipient=Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF&amount=0.025&label=CrimznConsult', '_blank')">Pay with Solana – 0.025 SOL</button><br>
-  <button class="paypal" onclick="window.open('https://www.paypal.me/crimzn', '_blank')">Pay with PayPal</button>
+  <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')" class="solana-button">Book a Consultation – 99.99 USDC</button>
+  <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')" class="solana-button">Send Tip - 1 USDC</button>
+  <button onclick="window.open('solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CrimznConsult')" class="solana-button">Pay with Solana - 0.025 SOL</button>
+  <button onclick="window.open('https://paypal.me/crimzn')" class="paypal-button">Pay with PayPal</button>
 
   <h2>🤖 Talk to CrimznBot</h2>
-  <input id="user-input" placeholder="Ask me anything..." />
-  <button id="submit-btn">Send</button>
-  <div id="chat-box"></div>
+  <div id="chatbox">
+    <input type="text" id="user-input" placeholder="Ask me anything..." />
+    <button onclick="sendMessage()">Send</button>
+    <p class="user" id="user-msg"></p>
+    <p class="bot" id="bot-msg"></p>
+  </div>
 
   <h2>📊 PulseIt Sentiment Analyzer</h2>
-  <input id="pulseit-input" placeholder="Enter a topic..." />
-  <button id="pulseit-btn">Analyze</button>
-  <div id="pulseit-result"></div>
+  <div id="pulsebox">
+    <input type="text" id="pulse-input" placeholder="Type something like 'Trump'" />
+    <button onclick="analyzePulse()">Analyze</button>
+    <p id="pulse-output" class="bot">Awaiting input...</p>
+  </div>
 
-  <h2>📮 Contact Me</h2>
-  <button class="contact-btn" onclick="window.open('mailto:crimzncipriano@gmail.com')">Contact via Email</button>
-  <button class="contact-btn" onclick="window.open('https://t.me/Crimznbot')">Contact via Telegram</button>
+  <h2>📬 Contact Me</h2>
+  <button onclick="window.open('mailto:crimzncipriano@gmail.com')">Contact via Email</button>
+  <button onclick="window.open('https://t.me/Crimznbot')">Contact via Telegram</button>
 
-  <h2>📡 Cycle Top Detector</h2>
-  <button class="radar-btn" onclick="window.open('radar.html', '_blank')">Open Cycle Radar</button>
+  <h2>📡 Cycle Top Radar</h2>
+  <iframe src="https://www.tradingview.com/widgetembed/?symbol=COINBASE:BTCUSD&interval=1H&theme=dark" width="100%" height="300" frameborder="0"></iframe>
 
+  <h2>📊 ETF Flows</h2>
+  <p><a href="https://www.farside.co.uk/ETFs/BTC" target="_blank" style="color:#00f">BTC ETF Tracker (Farside)</a></p>
+  <p><a href="https://pro.nansen.ai/etf" target="_blank" style="color:#00f">ETH ETF Tracker (Nansen)</a></p>
+
+  <audio id="bg-music" src="autoplay.mp3"></audio>
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      fetchPrice("bitcoin", "btc-price");
-      fetchPrice("ethereum", "eth-price");
-      fetchPrice("solana", "sol-price");
+    document.addEventListener('click', () => {
+      const music = document.getElementById('bg-music');
+      if (music && music.paused) music.play();
+    }, { once: true });
 
-      const submitBtn = document.getElementById("submit-btn");
-      const userInput = document.getElementById("user-input");
-      const chat = document.getElementById("chat-box");
+    async function sendMessage() {
+      const input = document.getElementById('user-input').value;
+      document.getElementById('user-msg').textContent = "You: " + input;
+      document.getElementById('bot-msg').textContent = "CrimznBot: ...";
 
-      if (submitBtn && userInput && chat) {
-        submitBtn.addEventListener("click", async (e) => {
-          e.preventDefault();
-          const msg = userInput.value.trim();
-          if (!msg) return;
-          chat.innerHTML = `<div style="color: orange;">You: ${msg}</div>`;
-          userInput.value = "";
+      const res = await fetch("/api/crimznbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: input })
+      });
+      const data = await res.json();
+      document.getElementById('bot-msg').textContent = "CrimznBot: " + data.reply;
+    }
 
-          try {
-            const res = await fetch("/api/ask", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ message: msg })
-            });
-            const data = await res.json();
-            chat.innerHTML += `<div style="color: lightgreen;">CrimznBot: ${data.response}</div>`;
-          } catch (err) {
-            chat.innerHTML += `<div style="color:red;">Error: ${err.message || "No response."}</div>`;
-          }
-        });
+    async function analyzePulse() {
+      const input = document.getElementById('pulse-input').value;
+      const res = await fetch("/api/pulseit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: input })
+      });
+      const data = await res.json();
+      document.getElementById('pulse-output').textContent = data.result;
+    }
+
+    async function fetchPrices() {
+      try {
+        const res = await fetch("/api/price");
+        const data = await res.json();
+        document.getElementById("btc-price").textContent = data.btc || "N/A";
+        document.getElementById("eth-price").textContent = data.eth || "N/A";
+        document.getElementById("sol-price").textContent = data.sol || "N/A";
+      } catch {
+        document.getElementById("btc-price").textContent = "N/A";
+        document.getElementById("eth-price").textContent = "N/A";
+        document.getElementById("sol-price").textContent = "N/A";
       }
+    }
 
-      const pulseitBtn = document.getElementById("pulseit-btn");
-      const pulseitInput = document.getElementById("pulseit-input");
-      const pulseitResult = document.getElementById("pulseit-result");
-
-      if (pulseitBtn && pulseitInput && pulseitResult) {
-        pulseitBtn.addEventListener("click", () => {
-          const input = pulseitInput.value.toLowerCase().trim();
-          if (!input) {
-            pulseitResult.innerText = "⚠️ Please enter a topic.";
-            return;
-          }
-
-          const sentiment =
-            input.includes("war") || input.includes("hacks")
-              ? "Bearish"
-              : input.includes("etf") || input.includes("adoption") || input.includes("trump")
-              ? "Bullish"
-              : "Neutral";
-
-          pulseitResult.innerHTML =
-            sentiment === "Bullish"
-              ? "<span style='color: lightgreen;'>📈 Bullish</span>"
-              : sentiment === "Bearish"
-              ? "<span style='color: red;'>📉 Bearish</span>"
-              : "<span style='color: gold;'>🟠 Neutral</span>";
-        });
-      }
-
-      async function fetchPrice(symbol, elementId) {
-        try {
-          const res = await fetch(`/api/price?id=${symbol}&vs=usd`);
-          const data = await res.json();
-          const price = data[symbol]?.usd ?? "N/A";
-          document.getElementById(elementId).innerText = `$${price.toLocaleString()}`;
-        } catch (error) {
-          console.error("Price fetch error for", symbol, error);
-          document.getElementById(elementId).innerText = "Error";
-        }
-      }
-    });
+    fetchPrices();
+    setInterval(fetchPrices, 60000);
   </script>
 </body>
 </html>

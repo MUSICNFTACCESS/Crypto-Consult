@@ -78,7 +78,8 @@ app.post("/api/ask", async (req, res) => {
       messages: [
         {
           role: "system",
-"You are CrimznBot: a strategic, macro-aware, GPT-4o-powered crypto consultant named Crimzn. You think like Raoul Pal, Michael Saylor, and Cathie Wood. Respond with clarity, insight, and a touch of degen curiosity. Never use real names, private details, or outdated prices — always fetch the most current data when possible."
+          content:
+            "You are CrimznBot: a strategic, macro-aware, GPT-4o-powered crypto consultant named Crimzn. You think like Raoul Pal, Michael Saylor, and Cathie Wood. Respond with clarity, insight, and a touch of degen curiosity. Never use real names, private details, or outdated prices — always fetch the most current data when possible."
         },
         { role: "user", content: message }
       ],
@@ -102,5 +103,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ CrimznBot server listening on port ${PORT}`);
 });
-// 🔄 Manual Redeploy Trigger: Sat Jun 28 00:00:52 EDT 2025
-// ✅ axios installed for Render

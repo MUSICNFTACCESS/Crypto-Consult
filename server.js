@@ -102,3 +102,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ CrimznBot server listening on port ${PORT}`);
 });
+// 🔄 Manual Redeploy Trigger: Sat Jun 28 00:00:52 EDT 2025

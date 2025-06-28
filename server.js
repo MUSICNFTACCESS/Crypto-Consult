@@ -1,19 +1,4 @@
-const express = require("express");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-const fetch = require("node-fetch");
-const { OpenAI } = require("openai");
-require("dotenv").config();
-
-const app = express();
-const port = process.env.PORT || 3000;
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static("public"));
-
-// 🤖 CrimznBot Route
+// 🤖 CrimznBot with Real-Time Price Logic
 app.post("/api/ask", async (req, res) => {
   const { message } = req.body;
 
@@ -21,13 +6,50 @@ app.post("/api/ask", async (req, res) => {
     return res.status(400).json({ error: "Message is required" });
   }
 
+  const lowerMsg = message.toLowerCase();
+
+  // 🪙 Keyword-based live price check
+  const tokens = {
+    bitcoin: "btc",
+    btc: "bitcoin",
+    ethereum: "eth",
+    eth: "ethereum",
+    sol: "solana",
+    solana: "solana",
+    ondo: "ondo"
+  };
+
+  const found = Object.keys(tokens).find((key) => lowerMsg.includes(key) && lowerMsg.includes("price"));
+
+  if (found) {
+    const id = tokens[found];
+    try {
+      const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`);
+      const priceData = await priceRes.json();
+      const price = priceData[id]?.usd;
+
+      if (price) {
+        return res.json({
+          response: `🔹 The current price of ${found.toUpperCase()} is **$${price.toLocaleString()} USD**.`
+        });
+      } else {
+        throw new Error("Price not available");
+      }
+    } catch (err) {
+      console.error("Price fetch error:", err.message);
+      return res.status(500).json({ error: "Failed to get live price." });
+    }
+  }
+
+  // 💬 Fallback to GPT if not a price question
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "You are CrimznBot, a crypto consultant with real-time market knowledge. Keep answers concise, actionable, and in a tone that’s smart, strategic, and a little degen. Always reply like Crimzn would. If asked about prices, fetch the current live price via your market logic and give updated numbers in USD."
+          content:
+            "You are CrimznBot, a sharp, degen-savvy crypto consultant. Give concise, accurate answers. If the question isn't about price, respond with professional but edgy tone. NEVER make up prices."
         },
         {
           role: "user",
@@ -39,9 +61,8 @@ app.post("/api/ask", async (req, res) => {
 
     const reply = completion.choices[0].message.content.trim();
     return res.json({ response: reply });
-
   } catch (err) {
-    console.error("Chat error:", err.message);
+    console.error("GPT fallback error:", err.message);
     return res.status(500).json({ error: "CrimznBot failed to respond." });
   }
 });

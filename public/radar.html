@@ -53,50 +53,34 @@
   <h1>📡 The Radar</h1>
   <p>This dashboard helps visualize potential crypto market cycle tops using key metrics, charts, and ETF flows.</p>
 
-  <!-- Chart Tabs -->
+  <!-- Tabs -->
   <div id="chart-tabs">
     <div class="tab active" onclick="setChart('btc')">📈 BTC/USD</div>
-    <div class="tab" onclick="setChart('eth')">📉 ETH/USD</div>
-    <div class="tab" onclick="setChart('sol')">⚡ SOL/USD</div>
+    <div class="tab" onclick="setChart('ethbtc')">🔁 ETH/BTC</div>
+    <div class="tab" onclick="setChart('solbtc')">⚡ SOL/BTC</div>
+    <div class="tab" onclick="setChart('fear')">😱 Fear & Greed</div>
+    <div class="tab" onclick="setChart('heatmap')">🌡️ Altcoin Heatmap</div>
   </div>
 
-  <!-- Chart Embed -->
-  <div id="chart-container">
-    <iframe id="tv-chart" src="https://www.tradingview.com/chart/" allowfullscreen></iframe>
+  <!-- Iframes -->
+  <div id="iframe-container">
+    <iframe id="btc" src="https://www.tradingview.com/embed-widget/mini-symbol-overview/?symbol=BITSTAMP:BTCUSD&locale=en" style="display:block;"></iframe>
+    <iframe id="ethbtc" src="https://www.tradingview.com/embed-widget/mini-symbol-overview/?symbol=BINANCE:ETHBTC&locale=en" style="display:none;"></iframe>
+    <iframe id="solbtc" src="https://www.tradingview.com/embed-widget/mini-symbol-overview/?symbol=BINANCE:SOLBTC&locale=en" style="display:none;"></iframe>
+    <iframe id="fear" src="https://alternative.me/crypto/fear-and-greed-index/" style="display:none;"></iframe>
+    <iframe id="heatmap" src="https://coin360.com/crypto-heatmap" style="display:none;"></iframe>
   </div>
 
-  <!-- Fear & Greed -->
-  <h2>Fear & Greed Index</h2>
-  <iframe 
-    src="https://alternative.me/crypto/fear-and-greed-index/" 
-    width="100%" height="300" style="border:0;" 
-    title="Crypto Fear and Greed Index">
-  </iframe>
+  <a href="/index.html" class="back-button">⬅️ Back to Home</a>
 
-  <!-- ETF Trackers -->
-  <h2>ETF Inflows (BTC & ETH)</h2>
-  <a href="https://www.farside.co.uk/" target="_blank" class="tab">🔍 View BTC ETF Flows (Farside)</a>
-  <a href="https://pro.nansen.ai/etf" target="_blank" class="tab">📊 View ETH ETF Flows (Nansen)</a>
-
-  <!-- Back Button -->
-  <a href="index.html" class="back-button">⬅️ Back to Main Page</a>
-
-  <!-- Script -->
   <script>
-    function setChart(coin) {
-      const tabs = document.querySelectorAll('.tab');
-      tabs.forEach(tab => tab.classList.remove('active'));
-      event.target.classList.add('active');
-
-      let url;
-      if (coin === 'btc') {
-        url = 'https://www.tradingview.com/chart/?symbol=COINBASE:BTCUSD';
-      } else if (coin === 'eth') {
-        url = 'https://www.tradingview.com/chart/?symbol=COINBASE:ETHUSD';
-      } else if (coin === 'sol') {
-        url = 'https://www.tradingview.com/chart/?symbol=COINBASE:SOLUSD';
-      }
-      document.getElementById('tv-chart').src = url;
+    function setChart(chartId) {
+      const tabs = document.querySelectorAll(".tab");
+      const iframes = document.querySelectorAll("iframe");
+      tabs.forEach(tab => tab.classList.remove("active"));
+      iframes.forEach(iframe => iframe.style.display = "none");
+      document.getElementById(chartId).style.display = "block";
+      event.target.classList.add("active");
     }
   </script>
 </body>

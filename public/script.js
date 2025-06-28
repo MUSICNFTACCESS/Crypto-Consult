@@ -1,63 +1,64 @@
 let questionCount = 0;
 const maxQuestions = 3;
 
-document.getElementById("ask-btn").onclick = async () => {
+document.addEventListener("DOMContentLoaded", () => {
+  const askBtn = document.getElementById("ask-btn");
   const input = document.getElementById("user-input");
   const chat = document.getElementById("chat-output");
-  const question = input.value.trim();
-  if (!question) return;
 
-  // Clear previous CrimznBot response
-  chat.innerHTML = `<div style="color:#f7931a;"><strong>You:</strong> ${question}</div>`;
-  input.value = "";
+  askBtn.onclick = async () => {
+    const question = input.value.trim();
+    if (!question) return;
 
-  if (questionCount >= maxQuestions) {
-    chat.innerHTML = `
-      <div style="color:limegreen;"><strong>CrimznBot:</strong> Access limit reached. To continue, please send 0.025 SOL:</div>
-      <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CrimznConsult" target="_blank">
-        <img src="solana-logo.svg" alt="Solana Pay" style="width:80px;" />
-      </a>
-    `;
-    return;
-  }
+    chat.innerHTML = `<div style="color:#f7931a;"><strong>You:</strong> ${question}</div>`;
+    input.value = "";
 
-  questionCount++;
+    if (questionCount >= maxQuestions) {
+      chat.innerHTML = `
+        <div style="color:limegreen;"><strong>CrimznBot:</strong> You've hit your free question limit. Please pay to continue:</div>
+        <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CrimznConsult" target="_blank">
+          <img src="solana-logo.svg" alt="Solana Pay" style="width:80px;" />
+        </a>
+      `;
+      return;
+    }
 
-  try {
-    const res = await fetch("/api/ask", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: question })
-    });
+    questionCount++;
 
-    const data = await res.json();
+    try {
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: question })
+      });
 
-    chat.innerHTML = `
-      <div style="color:limegreen;"><strong>CrimznBot:</strong> ${data.response}</div>
-      <div style="font-size:0.9em;">📊 PulseIt Sentiment: ${data.pulse}</div>
-    `;
-  } catch (err) {
-    chat.innerHTML = `<div style="color: red;">⚠️ CrimznBot is offline or encountered an error.</div>`;
-  }
+      const data = await res.json();
 
-  // Scroll fix
-  chat.scrollTop = chat.scrollHeight;
-};
+      chat.innerHTML = `
+        <div style="color:limegreen;"><strong>CrimznBot:</strong> ${data.response}</div>
+        <div style="font-size:0.9em;">📊 PulseIt Sentiment: ${data.pulse}</div>
+      `;
+    } catch (err) {
+      chat.innerHTML = `<div style="color:red;">⚠️ CrimznBot is offline or encountered an error.</div>`;
+    }
 
-document.getElementById("analyze-btn").onclick = () => {
-  const input = document.getElementById("sentimentInput").value.toLowerCase();
-  const output = document.getElementById("pulseOutput");
+    chat.scrollTop = chat.scrollHeight;
+  };
 
-  // Clear previous PulseIt result
-  output.innerHTML = "";
+  const analyzeBtn = document.getElementById("analyze-btn");
+  analyzeBtn.onclick = () => {
+    const inputText = document.getElementById("sentimentInput").value.toLowerCase();
+    const output = document.getElementById("pulseOutput");
 
-  let sentiment = "Neutral 🟨";
-  if (input.includes("war") || input.includes("regulation") || input.includes("hacked") || input.includes("scam") || input.includes("dump")) {
-    sentiment = "Bearish 🟥";
-  } else if (input.includes("etf") || input.includes("adoption") || input.includes("bullish") || input.includes("innovation")) {
-    sentiment = "Bullish 🟩";
-  }
+    output.innerHTML = ""; // Clear previous output
 
-  output.innerHTML = `<strong>PulseIt:</strong> ${sentiment}`;
-};
-// 🚀 Force redeploy Sat Jun 28 19:20:11 EDT 2025
+    let sentiment = "Neutral 🟨";
+    if (inputText.includes("war") || inputText.includes("regulation") || inputText.includes("hacked") || inputText.includes("scam") || inputText.includes("dump")) {
+      sentiment = "Bearish 🟥";
+    } else if (inputText.includes("etf") || inputText.includes("adoption") || inputText.includes("bullish") || inputText.includes("innovation")) {
+      sentiment = "Bullish 🟩";
+    }
+
+    output.innerHTML = `<strong>PulseIt:</strong> ${sentiment}`;
+  };
+});

@@ -10,19 +10,20 @@
       font-family: 'Courier New', monospace;
       text-align: center;
       margin: 0;
-      padding: 0;
+      padding: 0.5em;
     }
     h1 {
-      font-size: 2em;
+      font-size: 20px;
       margin-top: 0.5em;
     }
     .tab {
       background: #111;
+      color: white;
       display: inline-block;
-      padding: 0.3em 1em;
-      margin: 0.5em;
+      padding: 0.5em 1em;
+      margin: 0.25em;
       border: 1px solid #f7931a;
-      border-radius: 6px;
+      border-radius: 5px;
       cursor: pointer;
     }
     .tab.active {
@@ -35,17 +36,16 @@
       border: none;
       margin-top: 0.5em;
     }
-    a {
-      color: #00bfff;
-    }
-    button {
+    .back-button {
+      display: inline-block;
+      margin: 1em;
       background-color: #f7931a;
-      border: none;
-      padding: 0.5em 1em;
       color: black;
+      text-decoration: none;
       font-weight: bold;
-      cursor: pointer;
-      margin-top: 1em;
+      font-family: monospace;
+      border-radius: 8px;
+      padding: 0.5em 1em;
     }
   </style>
 </head>
@@ -53,59 +53,51 @@
   <h1>📡 The Radar</h1>
   <p>This dashboard helps visualize potential crypto market cycle tops using key metrics, charts, and ETF flows.</p>
 
-  <div>
-    <div id="btcTab" class="tab active" onclick="setChart('BTC')">BTC</div>
-    <div id="ethTab" class="tab" onclick="setChart('ETH')">ETH</div>
-    <div id="solTab" class="tab" onclick="setChart('SOL')">SOL</div>
+  <!-- Chart Tabs -->
+  <div id="chart-tabs">
+    <div class="tab active" onclick="setChart('btc')">📈 BTC/USD</div>
+    <div class="tab" onclick="setChart('eth')">📉 ETH/USD</div>
+    <div class="tab" onclick="setChart('sol')">⚡ SOL/USD</div>
   </div>
 
-  <iframe id="chartFrame" src="https://www.tradingview.com/embed-widget/mini-symbol-overview/?symbol=COINBASE:BTCUSD"></iframe>
+  <!-- Chart Embed -->
+  <div id="chart-container">
+    <iframe id="tv-chart" src="https://www.tradingview.com/chart/" allowfullscreen></iframe>
+  </div>
 
-  <h2>📉 BTC Dominance</h2>
-  <iframe src="https://www.tradingview.com/embed-widget/single-quote/?symbol=CRYPTOCAP:BTC.D" height="250"></iframe>
+  <!-- Fear & Greed -->
+  <h2>Fear & Greed Index</h2>
+  <iframe 
+    src="https://alternative.me/crypto/fear-and-greed-index/" 
+    width="100%" height="300" style="border:0;" 
+    title="Crypto Fear and Greed Index">
+  </iframe>
 
-<h2>📊 Altcoin Market Screener</h2>
-<div class="tradingview-widget-container">
-  <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-screener.js" async>
-  {
-    "width": "100%",
-    "height": 500,
-    "defaultColumn": "performance",
-    "defaultScreen": "crypto_mkt_cap",
-    "market": "crypto",
-    "showToolbar": true,
-    "colorTheme": "dark",
-    "locale": "en"
-  }
-  </script>
-</div>
-
-<h2>🧠 Fear & Greed Index</h2>
-<p>This gauge shows the current market sentiment in crypto, ranging from Extreme Fear (0) to Extreme Greed (100).</p>
-<a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank">
-  <img src="https://alternative.me/crypto/fear-and-greed-index.png" alt="Fear and Greed Index" width="100%">
-</a>
-
-<section>
+  <!-- ETF Trackers -->
   <h2>ETF Inflows (BTC & ETH)</h2>
-  <button onclick="window.open('https://blockworks.co/etf/bitcoin')">BTC ETF Tracker (Blockworks)</button>
-  <button onclick="window.open('https://blockworks.co/etf/ethereum')">ETH ETF Tracker (Blockworks)</button>
-</section>
+  <a href="https://www.farside.co.uk/" target="_blank" class="tab">🔍 View BTC ETF Flows (Farside)</a>
+  <a href="https://pro.nansen.ai/etf" target="_blank" class="tab">📊 View ETH ETF Flows (Nansen)</a>
 
-  <button onclick="location.href='/'">⬅️ Back to Main Page</button>
+  <!-- Back Button -->
+  <a href="index.html" class="back-button">⬅️ Back to Main Page</a>
 
+  <!-- Script -->
   <script>
-    function setChart(token) {
-      const srcMap = {
-        BTC: 'https://www.tradingview.com/embed-widget/mini-symbol-overview/?symbol=COINBASE:BTCUSD',
-        ETH: 'https://www.tradingview.com/embed-widget/mini-symbol-overview/?symbol=COINBASE:ETHUSD',
-        SOL: 'https://www.tradingview.com/embed-widget/mini-symbol-overview/?symbol=COINBASE:SOLUSD'
-      };
-      document.getElementById("chartFrame").src = srcMap[token];
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.getElementById(token.toLowerCase() + "Tab").classList.add("active");
+    function setChart(coin) {
+      const tabs = document.querySelectorAll('.tab');
+      tabs.forEach(tab => tab.classList.remove('active'));
+      event.target.classList.add('active');
+
+      let url;
+      if (coin === 'btc') {
+        url = 'https://www.tradingview.com/chart/?symbol=COINBASE:BTCUSD';
+      } else if (coin === 'eth') {
+        url = 'https://www.tradingview.com/chart/?symbol=COINBASE:ETHUSD';
+      } else if (coin === 'sol') {
+        url = 'https://www.tradingview.com/chart/?symbol=COINBASE:SOLUSD';
+      }
+      document.getElementById('tv-chart').src = url;
     }
   </script>
 </body>
 </html>
-

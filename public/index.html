@@ -4,165 +4,54 @@
   <meta charset="UTF-8" />
   <title>CryptoConsult by Crimzn</title>
   <link rel="icon" href="favicon.ico" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      background-color: #000;
-      color: #f7931a;
-      font-family: 'Courier New', monospace;
-      text-align: center;
-      padding: 20px;
-    }
-    .crypto-price {
-      font-size: 18px;
-    }
-    .button, .submit-button {
-      font-family: monospace;
-      padding: 10px 20px;
-      margin: 10px;
-      border-radius: 8px;
-      border: none;
-      color: white;
-      cursor: pointer;
-      background: linear-gradient(to right, #a259ff, #2aff95);
-    }
-    .ask-btn, .analyze-btn {
-      background-color: #f7931a;
-      color: #000;
-      border-radius: 5px;
-      padding: 10px;
-    }
-    .response-box {
-      margin: 20px auto;
-      padding: 15px;
-      max-width: 90%;
-      background: #111;
-      border-radius: 8px;
-      text-align: left;
-    }
-    .crimzn-response {
-      color: #00ff99;
-      white-space: pre-line;
-    }
-    .user-question {
-      color: #f7931a;
-    }
-    .pulse-response {
-      color: #00ff99;
-    }
-    .sentiment-icon {
-      font-size: 20px;
-      margin-left: 8px;
-    }
-    .hidden { display: none; }
-    .section-title {
-      margin-top: 30px;
-      font-size: 20px;
-      text-decoration: underline;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
 </head>
 <body>
   <h1>CryptoConsult by Crimzn</h1>
+
+  <!-- Wallet Address Display -->
+  <div id="wallet-display" style="position: absolute; top: 10px; right: 15px; font-size: 14px;"></div>
+
+  <!-- Live Prices -->
   <div class="crypto-price" id="price-btc">BTC: N/A</div>
   <div class="crypto-price" id="price-eth">ETH: N/A</div>
   <div class="crypto-price" id="price-sol">SOL: N/A</div>
 
-  <h2>Talk to CrimznBot</h2>
-  <input type="text" id="user-input" placeholder="Ask me anything..." />
-  <button class="ask-btn" onclick="sendMessage()">Ask</button>
-  <div id="response" class="response-box hidden"></div>
-
-  <div id="paywall" class="hidden">
-    <p>You've used 3 free questions. Please pay to continue:</p>
-    <img src="solana-logo.svg" alt="Solana Pay" width="50">
-    <br />
-    <a href="https://solana-pay.vercel.app/pay?recipient=Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF&amount=0.025&label=CrimznBot&message=Unlock+Consultation" class="button">Pay with Solana</a>
-    <br />
-    <a href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8" class="button">Pay $99.99 USDC</a>
-    <a href="https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b" class="button">Tip 1 USDC</a>
-    <a href="https://paypal.me/crimzn" class="button">Pay with PayPal</a>
+  <!-- Wallet Connect -->
+  <div id="wallet-controls">
+    <button class="solana-button" onclick="connectWallet()">Connect Wallet 👻</button>
   </div>
 
-  <h2>📢 PulseIt Sentiment Analyzer</h2>
-  <input type="text" id="pulse-input" placeholder="Enter news or phrase..." />
-  <button class="analyze-btn" onclick="analyzeSentiment()">Analyze</button>
-  <div id="pulse-response" class="response-box hidden"></div>
+  <!-- CrimznBot -->
+  <h2>Talk to CrimznBot</h2>
+  <input type="text" id="userInput" placeholder="Ask me anything..." />
+  <button class="submit-button" onclick="askCrimznBot()">Ask</button>
+  <div id="chatBox" class="response-box"></div>
 
-  <h2 class="section-title">Support & Payments</h2>
-  <p>Pay to Unlock CrimznBot:</p>
-  <img src="solana-logo.svg" alt="Solana Pay" width="40">
-  <br/>
-  <a href="https://solana-pay.vercel.app/pay?recipient=Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF&amount=0.025&label=CrimznBot&message=Unlock+Consultation" class="button">Pay with Solana</a>
+  <!-- Paywall -->
+  <div id="paywall" class="hidden">
+    <p>You've used 3 free questions. Please pay to continue:</p>
+    <img src="solana-logo.svg" alt="Solana Pay" width="50" />
+    <br /><br />
+    <a class="solana-button" href="https://solana-pay.vercel.app/pay?recipient=Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF" target="_blank">Pay with Solana</a><br />
+    <a class="button" href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8" target="_blank">Pay $99.99 USDC</a><br />
+    <a class="button" href="https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b" target="_blank">Tip 1 USDC</a><br />
+    <a class="button" href="https://paypal.me/crimzn" target="_blank">Pay with PayPal</a>
+  </div>
 
-  <h2 class="section-title">ETF Inflows</h2>
-  <a href="https://www.farside.co.uk/crypto-fund-flows" class="button">BTC ETF Flow Tracker</a>
-  <a href="https://pro.nansen.ai/etf-collections/eth" class="button">ETH ETF Flow Tracker</a>
+  <!-- PulseIt Sentiment Tool -->
+  <h2 class="section-title">PulseIt Sentiment Analyzer</h2>
+  <input type="text" id="sentimentInput" placeholder="Type a crypto news headline..." />
+  <button class="submit-button" onclick="analyzeSentiment()">Analyze</button>
+  <div class="pulse-response" id="pulseOutput"></div>
 
-  <script>
-    let questionCount = 0;
+  <!-- Radar Button -->
+  <br /><br />
+  <a href="radar.html" class="button">📡 Cycle Top Radar</a>
 
-    async function sendMessage() {
-      const input = document.getElementById("user-input").value;
-      const responseBox = document.getElementById("response");
-      const paywall = document.getElementById("paywall");
-
-      if (questionCount >= 3) {
-        paywall.classList.remove("hidden");
-        responseBox.classList.add("hidden");
-        return;
-      }
-
-      try {
-        const res = await fetch('https://crypto-consult.onrender.com/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: input })
-        });
-        const data = await res.json();
-        responseBox.innerHTML = `<div class="crimzn-response">CrimznBot: ${data.response}</div><br><div class="user-question">You: ${input}</div>`;
-        responseBox.classList.remove("hidden");
-        questionCount++;
-      } catch (err) {
-        responseBox.textContent = "⚠️ Error getting response.";
-        responseBox.classList.remove("hidden");
-      }
-    }
-
-    async function analyzeSentiment() {
-      const input = document.getElementById("pulse-input").value;
-      const responseBox = document.getElementById("pulse-response");
-
-      try {
-        const res = await fetch('https://crypto-consult.onrender.com/api/pulse', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: input })
-        });
-        const data = await res.json();
-        const icon = data.sentiment === "Bullish" ? "🟢" : data.sentiment === "Bearish" ? "🔴" : "🟡";
-        responseBox.innerHTML = `<div class="pulse-response">PulseIt: ${data.sentiment} ${icon}</div><br><div class="user-question">You: ${input}</div>`;
-        responseBox.classList.remove("hidden");
-      } catch (err) {
-        responseBox.textContent = "❌ Error analyzing.";
-        responseBox.classList.remove("hidden");
-      }
-    }
-
-    async function updatePrices() {
-      try {
-        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd');
-        const data = await res.json();
-        document.getElementById("price-btc").textContent = `BTC: $${data.bitcoin.usd}`;
-        document.getElementById("price-eth").textContent = `ETH: $${data.ethereum.usd}`;
-        document.getElementById("price-sol").textContent = `SOL: $${data.solana.usd}`;
-      } catch (err) {
-        console.error("Price fetch error:", err);
-      }
-    }
-
-    updatePrices();
-    setInterval(updatePrices, 60000);
-  </script>
+  <!-- Script -->
+  <script src="/script.js"></script>
 </body>
 </html>

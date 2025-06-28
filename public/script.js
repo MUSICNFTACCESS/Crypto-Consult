@@ -5,7 +5,6 @@ document.getElementById("ask-btn").onclick = async () => {
   const input = document.getElementById("user-input");
   const chat = document.getElementById("chat-output");
   const question = input.value.trim();
-
   if (!question) return;
 
   chat.innerHTML = `<div style="color:#f7931a;"><strong>You:</strong> ${question}</div>` + chat.innerHTML;
@@ -14,11 +13,9 @@ document.getElementById("ask-btn").onclick = async () => {
   if (questionCount >= maxFreeQuestions) {
     chat.innerHTML = `
       <div style="color:limegreen;"><strong>CrimznBot:</strong> You've hit your free limit. To unlock full access, send 0.025 SOL:</div>
-      <br>
       <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CryptoConsult%20Access" target="_blank">
-        <img src="solana-logo.svg" alt="Pay with Solana" style="width:80px;height:auto;" />
+        <img src="solana-logo.svg" alt="Solana Pay" style="width:80px;" />
       </a>
-      <div style="margin-top:10px;">← Tap logo to pay</div>
     ` + chat.innerHTML;
     return;
   }
@@ -34,14 +31,10 @@ document.getElementById("ask-btn").onclick = async () => {
 
     const data = await res.json();
 
-    if (data.response) {
-      chat.innerHTML = `
-        <div style="color:limegreen;"><strong>CrimznBot:</strong> ${data.response}</div>
-        <div style="font-size:0.9em;">📊 PulseIt Sentiment: ${data.pulse}</div>
-      ` + chat.innerHTML;
-    } else {
-      throw new Error("No response from CrimznBot.");
-    }
+    chat.innerHTML = `
+      <div style="color:limegreen;"><strong>CrimznBot:</strong> ${data.response}</div>
+      <div style="font-size:0.9em;">📊 PulseIt Sentiment: ${data.pulse}</div>
+    ` + chat.innerHTML;
   } catch (err) {
     chat.innerHTML = `<div style="color:red;"><strong>Error:</strong> ${err.message}</div>` + chat.innerHTML;
   }
@@ -51,7 +44,6 @@ document.getElementById("pulse-btn").onclick = async () => {
   const input = document.getElementById("pulse-input");
   const pulseOutput = document.getElementById("pulse-output");
   const phrase = input.value.trim();
-
   if (!phrase) return;
 
   pulseOutput.innerHTML = `<div style="color:#f7931a;"><strong>You:</strong> ${phrase}</div>` + pulseOutput.innerHTML;
@@ -65,12 +57,7 @@ document.getElementById("pulse-btn").onclick = async () => {
     });
 
     const data = await res.json();
-
-    if (data.sentiment) {
-      pulseOutput.innerHTML = `<div style="color:limegreen;"><strong>PulseIt:</strong> ${data.sentiment}</div>` + pulseOutput.innerHTML;
-    } else {
-      throw new Error("PulseIt returned no sentiment.");
-    }
+    pulseOutput.innerHTML = `<div style="color:limegreen;"><strong>PulseIt:</strong> ${data.sentiment}</div>` + pulseOutput.innerHTML;
   } catch (err) {
     pulseOutput.innerHTML = `<div style="color:red;"><strong>Error:</strong> ${err.message}</div>` + pulseOutput.innerHTML;
   }
@@ -78,7 +65,7 @@ document.getElementById("pulse-btn").onclick = async () => {
 
 async function fetchPrices() {
   try {
-    const res = await fetch("/api/prices?ids=bitcoin,ethereum,solana&vs=usd");
+    const res = await fetch("/api/prices");
     const data = await res.json();
     document.getElementById("btc-price").textContent = "$" + data.price.bitcoin.usd;
     document.getElementById("eth-price").textContent = "$" + data.price.ethereum.usd;

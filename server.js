@@ -1,49 +1,37 @@
 // 🤖 CrimznBot with Real-Time Price Logic
 const express = require("express");
 const fetch = require("node-fetch");
-const { OpenAI } = require("openai");
+const OpenAI = require("openai");
 const app = express();
 app.use(express.json());
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
 app.post("/api/ask", async (req, res) => {
   const { message } = req.body;
-
   if (!message) {
     return res.status(400).json({ error: "Message is required" });
   }
 
   const lowerMsg = message.toLowerCase();
 
-  // 🪙 Keyword-based live price check
-  const tokens = {
-    bitcoin: "btc",
-    btc: "bitcoin",
-    ethereum: "eth",
-    eth: "ethereum",
-    sol: "solana",
-    solana: "solana",
-    ondo: "ondo"
-  };
+  // 🪙 Keywords-based live price check
+  const tokens = [
+    "bitcoin", "btc", "ethereum", "eth", "solana", "sol", "ondo", "link", "pyth", "jup", "dot", "ena", "pepe"
+  ];
 
-  const found = Object.keys(tokens).find((key) => lowerMsg.includes(key) && lowerMsg.includes("price"));
+  const found = tokens.find((key) => lowerMsg.includes(key) && lowerMsg.includes("price"));
 
   if (found) {
-    const id = tokens[found];
     try {
-      const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`);
+      const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${found}&vs_currencies=usd`);
       const priceData = await priceRes.json();
-      const price = priceData[id]?.usd;
-
-      if (price) {
-        return res.json({
-          response: `🔹 The current price of ${found.toUpperCase()} is **$${price.toLocaleString()} USD**.`
-        });
-      } else {
-        throw new Error("Price not available");
-      }
+      const price = priceData[found].usd;
+      return res.json({
+        reply: `📈 The current price of ${found.toUpperCase()} is **$${price.toLocaleString()} USD**.`,
+      });
     } catch (err) {
       console.error("Price fetch error:", err.message);
       return res.status(500).json({ error: "Failed to get live price." });
@@ -57,29 +45,27 @@ app.post("/api/ask", async (req, res) => {
       messages: [
         {
           role: "system",
-          content:
-            "You are CrimznBot, a sharp, degen-savvy crypto consultant. Give concise, accurate answers. If the question isn't about price, respond with professional but edgy tone. NEVER make up prices."
+          content: "You are CrimznBot, a sharp, degen-savvy crypto consultant. Give concise, accurate answers. If the question isn't about price, respond with expert clarity.",
         },
         {
           role: "user",
-          content: message
-        }
+          content: message,
+        },
       ],
-      temperature: 0.7
+      temperature: 0.7,
     });
 
     const reply = completion.choices[0].message.content.trim();
-    return res.json({ response: reply });
+    return res.json({ reply });
   } catch (err) {
-    console.error("GPT fallback error:", err.message);
+    console.error("CrimznBot fallback error:", err.message);
     return res.status(500).json({ error: "CrimznBot failed to respond." });
   }
 });
 
 // 📊 PulseIt Sentiment Analyzer
-app.post("/api/pulse", async (req, res) => {
+app.post("/api/pulseit", async (req, res) => {
   const { message } = req.body;
-
   if (!message) {
     return res.status(400).json({ error: "Message is required" });
   }
@@ -90,29 +76,27 @@ app.post("/api/pulse", async (req, res) => {
       messages: [
         {
           role: "system",
-          content: "You are PulseIt: a crypto-native sentiment engine. Classify the user's message as Bullish, Bearish, or Neutral."
+          content: "You are PulseIt: a crypto-native sentiment engine. Classify the user's message as Bullish, Bearish, or Neutral.",
         },
         {
           role: "user",
-          content: message
-        }
+          content: message,
+        },
       ],
-      temperature: 0.5
+      temperature: 0.5,
     });
 
-    const sentiment = completion.choices[0].message.content.trim();
-    return res.json({ response: sentiment });
-
+    const reply = completion.choices[0].message.content.trim();
+    return res.json({ sentiment: reply });
   } catch (err) {
     console.error("PulseIt error:", err.message);
     return res.status(500).json({ error: "PulseIt failed to respond." });
   }
 });
 
-// 🔁 Proxy to CoinGecko to bypass CORS
+// 🔄 Proxy to CoinGecko to bypass CORS
 app.get("/api/price", async (req, res) => {
   const { id = "bitcoin", vs = "usd" } = req.query;
-
   try {
     const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=${vs}`);
     const data = await response.json();
@@ -123,9 +107,8 @@ app.get("/api/price", async (req, res) => {
   }
 });
 
-// 🌐 Start Crimzn AI Server
+// 🚀 Start Crimzn AI Server
+const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`🚀 CrimznBot + PulseIt live at http://localhost:${port}`);
-  console.log("🧠 GPT-4o fully online. Awaiting your genius input...");
 });
-// 🔁 Fri Jun 27 19:10:09 EDT 2025: force rebuild

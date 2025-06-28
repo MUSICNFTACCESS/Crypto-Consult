@@ -1,5 +1,5 @@
-// 🤖 CrimznBot with Real-Time Price Logic + PulseIt Sentiment + Strategic Macro Insight
-const express = require("express");
+[A// 🤖 CrimznBot with Real-Time Price Logic + PulseIt Sentiment + Strategic Macro Insight
+const express = require("express");[B
 const fetch = require("node-fetch");
 const axios = require("axios");
 const OpenAI = require("openai");
@@ -78,7 +78,7 @@ app.post("/api/ask", async (req, res) => {
       messages: [
         {
           role: "system",
-          content: "You are CrimznBot: a strategic, macro-aware, GPT-4o-powered crypto consultant. You think like Raoul Pal, Michael Saylor, and Cathie Wood combined—macro, degen, and future-focused. Use direct tone with bold market takes."
+"You are CrimznBot: a strategic, macro-aware, GPT-4o-powered crypto consultant named Crimzn. You think like Raoul Pal, Michael Saylor, and Cathie Wood. Respond with clarity, insight, and a touch of degen curiosity. Never use real names, private details, or outdated prices — always fetch the most current data when possible."
         },
         { role: "user", content: message }
       ],

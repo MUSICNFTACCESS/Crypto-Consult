@@ -3,175 +3,102 @@
 <head>
   <meta charset="UTF-8" />
   <title>CryptoConsult by Crimzn</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' x='5' font-size='80' font-weight='bold' fill='%23f7931a' style='text-shadow:1px 1px %23000'>₿</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script defer src="script.js"></script>
   <style>
     body {
       background-color: #000;
       color: #f7931a;
-      font-family: 'Courier New', monospace;
-      text-align: center;
+      font-family: Courier, monospace;
       padding: 20px;
+      text-align: center;
     }
-    h1, h2 {
-      color: #f7931a;
+    h1 {
+      font-size: 2em;
     }
-    button {
-      font-family: monospace;
+    .section {
+      margin-bottom: 40px;
+    }
+    .price-tag {
+      font-size: 1.2em;
+      margin: 5px;
+    }
+    input, button {
+      font-family: inherit;
       padding: 10px;
       margin: 5px;
-      background: linear-gradient(to right, #9945FF, #14F195);
-      color: black;
       border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
+      border-radius: 6px;
     }
     input {
-      width: 90%;
-      padding: 10px;
-      margin: 10px auto;
-      display: block;
-      font-family: monospace;
+      width: 70%;
     }
-    .version-marker {
-      position: fixed;
-      bottom: 2px;
-      right: 2px;
-      font-size: 10px;
-      color: #222;
+    button {
       background: #f7931a;
-      border-radius: 5px;
-      padding: 2px 6px;
-    }
-    .solana-logo {
-      width: 130px;
-      margin-top: 10px;
+      color: #000;
       cursor: pointer;
+    }
+    .chat-box, .pulse-box {
+      background: #111;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+      text-align: left;
+    }
+    a.button-link {
+      display: inline-block;
+      margin: 5px;
+      padding: 10px 15px;
+      background: #222;
+      color: #f7931a;
+      text-decoration: none;
+      border-radius: 8px;
     }
   </style>
 </head>
 <body>
   <h1>CryptoConsult by Crimzn</h1>
-  <p>Talk to CrimznBot, get PulseIt sentiment, and book a session anytime.</p>
 
-  <h2>📉 Live Prices:</h2>
-  <div>BTC: <span id="btc-price">Loading...</span></div>
-  <div>ETH: <span id="eth-price">Loading...</span></div>
-  <div>SOL: <span id="sol-price">Loading...</span></div>
+  <div class="section">
+    <div class="price-tag">BTC: <span id="btc-price">Loading...</span></div>
+    <div class="price-tag">ETH: <span id="eth-price">Loading...</span></div>
+    <div class="price-tag">SOL: <span id="sol-price">Loading...</span></div>
+  </div>
 
-  <h2>📋 Available Services:</h2>
-  <ul style="text-align: left; display: inline-block;">
-    <li>📊 Technical & Fundamental Analysis</li>
-    <li>🔐 Wallet Setup & Crypto Security</li>
-    <li>🪙 Onramping, Offramping, Reallocating</li>
-    <li>💼 Capital Allocation</li>
-    <li>🧠 Strategy Sessions, Project Dives & More</li>
-  </ul>
+  <div class="section">
+    <h2>Talk to CrimznBot</h2>
+    <input id="user-input" placeholder="Ask me anything..." />
+    <button id="ask-btn">Ask</button>
+    <div id="chat-output" class="chat-box"></div>
+  </div>
 
-  <h2>💳 Support & Payments:</h2>
-  <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Pay $99.99 USDC</button>
-  <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')">Tip 1 USDC</button>
-  <img src="https://cryptoconsult.onrender.com/solana-logo.png" alt="Solana Pay" class="solana-logo" onclick="window.open('https://solana.com/pay')">
-  <button onclick="window.open('https://paypal.me/crimzn')">Pay with PayPal</button>
+  <div class="section">
+    <h2>PulseIt Sentiment Analyzer</h2>
+    <input id="pulse-input" placeholder="Enter news or phrase..." />
+    <button id="pulse-btn">Analyze</button>
+    <div id="pulse-output" class="pulse-box"></div>
+  </div>
 
-  <h2>🤖 Talk to CrimznBot</h2>
-  <input id="user-input" placeholder="Ask me anything..." />
-  <button onclick="askCrimzn()">Submit</button>
-  <p id="bot-msg">CrimznBot: ...</p>
+  <div class="section">
+    <h2>Support & Payments</h2>
+    <div>
+      <strong>Pay to Unlock CrimznBot:</strong><br />
+      <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CryptoConsult%20Access" target="_blank">
+        <img src="solana-logo.svg" alt="Pay with Solana" style="width:80px;height:auto;" />
+      </a>
+      <div>← Tap logo to pay 0.025 SOL</div>
+    </div>
+  </div>
 
-  <h2>📣 PulseIt Sentiment Analyzer</h2>
-  <input id="pulse-input" placeholder='Type something like "Trump"' />
-  <button onclick="analyzePulse()">Analyze</button>
-  <p id="pulse-output">PulseIt: ...</p>
+  <div class="section">
+    <h2>ETF Inflows</h2>
+    <a class="button-link" href="https://www.farside.co.uk/ETFs/BTC" target="_blank">BTC ETF Flow Tracker</a>
+    <a class="button-link" href="https://pro.nansen.ai/etf-portal" target="_blank">ETH ETF Flow Tracker</a>
+  </div>
 
-  <h2>📬 Contact Me</h2>
-  <button onclick="window.open('mailto:crimzncipriano@gmail.com')">Contact via Email</button>
-  <button onclick="window.open('https://t.me/Crimznbot')">Contact via Telegram</button>
-
-  <h2>📡 ETF Flows</h2>
-  <p><a href="https://www.farside.co.uk/etf/btc" target="_blank" style="color:#00f">📈 BTC ETF Tracker (Farside)</a></p>
-  <p><a href="https://pro.nansen.ai/etf" target="_blank" style="color:#0f0">📉 ETH ETF Tracker (Nansen)</a></p>
-
-  <button onclick="window.location.href='radar.html'">📡 View Radar Page</button>
-
-  <div class="version-marker">🔥 Final June Build</div>
-
-  <script>
-    let questionCount = 0;
-    const maxQuestions = 3;
-
-    async function askCrimzn() {
-      const input = document.getElementById("user-input");
-      const question = input.value.trim();
-      if (!question) return;
-
-      if (questionCount >= maxQuestions) {
-        document.getElementById("bot-msg").textContent =
-          "⚠️ 3 free questions used.\n💸 Please pay 0.025 SOL to unlock more.";
-        return;
-      }
-
-      document.getElementById("bot-msg").textContent = "CrimznBot is thinking...";
-      try {
-        const res = await fetch("/api/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: question })
-        });
-        const data = await res.json();
-        if (data.response) {
-          document.getElementById("bot-msg").textContent = data.response;
-          input.value = "";
-          questionCount++;
-        } else {
-          document.getElementById("bot-msg").textContent = "⚠️ No response.";
-        }
-      } catch {
-        document.getElementById("bot-msg").textContent = "❌ Network error.";
-      }
-    }
-
-    async function analyzePulse() {
-      const text = document.getElementById("pulse-input").value.trim();
-      if (!text) return;
-
-      document.getElementById("pulse-output").textContent = "Analyzing...";
-      try {
-        const res = await fetch("/pulse", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text })
-        });
-        const data = await res.json();
-        document.getElementById("pulse-output").textContent = data.result || data.sentiment;
-      } catch {
-        document.getElementById("pulse-output").textContent = "❌ Error analyzing.";
-      }
-    }
-
-    async function fetchPrices() {
-      try {
-        const res = await fetch("/api/prices?ids=bitcoin,ethereum,solana&vs=usd");
-        const data = await res.json();
-        document.getElementById("btc-price").textContent = "$" + data.price.bitcoin;
-        document.getElementById("eth-price").textContent = "$" + data.price.ethereum;
-        document.getElementById("sol-price").textContent = "$" + data.price.solana;
-      } catch {
-        document.getElementById("btc-price").textContent = "N/A";
-        document.getElementById("eth-price").textContent = "N/A";
-        document.getElementById("sol-price").textContent = "N/A";
-      }
-    }
-
-    fetchPrices();
-    setInterval(fetchPrices, 60000);
-  </script>
+  <div class="section">
+    <h2>Market Radar</h2>
+    <iframe src="/blog/2025-06-13.html" style="width:100%;height:300px;border:none;"></iframe>
+  </div>
 </body>
 </html>
-
-
-
-
-
-

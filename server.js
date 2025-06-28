@@ -2,6 +2,7 @@
 const express = require("express");
 const fetch = require("node-fetch");
 const axios = require("axios");
+const rateLimit = require("express-rate-limit");
 const OpenAI = require("openai");
 require("dotenv").config();
 
@@ -9,10 +10,19 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public")); // Serves index.html + radar.html etc.
 
+// 🛡️ Basic Rate Limiting
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use("/api/", limiter);
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 console.log("🔐 OPENAI_API_KEY Loaded:", process.env.OPENAI_API_KEY ? "✅ Present" : "❌ MISSING");
 
-// ✅ GET endpoint for manual price checks via curl or frontend
+// ✅ GET /api/price — Manual Price Checks
 app.get("/api/price", async (req, res) => {
   const { id, vs } = req.query;
   try {
@@ -26,30 +36,22 @@ app.get("/api/price", async (req, res) => {
   }
 });
 
-// ✅ POST endpoint: CrimznBot AI + live price + PulseIt sentiment
+// ✅ POST /api/ask — CrimznBot AI + Price + Sentiment
 app.post("/api/ask", async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: "Message is required" });
 
   const lower = message.toLowerCase();
 
-  // 💬 PulseIt Sentiment Analyzer
+  // 💬 PulseIt basic keywords
   const bullish = ["etf", "adoption", "halving", "bullish", "blackrock", "trump", "michael saylor", "raoul pal", "cathie wood"];
   const bearish = ["recession", "war", "inflation", "crash", "dump", "rug", "scam"];
   let pulse = "Neutral 🟡";
-  if (bullish.some(word => lower.includes(word))) pulse = "Bullish 🟢";
-  else if (bearish.some(word => lower.includes(word))) pulse = "Bearish 🔴";
+  if (bullish.some(w => lower.includes(w))) pulse = "Bullish 🟢";
+  else if (bearish.some(w => lower.includes(w))) pulse = "Bearish 🔴";
 
-  // 💰 Live price logic
-  const tokens = [
-    "bitcoin", "btc", "ethereum", "eth", "solana", "sol", "ondo", "link", "ena", "pepe", "doge",
-    "dot", "avax", "matic", "ada", "ton", "xrp", "xlm", "shib", "uni", "ltc", "atom", "near", "apt",
-    "arb", "op", "kaspa", "inj", "fet", "gala", "render", "snx", "pyth", "sui", "beam", "mina",
-    "axl", "joe", "stx", "blur", "jup", "mantra", "celestia", "ocean", "zil", "metis", "radix", "hnt",
-    "bsv", "fil", "zec", "ckb", "lrc", "yfi", "1inch", "comp", "bat", "enj", "woo", "cake", "chz",
-    "bal", "band", "dydx", "nexo", "rune", "rndr", "lido", "sxp", "hbar", "icp", "egld", "grt", "dai",
-    "usdt", "usdc", "fdusd", "tusd", "frax", "rai", "gusd"
-  ];
+  // 💰 Real-time price check
+  const tokens = [ "bitcoin", "btc", "ethereum", "eth", "solana", "sol", "ondo", "link", "ena", "pepe", "doge", "dot", "avax", "matic", "ada", "ton", "xrp", "xlm", "shib", "uni", "ltc", "atom", "near", "apt", "arb", "op", "kaspa", "inj", "fet", "gala", "render", "snx", "pyth", "sui", "beam", "mina", "axl", "joe", "stx", "blur", "jup", "mantra", "celestia", "ocean", "zil", "metis", "radix", "hnt", "bsv", "fil", "zec", "ckb", "lrc", "yfi", "1inch", "comp", "bat", "enj", "woo", "cake", "chz", "bal", "band", "dydx", "nexo", "rune", "rndr", "lido", "sxp", "hbar", "icp", "egld", "grt", "dai", "usdt", "usdc", "fdusd", "tusd", "frax", "rai", "gusd" ];
   const found = tokens.find(t => lower.includes(t) && lower.includes("price"));
 
   if (found) {
@@ -72,14 +74,13 @@ app.post("/api/ask", async (req, res) => {
     }
   }
 
-  // 🎯 GPT-4o fallback with macro tone
+  // 🎯 GPT-4o Fallback — Strategic Tone
   try {
     const completion = await openai.chat.completions.create({
       messages: [
         {
           role: "system",
-          content:
-            "You are CrimznBot: a strategic, macro-aware, GPT-4o-powered crypto consultant named Crimzn. You think like Raoul Pal, Michael Saylor, and Cathie Wood. Respond with clarity, insight, and a touch of degen curiosity. Never use real names, private details, or outdated prices — always fetch the most current data when possible."
+          content: "You are CrimznBot: a strategic, macro-aware, GPT-4o-powered crypto consultant named Crimzn. You think like Raoul Pal, Michael Saylor, and Cathie Wood. Your tone is sharp, confident, slightly degen, and always fact-driven."
         },
         { role: "user", content: message }
       ],
@@ -93,12 +94,36 @@ app.post("/api/ask", async (req, res) => {
   }
 });
 
-// 🔁 Serve index.html for root route
+// ✅ POST /api/pulse — PulseIt AI Standalone
+app.post("/api/pulse", async (req, res) => {
+  const { headline } = req.body;
+  if (!headline) return res.status(400).json({ error: "Headline is required" });
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You're PulseIt, a crypto-native sentiment bot. You take in short phrases or headlines and rate them as Bullish, Bearish, or Neutral. Then explain why in one short sentence. Format: Sentiment: [label] — [reason]."
+        },
+        { role: "user", content: headline }
+      ],
+      model: "gpt-4"
+    });
+
+    res.json({ sentiment: completion.choices[0].message.content });
+  } catch (err) {
+    console.error("❌ PulseIt error:", err.message);
+    res.status(500).json({ error: "PulseIt sentiment analysis failed" });
+  }
+});
+
+// 🔁 Root
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/public/index.html");
 });
 
-// 🚀 Start server
+// 🚀 Start
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ CrimznBot server listening on port ${PORT}`);

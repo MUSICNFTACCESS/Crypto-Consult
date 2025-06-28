@@ -4,7 +4,11 @@ const fetch = require("node-fetch");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 require("dotenv").config();
-const { Configuration, OpenAIApi } = require("openai");
+const OpenAI = require("openai");
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,25 +17,21 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
-// ✅ Initialize OpenAI once
-const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
-const openai = new OpenAIApi(configuration);
-
 // ✅ CrimznBot Route (answer + pulse tone)
 app.post("/api/ask", async (req, res) => {
   const userMessage = req.body.message;
   if (!userMessage) return res.status(400).json({ error: "Message is required" });
 
-  const prompt = `You are CrimznBot, a crypto market expert trained by Raoul Pal, Michael Saylor, and Cathie Wood. Provide clear, accurate, forward-thinking answers about crypto, investing, and markets. Always speak in a confident but strategic tone.\n\nUser: ${userMessage}\nCrimznBot:`;
+  const prompt = `You are CrimznBot, a crypto market expert trained by Raoul Pal, Michael Saylor, and Cathie Wood. Provide clear, accurate, forward-thinking responses using macro insight, trading logic, and crypto-native analysis. Question: ${userMessage}`;
 
   try {
-    const completion = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
     });
 
-    const reply = completion.data.choices?.[0]?.message?.content || "Couldn’t fetch a response. Try again shortly.";
+    const reply = completion.choices?.[0]?.message?.content || "Couldn’t fetch a response. Try again shortly.";
 
     const pulse = reply.toLowerCase().includes("bearish")
       ? "Bearish 🔴"
@@ -54,16 +54,16 @@ app.post("/api/pulse", async (req, res) => {
   const phrase = req.body.phrase;
   if (!phrase) return res.status(400).json({ error: "Phrase is required" });
 
-  const pulsePrompt = `You are PulseIt, a crypto-native market sentiment engine. Given the following word, phrase, or headline, determine if the tone is Bullish, Bearish, or Neutral.\n\n"${phrase}"\n\nSentiment:`;
+  const pulsePrompt = `You are PulseIt, a crypto-native market sentiment engine. Given the following word, phrase, or headline, determine if the tone is Bullish 🟢, Bearish 🔴, or Neutral 🟡: "${phrase}"`;
 
   try {
-    const completion = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [{ role: "user", content: pulsePrompt }],
       temperature: 0.3,
     });
 
-    const sentiment = completion.data.choices?.[0]?.message?.content?.trim() || "Neutral";
+    const sentiment = completion.choices?.[0]?.message?.content?.trim() || "Neutral";
     res.json({ sentiment });
   } catch (err) {
     console.error("❌ PulseIt error:", err.message);

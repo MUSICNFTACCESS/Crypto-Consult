@@ -1,4 +1,4 @@
-// 🤖 CrimznBot with Real-Time Price Logic
+// 🤖 CrimznBot with Real-Time Price Logic + PulseIt Sentiment
 const express = require("express");
 const fetch = require("node-fetch");
 const OpenAI = require("openai");
@@ -6,10 +6,12 @@ require("dotenv").config();
 
 const app = express();
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.static("public")); // Serves index.html + frontend
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+console.log("🔐 OPENAI_API_KEY Loaded:", process.env.OPENAI_API_KEY ? "✅ Present" : "❌ MISSING");
 
+// 🧠 CrimznBot AI + Price Logic
 app.post("/api/ask", async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: "Message is required" });
@@ -106,4 +108,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ CrimznBot server listening on port ${PORT}`);
 });
-

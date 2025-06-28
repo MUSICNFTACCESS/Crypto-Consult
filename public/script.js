@@ -1,80 +1,139 @@
-// ✅ DOM Ready Wrapper
-document.addEventListener("DOMContentLoaded", () => {
-  // 💸 Live Prices
-  fetchPrice("bitcoin", "btc-price");
-  fetchPrice("ethereum", "eth-price");
-  fetchPrice("solana", "sol-price");
+let questions = [];
+let currentQuestionIndex = 0;
+let score = 0;
+let timerInterval;
 
-  // 🤖 CrimznBot Chat
-  const submitBtn = document.getElementById("submit-btn");
-  const userInput = document.getElementById("user-input");
-  const chat = document.getElementById("chat-box");
+const TIME_PER_QUESTION = 20;
 
-  if (submitBtn && userInput && chat) {
-    submitBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      const msg = userInput.value.trim();
-      if (!msg) return;
+async function loadQuestions() {
+  try {
+    const res = await fetch("questions.json");
+    questions = await res.json();
+    shuffle(questions);
+  } catch (err) {
+    console.error("Failed to load questions:", err);
+    alert("❌ Failed to load quiz questions. Please try again.");
+  }
+}
 
-      chat.innerHTML = `<div style="color: orange;">You: ${msg}</div>`;
-      userInput.value = "";
+function startQuiz() {
+  document.getElementById("splash-screen").classList.add("hidden");
+  document.getElementById("quiz-container").classList.remove("hidden");
+  currentQuestionIndex = 0;
+  score = 0;
+  loadQuestions().then(() => showQuestion());
+}
 
-      try {
-        const res = await fetch("/api/ask", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ message: msg })
-        });
-
-        const data = await res.json();
-        chat.innerHTML += `<div style="color: lightgreen;">CrimznBot: ${data.response}</div>`;
-      } catch (err) {
-        chat.innerHTML += `<div style="color:red;">Error: ${err.message || "No response."}</div>`;
-      }
-    });
+function showQuestion() {
+  if (currentQuestionIndex >= questions.length) {
+    return endQuiz();
   }
 
-  // 📊 PulseIt Analyzer
-  const pulseitBtn = document.getElementById("pulseit-btn");
-  const pulseitInput = document.getElementById("pulseit-input");
-  const pulseitResult = document.getElementById("pulseit-result");
+  const question = questions[currentQuestionIndex];
+  document.getElementById("question").textContent = question.question;
 
-  if (pulseitBtn && pulseitInput && pulseitResult) {
-    pulseitBtn.addEventListener("click", () => {
-      const input = pulseitInput.value.toLowerCase().trim();
-      if (!input) {
-        pulseitResult.innerText = "⚠️ Please enter a topic.";
-        return;
-      }
+  const optionsList = document.getElementById("options");
+  optionsList.innerHTML = "";
 
-      const sentiment =
-        input.includes("war") || input.includes("hacks")
-          ? "Bearish"
-          : input.includes("etf") || input.includes("adoption") || input.includes("trump")
-          ? "Bullish"
-          : "Neutral";
+  question.options.forEach((opt, index) => {
+    const li = document.createElement("li");
+    li.textContent = opt;
+    li.onclick = () => selectOption(index);
+    optionsList.appendChild(li);
+  });
 
-      pulseitResult.innerHTML =
-        sentiment === "Bullish"
-          ? "<span style='color: lightgreen;'>📈 Bullish</span>"
-          : sentiment === "Bearish"
-          ? "<span style='color: red;'>📉 Bearish</span>"
-          : "<span style='color: gold;'>🟠 Neutral</span>";
-    });
+  updateProgress();
+  startTimer();
+}
+
+function selectOption(index) {
+  resetTimer();
+  const correct = questions[currentQuestionIndex].correct;
+  const optionsList = document.getElementById("options").children;
+
+  for (let i = 0; i < optionsList.length; i++) {
+    optionsList[i].classList.add(i === correct ? "correct" : "incorrect");
   }
 
-  // 💰 Price Fetching Utility
-  async function fetchPrice(symbol, elementId) {
-    try {
-      const res = await fetch(`/api/price?id=${symbol}&vs=usd`);
-      const data = await res.json();
-      const price = data[symbol]?.usd ?? "N/A";
-      document.getElementById(elementId).innerText = `$${price.toLocaleString()}`;
-    } catch (error) {
-      console.error("Price fetch error for", symbol, error);
-      document.getElementById(elementId).innerText = "Error";
+  if (index === correct) score++;
+
+  setTimeout(() => {
+    currentQuestionIndex++;
+    showQuestion();
+  }, 1000);
+}
+
+function endQuiz() {
+  document.getElementById("quiz-container").classList.add("hidden");
+  document.getElementById("score-container").classList.remove("hidden");
+
+  document.getElementById("score").textContent = score;
+
+  const prev = parseInt(localStorage.getItem("cryptokids_points") || "0");
+  localStorage.setItem("cryptokids_points", prev + score);
+
+  const wallet = localStorage.getItem("walletAddress");
+  if (wallet) {
+    fetch("/save-points", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wallet, points: score })
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log("Points saved:", data);
+      });
+  }
+}
+
+function updateProgress() {
+  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  const progressBar = document.getElementById("progress");
+  if (progressBar) {
+    progressBar.style.width = `${progress}%`;
+  }
+}
+
+function startTimer() {
+  let timeLeft = TIME_PER_QUESTION;
+  document.getElementById("time-left")?.textContent = timeLeft;
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    document.getElementById("time-left")?.textContent = timeLeft;
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      currentQuestionIndex++;
+      showQuestion();
     }
+  }, 1000);
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+}
+
+function shuffle(arr) {
+  return arr.sort(() => Math.random() - 0.5);
+}
+
+async function connectWallet() {
+  if (window.solana && window.solana.isPhantom) {
+    try {
+      const resp = await window.solana.connect({ onlyIfTrusted: false });
+      const walletAddress = resp.publicKey.toString();
+      localStorage.setItem("walletAddress", walletAddress);
+
+      const status = document.getElementById("wallet-status");
+      if (status) {
+        status.innerText = `✅ Points saved to wallet: ${walletAddress}`;
+        status.style.color = "#00ff00";
+      }
+    } catch (err) {
+      alert("Wallet connection failed.");
+      console.error("Phantom connection error:", err);
+    }
+  } else {
+    alert("Phantom Wallet not detected. Please open this page in the Phantom browser.");
   }
-});
+}

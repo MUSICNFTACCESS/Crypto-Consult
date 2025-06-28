@@ -1,139 +1,97 @@
-let questions = [];
-let currentQuestionIndex = 0;
-let score = 0;
-let timerInterval;
+let questionCount = 0;
+const maxFreeQuestions = 3;
 
-const TIME_PER_QUESTION = 20;
+// ✅ CrimznBot AI Handler
+document.getElementById("ask-btn").onclick = async () => {
+  const input = document.getElementById("user-input");
+  const chat = document.getElementById("chat-output");
+  const question = input.value.trim();
 
-async function loadQuestions() {
+  if (!question) return;
+
+  chat.innerHTML = `<div style="color:#f7931a;"><strong>You:</strong> ${question}</div>` + chat.innerHTML;
+  input.value = "";
+
+  if (questionCount >= maxFreeQuestions) {
+    chat.innerHTML = `
+      <div style="color:limegreen;"><strong>CrimznBot:</strong> You've hit your free limit. To unlock full access, send 0.025 SOL:</div>
+      <br>
+      <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CryptoConsult%20Access" target="_blank">
+        <img src="solana-logo.svg" alt="Pay with Solana" style="width:80px;height:auto;" />
+      </a>
+      <div style="margin-top:10px;">← Tap logo to pay</div>
+    ` + chat.innerHTML;
+    return;
+  }
+
+  questionCount++;
+
   try {
-    const res = await fetch("questions.json");
-    questions = await res.json();
-    shuffle(questions);
-  } catch (err) {
-    console.error("Failed to load questions:", err);
-    alert("❌ Failed to load quiz questions. Please try again.");
-  }
-}
-
-function startQuiz() {
-  document.getElementById("splash-screen").classList.add("hidden");
-  document.getElementById("quiz-container").classList.remove("hidden");
-  currentQuestionIndex = 0;
-  score = 0;
-  loadQuestions().then(() => showQuestion());
-}
-
-function showQuestion() {
-  if (currentQuestionIndex >= questions.length) {
-    return endQuiz();
-  }
-
-  const question = questions[currentQuestionIndex];
-  document.getElementById("question").textContent = question.question;
-
-  const optionsList = document.getElementById("options");
-  optionsList.innerHTML = "";
-
-  question.options.forEach((opt, index) => {
-    const li = document.createElement("li");
-    li.textContent = opt;
-    li.onclick = () => selectOption(index);
-    optionsList.appendChild(li);
-  });
-
-  updateProgress();
-  startTimer();
-}
-
-function selectOption(index) {
-  resetTimer();
-  const correct = questions[currentQuestionIndex].correct;
-  const optionsList = document.getElementById("options").children;
-
-  for (let i = 0; i < optionsList.length; i++) {
-    optionsList[i].classList.add(i === correct ? "correct" : "incorrect");
-  }
-
-  if (index === correct) score++;
-
-  setTimeout(() => {
-    currentQuestionIndex++;
-    showQuestion();
-  }, 1000);
-}
-
-function endQuiz() {
-  document.getElementById("quiz-container").classList.add("hidden");
-  document.getElementById("score-container").classList.remove("hidden");
-
-  document.getElementById("score").textContent = score;
-
-  const prev = parseInt(localStorage.getItem("cryptokids_points") || "0");
-  localStorage.setItem("cryptokids_points", prev + score);
-
-  const wallet = localStorage.getItem("walletAddress");
-  if (wallet) {
-    fetch("/save-points", {
+    const res = await fetch("/api/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet, points: score })
-    })
-      .then(res => res.json())
-      .then(data => {
-        console.log("Points saved:", data);
-      });
-  }
-}
+      body: JSON.stringify({ message: question })
+    });
 
-function updateProgress() {
-  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
-  const progressBar = document.getElementById("progress");
-  if (progressBar) {
-    progressBar.style.width = `${progress}%`;
-  }
-}
+    const data = await res.json();
 
-function startTimer() {
-  let timeLeft = TIME_PER_QUESTION;
-  document.getElementById("time-left")?.textContent = timeLeft;
-
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    document.getElementById("time-left")?.textContent = timeLeft;
-    if (timeLeft <= 0) {
-      clearInterval(timerInterval);
-      currentQuestionIndex++;
-      showQuestion();
+    if (data.response) {
+      chat.innerHTML = `
+        <div style="color:limegreen;"><strong>CrimznBot:</strong> ${data.response}</div>
+        <div style="font-size:0.9em;">📊 PulseIt Sentiment: ${data.pulse}</div>
+      ` + chat.innerHTML;
+    } else {
+      throw new Error(data.error || "No response from CrimznBot");
     }
-  }, 1000);
-}
+  } catch (err) {
+    chat.innerHTML = `<div style="color:red;"><strong>Error:</strong> ${err.message}</div>` + chat.innerHTML;
+  }
+};
 
-function resetTimer() {
-  clearInterval(timerInterval);
-}
+// ✅ PulseIt Headline Sentiment Analyzer
+document.getElementById("pulse-btn").onclick = async () => {
+  const input = document.getElementById("pulse-input");
+  const pulseOutput = document.getElementById("pulse-output");
+  const headline = input.value.trim();
 
-function shuffle(arr) {
-  return arr.sort(() => Math.random() - 0.5);
-}
+  if (!headline) return;
 
-async function connectWallet() {
-  if (window.solana && window.solana.isPhantom) {
-    try {
-      const resp = await window.solana.connect({ onlyIfTrusted: false });
-      const walletAddress = resp.publicKey.toString();
-      localStorage.setItem("walletAddress", walletAddress);
+  pulseOutput.innerHTML = `<div style="color:#f7931a;"><strong>You:</strong> ${headline}</div>` + pulseOutput.innerHTML;
+  input.value = "";
 
-      const status = document.getElementById("wallet-status");
-      if (status) {
-        status.innerText = `✅ Points saved to wallet: ${walletAddress}`;
-        status.style.color = "#00ff00";
-      }
-    } catch (err) {
-      alert("Wallet connection failed.");
-      console.error("Phantom connection error:", err);
+  try {
+    const res = await fetch("/api/pulse", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ headline })
+    });
+
+    const data = await res.json();
+
+    if (data.sentiment) {
+      pulseOutput.innerHTML = `<div style="color:limegreen;"><strong>PulseIt:</strong> ${data.sentiment}</div>` + pulseOutput.innerHTML;
+    } else {
+      throw new Error("PulseIt returned no sentiment.");
     }
-  } else {
-    alert("Phantom Wallet not detected. Please open this page in the Phantom browser.");
+  } catch (err) {
+    pulseOutput.innerHTML = `<div style="color:red;"><strong>Error:</strong> ${err.message}</div>` + pulseOutput.innerHTML;
+  }
+};
+
+// ✅ Real-Time BTC / ETH / SOL Prices
+async function fetchPrices() {
+  try {
+    const res = await fetch("/api/prices?ids=bitcoin,ethereum,solana&vs=usd");
+    const data = await res.json();
+    document.getElementById("btc-price").textContent = "$" + data.price.bitcoin;
+    document.getElementById("eth-price").textContent = "$" + data.price.ethereum;
+    document.getElementById("sol-price").textContent = "$" + data.price.solana;
+  } catch {
+    document.getElementById("btc-price").textContent = "N/A";
+    document.getElementById("eth-price").textContent = "N/A";
+    document.getElementById("sol-price").textContent = "N/A";
   }
 }
+
+fetchPrices();
+setInterval(fetchPrices, 60000);

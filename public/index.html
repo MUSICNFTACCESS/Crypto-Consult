@@ -4,8 +4,7 @@
   <meta charset="UTF-8" />
   <title>CryptoConsult by Crimzn</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🍊</text></svg>">
-  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' x='5' font-size='80' font-weight='bold' fill='%23f7931a' style='text-shadow:1px 1px %23000'>₿</text></svg>">
   <style>
     body {
       background-color: #000;
@@ -17,7 +16,7 @@
     h1, h2 {
       color: #f7931a;
     }
-    button, .solana-button {
+    button {
       font-family: monospace;
       padding: 10px;
       margin: 5px;
@@ -28,16 +27,38 @@
       cursor: pointer;
       font-weight: bold;
     }
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 10px auto;
+      display: block;
+      font-family: monospace;
+    }
+    .version-marker {
+      position: fixed;
+      bottom: 2px;
+      right: 2px;
+      font-size: 10px;
+      color: #222;
+      background: #f7931a;
+      border-radius: 5px;
+      padding: 2px 6px;
+    }
+    .solana-logo {
+      width: 130px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
   </style>
 </head>
-<!<body>
+<body>
   <h1>CryptoConsult by Crimzn</h1>
   <p>Talk to CrimznBot, get PulseIt sentiment, and book a session anytime.</p>
 
   <h2>📉 Live Prices:</h2>
-  <div>BTC: <span id="btc-price">N/A</span></div>
-  <div>ETH: <span id="eth-price">N/A</span></div>
-  <div>SOL: <span id="sol-price">N/A</span></div>
+  <div>BTC: <span id="btc-price">Loading...</span></div>
+  <div>ETH: <span id="eth-price">Loading...</span></div>
+  <div>SOL: <span id="sol-price">Loading...</span></div>
 
   <h2>📋 Available Services:</h2>
   <ul style="text-align: left; display: inline-block;">
@@ -49,10 +70,10 @@
   </ul>
 
   <h2>💳 Support & Payments:</h2>
-  <button class="solana-button" onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Book a Consultation</button>
-  <button class="solana-button" onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')">Send Tip (1 USDC)</button>
-  <button class="solana-button" onclick="window.open('https://solana.com/pay')">Pay with Solana</button>
-  <button class="solana-button" onclick="window.open('https://paypal.me/crimzn')">Pay with PayPal</button>
+  <button onclick="window.open('https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8')">Pay $99.99 USDC</button>
+  <button onclick="window.open('https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b')">Tip 1 USDC</button>
+  <img src="https://cryptoconsult.onrender.com/solana-logo.png" alt="Solana Pay" class="solana-logo" onclick="window.open('https://solana.com/pay')">
+  <button onclick="window.open('https://paypal.me/crimzn')">Pay with PayPal</button>
 
   <h2>🤖 Talk to CrimznBot</h2>
   <input id="user-input" placeholder="Ask me anything..." />
@@ -72,35 +93,61 @@
   <p><a href="https://www.farside.co.uk/etf/btc" target="_blank" style="color:#00f">📈 BTC ETF Tracker (Farside)</a></p>
   <p><a href="https://pro.nansen.ai/etf" target="_blank" style="color:#0f0">📉 ETH ETF Tracker (Nansen)</a></p>
 
-  <!-- 🧠 Version Marker -->
-  <div style="position:fixed;bottom:2px;right:2px;font-size:10px;color:#222;background:#f7931a;border-radius:50%;width:10px;height:10px;text-align:center;line-height:10px;">🧠</div>
+  <button onclick="window.location.href='radar.html'">📡 View Radar Page</button>
+
+  <div class="version-marker">🔥 Final June Build</div>
+
   <script>
-    document.addEventListener('click', () => {
-      const audio = new Audio('autoplay.mp3');
-      audio.loop = true;
-      audio.play();
-    }, { once: true });
+    let questionCount = 0;
+    const maxQuestions = 3;
 
     async function askCrimzn() {
-      document.getElementById("bot-msg").textContent = "CrimznBot: ...";
-      const res = await fetch("/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: document.getElementById("user-input").value })
-      });
-      const data = await res.json();
-      document.getElementById("bot-msg").textContent = "CrimznBot: " + data.response;
+      const input = document.getElementById("user-input");
+      const question = input.value.trim();
+      if (!question) return;
+
+      if (questionCount >= maxQuestions) {
+        document.getElementById("bot-msg").textContent =
+          "⚠️ 3 free questions used.\n💸 Please pay 0.025 SOL to unlock more.";
+        return;
+      }
+
+      document.getElementById("bot-msg").textContent = "CrimznBot is thinking...";
+      try {
+        const res = await fetch("/api/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: question })
+        });
+        const data = await res.json();
+        if (data.response) {
+          document.getElementById("bot-msg").textContent = data.response;
+          input.value = "";
+          questionCount++;
+        } else {
+          document.getElementById("bot-msg").textContent = "⚠️ No response.";
+        }
+      } catch {
+        document.getElementById("bot-msg").textContent = "❌ Network error.";
+      }
     }
 
     async function analyzePulse() {
-      document.getElementById("pulse-output").textContent = "PulseIt: ...";
-      const res = await fetch("/pulse", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: document.getElementById("pulse-input").value })
-      });
-      const data = await res.json();
-      document.getElementById("pulse-output").textContent = "PulseIt: " + data.sentiment;
+      const text = document.getElementById("pulse-input").value.trim();
+      if (!text) return;
+
+      document.getElementById("pulse-output").textContent = "Analyzing...";
+      try {
+        const res = await fetch("/pulse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text })
+        });
+        const data = await res.json();
+        document.getElementById("pulse-output").textContent = data.result || data.sentiment;
+      } catch {
+        document.getElementById("pulse-output").textContent = "❌ Error analyzing.";
+      }
     }
 
     async function fetchPrices() {
@@ -122,8 +169,6 @@
   </script>
 </body>
 </html>
-
-
 
 
 

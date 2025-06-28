@@ -1,7 +1,7 @@
 let questionCount = 0;
 const maxFreeQuestions = 3;
 
-// ✅ CrimznBot AI Handler
+// ✅ CrimznBot Handler
 document.getElementById("ask-btn").onclick = async () => {
   const input = document.getElementById("user-input");
   const chat = document.getElementById("chat-output");
@@ -48,22 +48,22 @@ document.getElementById("ask-btn").onclick = async () => {
   }
 };
 
-// ✅ PulseIt Headline Sentiment Analyzer
+// ✅ PulseIt Sentiment Analyzer (freeform input)
 document.getElementById("pulse-btn").onclick = async () => {
   const input = document.getElementById("pulse-input");
   const pulseOutput = document.getElementById("pulse-output");
-  const headline = input.value.trim();
+  const phrase = input.value.trim();
 
-  if (!headline) return;
+  if (!phrase) return;
 
-  pulseOutput.innerHTML = `<div style="color:#f7931a;"><strong>You:</strong> ${headline}</div>` + pulseOutput.innerHTML;
+  pulseOutput.innerHTML = `<div style="color:#f7931a;"><strong>You:</strong> ${phrase}</div>` + pulseOutput.innerHTML;
   input.value = "";
 
   try {
     const res = await fetch("/api/pulse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ headline })
+      body: JSON.stringify({ headline: phrase })
     });
 
     const data = await res.json();
@@ -78,7 +78,7 @@ document.getElementById("pulse-btn").onclick = async () => {
   }
 };
 
-// ✅ Real-Time BTC / ETH / SOL Prices
+// ✅ Realtime Price Fetcher
 async function fetchPrices() {
   try {
     const res = await fetch("/api/prices?ids=bitcoin,ethereum,solana&vs=usd");

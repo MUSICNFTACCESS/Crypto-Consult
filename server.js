@@ -94,24 +94,22 @@ app.post("/api/ask", async (req, res) => {
   }
 });
 
-// ✅ POST /api/pulse — PulseIt AI Standalone
+// ✅ POST /api/pulse — PulseIt Sentiment for any word/phrase/headline
 app.post("/api/pulse", async (req, res) => {
-  const { headline } = req.body;
-  if (!headline) return res.status(400).json({ error: "Headline is required" });
+  const phrase = req.body.headline;
+  if (!phrase) return res.status(400).json({ error: "Phrase is required" });
+
+  const pulsePrompt = `You are PulseIt, a crypto-native sentiment bot. You take in short phrases or headlines and return one word: Bullish, Bearish, or Neutral — based on the crypto market’s interpretation.\n\nInput: "${phrase}"\n\nSentiment:`;
 
   try {
     const completion = await openai.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: "You're PulseIt, a crypto-native sentiment bot. You take in short phrases or headlines and rate them as Bullish, Bearish, or Neutral. Then explain why in one short sentence. Format: Sentiment: [label] — [reason]."
-        },
-        { role: "user", content: headline }
-      ],
-      model: "gpt-4"
+      model: "gpt-4",
+      messages: [{ role: "user", content: pulsePrompt }],
+      temperature: 0.3,
     });
 
-    res.json({ sentiment: completion.choices[0].message.content });
+    const sentiment = completion.choices?.[0]?.message?.content?.trim() || "Neutral";
+    res.json({ sentiment });
   } catch (err) {
     console.error("❌ PulseIt error:", err.message);
     res.status(500).json({ error: "PulseIt sentiment analysis failed" });

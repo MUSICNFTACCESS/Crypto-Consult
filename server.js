@@ -17,27 +17,48 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
-// ✅ CrimznBot Route (answer + pulse tone)
+// ✅ CrimznBot Route (Real-Time Price + Crimzn Tone + Pulse)
 app.post("/api/ask", async (req, res) => {
   const userMessage = req.body.message;
   if (!userMessage) return res.status(400).json({ error: "Message is required" });
 
-  const prompt = `You are CrimznBot, a crypto market expert trained by Raoul Pal, Michael Saylor, and Cathie Wood. Provide clear, accurate, forward-thinking responses using macro insight, trading logic, and crypto-native analysis. Question: ${userMessage}`;
-
   try {
+    const priceRes = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
+    const priceData = await priceRes.json();
+
+    const btc = priceData.bitcoin.usd;
+    const eth = priceData.ethereum.usd;
+    const sol = priceData.solana.usd;
+
+    const systemPrompt = `
+You are CrimznBot — a crypto-native assistant built by Crimzn.
+You respond like a mix of ChatGPT-4o and a macro-degen strategist trained by Raoul Pal, Michael Saylor, and Cathie Wood.
+Tone: confident, concise, strategic — with edge and occasional humor.
+You ALWAYS give real-time prices like these:
+- Bitcoin (BTC): $${btc}
+- Ethereum (ETH): $${eth}
+- Solana (SOL): $${sol}
+If asked for price info, don’t say you can’t — just report the numbers above.
+If asked for a crypto opinion, feel free to add macro context, ETF flows, and BTC dominance insights too.
+`;
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage }
+      ],
       temperature: 0.7,
     });
 
-    const reply = completion.choices?.[0]?.message?.content || "Couldn’t fetch a response. Try again shortly.";
+    const reply = completion.choices?.[0]?.message?.content?.trim() || "Try again shortly.";
 
-    const pulse = reply.toLowerCase().includes("bearish")
-      ? "Bearish 🔴"
-      : reply.toLowerCase().includes("bullish")
-      ? "Bullish 🟢"
-      : "Neutral 🟡";
+    const pulse =
+      reply.toLowerCase().includes("bearish")
+        ? "Bearish 🔴"
+        : reply.toLowerCase().includes("bullish")
+        ? "Bullish 🟢"
+        : "Neutral 🟡";
 
     res.json({ response: reply, pulse });
   } catch (err) {
@@ -49,12 +70,12 @@ app.post("/api/ask", async (req, res) => {
   }
 });
 
-// ✅ PulseIt Sentiment — freeform input (any phrase or headline)
+// ✅ PulseIt Sentiment Analyzer (freeform headline/phrase)
 app.post("/api/pulse", async (req, res) => {
   const phrase = req.body.phrase;
   if (!phrase) return res.status(400).json({ error: "Phrase is required" });
 
-  const pulsePrompt = `You are PulseIt, a crypto-native market sentiment engine. Given the following word, phrase, or headline, determine if the tone is Bullish 🟢, Bearish 🔴, or Neutral 🟡: "${phrase}"`;
+  const pulsePrompt = `You are PulseIt, a crypto-native sentiment bot. Analyze the phrase: "${phrase}" and reply with just one word: Bullish, Bearish, or Neutral.`;
 
   try {
     const completion = await openai.chat.completions.create({
@@ -71,7 +92,7 @@ app.post("/api/pulse", async (req, res) => {
   }
 });
 
-// ✅ Real-Time Price API
+// ✅ Live Price Endpoint (used optionally for frontend)
 app.get("/api/prices", async (req, res) => {
   try {
     const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
@@ -90,7 +111,7 @@ app.get("/api/prices", async (req, res) => {
   }
 });
 
-// 🔁 Root
+// 🔁 Root Route
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/public/index.html");
 });

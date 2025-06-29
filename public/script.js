@@ -90,4 +90,5 @@ async function connectWallet() {
   }
 }
 // 🧼 UI Clean Patch: Removed footer logs, cleared chat input, scoped PulseIt
-  if (input.includes("etf") || input.includes("war")) { output.innerHTML = `<strong>PulseIt:</strong> ${sentiment}<br/><em>${explanation}</em>`; }
+if (userInput.includes("etf") || userInput.includes("war")) { output.innerHTML = `<strong>PulseIt:</strong> ${sentiment}<br/><em>${explanation}</em>`; }
+        botReply = "⚠️ Sorry, something went sideways — try again or drop me a tip to keep me sharp."; // Crimzn-style fallback

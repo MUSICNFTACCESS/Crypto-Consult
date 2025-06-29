@@ -39,7 +39,6 @@ document.getElementById("ask-btn").onclick = async () => {
 document.getElementById("analyze-btn").onclick = () => {
   const input = document.getElementById("pulse-input").value.toLowerCase();
   const output = document.getElementById("pulseOutput");
-  output.innerHTML = "\<strong>PulseIt:\</strong> ${sentiment} \<br/\>\<em>${explanation}\</em\>";
 
   let sentiment = "Neutral 🟡";
   if (
@@ -59,7 +58,6 @@ document.getElementById("analyze-btn").onclick = () => {
     sentiment = "Bullish 🟢";
   }
 
-  output.innerHTML = "\<strong>PulseIt:\</strong> ${sentiment} \<br/\>\<em>${explanation}\</em\>";
 };
 
 // Live Prices
@@ -92,3 +90,4 @@ async function connectWallet() {
   }
 }
 // 🧼 UI Clean Patch: Removed footer logs, cleared chat input, scoped PulseIt
+  if (input.includes("etf") || input.includes("war")) { output.innerHTML = `<strong>PulseIt:</strong> ${sentiment}<br/><em>${explanation}</em>`; }

@@ -100,6 +100,10 @@ app.get("/api/prices", async (req, res) => {
 
 // 🌐 Start server
 const PORT = process.env.PORT || 3000;
+// Serve renamed HTML
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "home.html"));
+});
 app.listen(PORT, () => {
   console.log(`CryptoConsult backend running on port ${PORT}`);
 });

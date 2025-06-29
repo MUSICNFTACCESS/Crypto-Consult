@@ -90,5 +90,40 @@ async function connectWallet() {
   }
 }
 // 🧼 UI Clean Patch: Removed footer logs, cleared chat input, scoped PulseIt
-if (userInput.includes("etf") || userInput.includes("war")) { output.innerHTML = `<strong>PulseIt:</strong> ${sentiment}<br/><em>${explanation}</em>`; }
         botReply = "⚠️ Sorry, something went sideways — try again or drop me a tip to keep me sharp."; // Crimzn-style fallback
+
+// 💬 CrimznBot Logic
+chatSubmit.onclick = async function () {
+  const input = chatInput.value.trim();
+  if (!input) return;
+  chatMessages.innerHTML = `<div class="user-msg">${input}</div>`;
+  chatInput.value = "";
+
+  try {
+    const res = await fetch("/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: input })
+    });
+    const data = await res.json();
+    chatMessages.innerHTML += `<div class="bot-msg">${data.answer}</div>`;
+  } catch (err) {
+    chatMessages.innerHTML += `<div class="bot-msg">Error. Please try again later.</div>`;
+  }
+};
+
+// 📊 PulseIt Logic
+document.getElementById("analyzeButton").onclick = function () {
+  const userInput = document.getElementById("pulseInput").value.toLowerCase();
+  let sentiment = "Neutral", icon = "🟡", explanation = "No strong signals detected.";
+
+  if (userInput.includes("etf") || userInput.includes("bitcoin")) {
+    sentiment = "Bullish"; icon = "🟢"; explanation = "ETF flows suggest strong market support.";
+  } else if (userInput.includes("war") || userInput.includes("election")) {
+    sentiment = "Bearish"; icon = "🔴"; explanation = "Geopolitical uncertainty affecting sentiment.";
+  }
+
+  const output = document.getElementById("pulseOutput");
+  output.innerHTML = `<strong>PulseIt Sentiment:</strong> ${icon} ${sentiment}<br/><em>${explanation}</em>`;
+  document.getElementById("pulseInput").value = "";
+};

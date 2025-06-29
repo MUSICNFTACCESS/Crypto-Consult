@@ -3,60 +3,71 @@
 <head>
   <meta charset="UTF-8" />
   <title>CryptoConsult by Crimzn</title>
-  <link rel="icon" href="favicon.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/style.css" />
+  <link rel="icon" href="favicon.ico" />
+
+  <!-- ✅ Solana Wallet Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@1.10.10/lib/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.9.15/lib/index.umd.js"></script>
 </head>
 <body>
   <h1>CryptoConsult by Crimzn</h1>
 
   <!-- Wallet Display -->
-  <div id="wallet-display" style="position:absolute; top:10px; right:10px; color:#f7931a;"></div>
+  <div id="wallet-display" style="position: absolute; top: 10px; right: 10px; color: #f7931a;"></div>
 
   <!-- Live Prices -->
   <div class="crypto-price" id="price-btc">BTC: N/A</div>
   <div class="crypto-price" id="price-eth">ETH: N/A</div>
   <div class="crypto-price" id="price-sol">SOL: N/A</div>
 
-  <!-- Wallet Connect -->
+  <!-- Wallet Connect Controls -->
   <div id="wallet-controls">
-    <button class="solana-button" id="connect-wallet-btn">Connect Wallet</button>
+    <button class="solana-button" onclick="connectWallet()">Connect Wallet</button>
+    <button class="solana-button" onclick="disconnectWallet()">Disconnect</button>
   </div>
 
   <!-- CrimznBot Section -->
-  <div id="chat-container">
-    <h2>Talk to CrimznBot</h2>
-    <input type="text" id="user-input" placeholder="Ask me anything..." />
-    <button id="ask-btn">Ask</button>
-    <div id="chat-output"></div>
-  </div>
+  <h2 style="color: orange;">Talk to CrimznBot</h2>
+  <input id="user-input" placeholder="Ask me anything..." />
+  <button id="ask-btn">Ask</button>
+  <div id="bot-output" style="margin-top: 10px;"></div>
 
   <!-- Paywall -->
   <div id="paywall" class="hidden">
     <p>You've used 3 free questions. Please pay to continue:</p>
-    <img src="solana-logo.svg" alt="Solana Pay" style="width:60px;" />
-    <br />
+    <img src="/solana-logo.svg" alt="Solana Pay" style="width: 60px;" /><br/>
     <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CrimznConsult" target="_blank">
       <button class="solana-button">Pay with Solana</button>
+    </a><br/><br/>
+    <a href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8" target="_blank">
+      <button class="solana-button">Pay $99.99 USDC</button>
+    </a><br/>
+    <a href="https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b" target="_blank">
+      <button class="solana-button">Tip 1 USDC</button>
+    </a><br/>
+    <a href="https://paypal.me/crimzn" target="_blank">
+      <button class="solana-button">Pay with PayPal</button>
     </a>
-    <br />
-    <a href="https://commerce.coinbase.com/checkout/0193a8a5-c86f-407d-b5d7-6f89664fbdf8" target="_blank">Pay $99.99 USDC</a><br />
-    <a href="https://commerce.coinbase.com/checkout/1d7cd946-d6ec-4278-b7ea-ee742b86982b" target="_blank">Tip 1 USDC</a><br />
-    <a href="https://paypal.me/crimzn" target="_blank">Pay with PayPal</a>
   </div>
 
-  <!-- PulseIt -->
-  <h2>PulseIt Sentiment Analyzer</h2>
-  <input type="text" id="sentimentInput" placeholder="Type a topic like 'ETF' or 'war'" />
+  <!-- PulseIt Analyzer -->
+  <h2 style="color: orange;">PulseIt Sentiment Analyzer</h2>
+  <input id="pulse-input" placeholder="Type a topic like 'ETF' or 'war'" />
   <button id="analyze-btn">Analyze</button>
-  <div id="pulseOutput"></div>
+  <div id="pulseOutput" style="margin-top: 10px;"></div>
 
   <!-- Radar and Whitepaper -->
-  <div style="margin-top: 40px;">
-    <button class="solana-button">🧭 Cycle Top Radar</button>
-    <a href="/whitepaper.pdf" target="_blank"><button class="solana-button">📄 View Whitepaper</button></a>
-  </div>
+  <h2 style="color: orange;">Radar and Whitepaper</h2>
+  <button class="solana-button" onclick="window.open('https://radar.cryptoconsult.ai')">🧭 Cycle Top Radar</button>
+  <br/><br/>
+  <a href="/whitepaper.pdf" target="_blank">
+    <button class="solana-button">📄 View Whitepaper</button>
+  </a>
 
+  <!-- Scripts -->
   <script src="/script.js"></script>
 </body>
 </html>

@@ -25,6 +25,7 @@
       border: 1px solid #f7931a;
       border-radius: 5px;
       cursor: pointer;
+      user-select: none;
     }
     .tab.active {
       background: #f7931a;
@@ -35,6 +36,10 @@
       height: 500px;
       border: none;
       margin-top: 0.5em;
+      display: none;
+    }
+    iframe.active {
+      display: block;
     }
     .back-button {
       display: inline-block;
@@ -51,36 +56,72 @@
 </head>
 <body>
   <h1>📡 The Radar</h1>
-  <p>This dashboard helps visualize potential crypto market cycle tops using key metrics, charts, and ETF flows.</p>
+  <p>This dashboard helps visualize potential crypto market cycle tops using key metrics and charts.</p>
 
   <!-- Tabs -->
   <div id="chart-tabs">
     <div class="tab active" onclick="setChart('btc')">📈 BTC/USD</div>
     <div class="tab" onclick="setChart('ethbtc')">🔁 ETH/BTC</div>
     <div class="tab" onclick="setChart('solbtc')">⚡ SOL/BTC</div>
-    <div class="tab" onclick="setChart('fear')">😱 Fear & Greed</div>
+    <div class="tab" onclick="setChart('fear')">😱 Fear &amp; Greed</div>
     <div class="tab" onclick="setChart('heatmap')">🌡️ Altcoin Heatmap</div>
   </div>
 
   <!-- Iframes -->
   <div id="iframe-container">
-    <iframe id="btc" src="https://www.tradingview.com/embed-widget/mini-symbol-overview/?symbol=BITSTAMP:BTCUSD&locale=en" style="display:block;"></iframe>
-    <iframe id="ethbtc" src="https://www.tradingview.com/embed-widget/mini-symbol-overview/?symbol=BINANCE:ETHBTC&locale=en" style="display:none;"></iframe>
-    <iframe id="solbtc" src="https://www.tradingview.com/embed-widget/mini-symbol-overview/?symbol=BINANCE:SOLBTC&locale=en" style="display:none;"></iframe>
+    <iframe
+      id="btc"
+      class="active"
+      src="https://s.tradingview.com/widgetembed/?symbol=BITSTAMP:BTCUSD&interval=60&theme=dark&style=1&toolbar=1&studies=[]"
+      allowtransparency="true"
+      scrolling="no"
+      frameborder="0"
+    ></iframe>
+
+    <iframe
+      id="ethbtc"
+      src="https://s.tradingview.com/widgetembed/?symbol=BINANCE:ETHBTC&interval=60&theme=dark&style=1&toolbar=1&studies=[]"
+      allowtransparency="true"
+      scrolling="no"
+      frameborder="0"
+    ></iframe>
+
+    <iframe
+      id="solbtc"
+      src="https://s.tradingview.com/widgetembed/?symbol=BINANCE:SOLBTC&interval=60&theme=dark&style=1&toolbar=1&studies=[]"
+      allowtransparency="true"
+      scrolling="no"
+      frameborder="0"
+    ></iframe>
+
+    <iframe
+      id="fear"
+      src="https://alternative.me/crypto/fear-and-greed-index/"
+      allowtransparency="true"
+      scrolling="no"
+      frameborder="0"
+    ></iframe>
+
+    <iframe
+      id="heatmap"
+      src="https://cryptoslate.com/crypto-market-cap/"
+      allowtransparency="true"
+      scrolling="yes"
+      frameborder="0"
+    ></iframe>
   </div>
 
-  <a href="/index.html" class="back-button">⬅️ Back to Home</a>
+  <a href="/home.html" class="back-button">⬅️ Back to Home</a>
 
   <script>
     function setChart(chartId) {
       const tabs = document.querySelectorAll(".tab");
       const iframes = document.querySelectorAll("iframe");
       tabs.forEach(tab => tab.classList.remove("active"));
-      iframes.forEach(iframe => iframe.style.display = "none");
-      document.getElementById(chartId).style.display = "block";
+      iframes.forEach(iframe => iframe.classList.remove("active"));
+      document.getElementById(chartId).classList.add("active");
       event.target.classList.add("active");
     }
   </script>
 </body>
 </html>
-// 🔁 Patch Radar Widgets: Sun Jun 29 09:28:40 EDT 2025

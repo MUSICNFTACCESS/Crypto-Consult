@@ -127,3 +127,34 @@ document.getElementById("analyzeButton").onclick = function () {
   output.innerHTML = `<strong>PulseIt Sentiment:</strong> ${icon} ${sentiment}<br/><em>${explanation}</em>`;
   document.getElementById("pulseInput").value = "";
 };
+function chatSubmit() {
+  const input = document.getElementById("chatInput").value.trim();
+  if (!input) return;
+  const chatMessages = document.getElementById("chatMessages");
+  chatMessages.innerHTML = "";
+  fetch("/ask", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ question: input })
+  })
+  .then(res => res.json())
+  .then(data => {
+    chatMessages.innerHTML = `<span style="color:#f7931a;"><strong>You:</strong> ${input}</span><br><span style="color:#00ff00;"><strong>CrimznBot:</strong> ${data.answer}</span>`;
+    document.getElementById("chatInput").value = "";
+  });
+}
+function pulseAnalyze() {
+  const input = document.getElementById("pulseInput").value.trim().toLowerCase();
+  const output = document.getElementById("pulseOutput");
+  let sentiment = "Neutral";
+  let explanation = "No strong bias detected.";
+  if (input.includes("etf") || input.includes("bullish") || input.includes("crypto")) {
+    sentiment = "Bullish";
+    explanation = "Positive developments or optimism detected.";
+  } else if (input.includes("war") || input.includes("regulation") || input.includes("dump")) {
+    sentiment = "Bearish";
+    explanation = "Concerns or negative developments noted.";
+  }
+  output.innerHTML = `<strong>PulseIt:</strong> ${sentiment}<br><em>${explanation}</em>`;
+  document.getElementById("pulseInput").value = "";
+}

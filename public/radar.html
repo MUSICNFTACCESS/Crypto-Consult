@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>📡 Cycle Top Radar</title>
+  <title>📈 Cycle Top Radar</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
@@ -20,14 +20,14 @@
     .tab {
       background: #111;
       color: white;
+      padding: 5px 12px;
+      margin: 2px;
+      border: 1px solid #222;
+      border-radius: 8px;
       display: inline-block;
-      padding: 0.5em 1.2em;
-      margin: 0.25em 0.5em;
-      border: 1px solid #f7931a;
-      border-radius: 5px;
+      font-family: monospace;
       cursor: pointer;
       user-select: none;
-      transition: background 0.3s, color 0.3s;
     }
     .tab.active {
       background: #f7931a;
@@ -35,38 +35,21 @@
     }
     iframe {
       width: 100%;
-      height: 550px;
-      border: none;
+      height: 500px;
       margin-top: 0.7em;
       display: none;
-    }
-    .back-button {
-      display: inline-block;
-      margin: 1.2em 0;
-      background-color: #f7931a;
-      color: black;
-      text-decoration: none;
-      font-weight: bold;
-      font-family: monospace;
-      border-radius: 8px;
-      padding: 0.6em 1.2em;
-      box-shadow: 0 2px 8px rgba(247,147,26,0.4);
-      transition: background-color 0.3s ease;
-    }
-    .back-button:hover {
-      background-color: #d4790a;
-      color: white;
+      border: none;
     }
     .external-button {
       background-color: #222;
       color: #f7931a;
-      padding: 0.7em 1.2em;
-      border: 1px solid #f7931a;
-      margin: 1em auto;
+      padding: 5px 12px;
+      margin: 2px;
+      border: 1px solid #444;
       display: none;
       font-family: monospace;
-      font-size: 16px;
-      border-radius: 5px;
+      font-size: 14px;
+      border-radius: 8px;
       cursor: pointer;
       text-decoration: none;
     }
@@ -74,57 +57,62 @@
       background-color: #f7931a;
       color: black;
     }
+    .back-button {
+      background-color: #f7931a;
+      color: black;
+      font-weight: bold;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      margin-top: 1em;
+      cursor: pointer;
+      display: inline-block;
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
-  <h1>📡 The Radar: Crypto Cycle Top Dashboard</h1>
+  <h1>📊 The Radar: Crypto Cycle Top Dashboard</h1>
   <p>Visualize key crypto metrics to time market cycles, spot tops, and confirm trends.</p>
 
   <!-- Tabs -->
-  <div id="chart-tabs">
-    <div class="tab active" data-chart="btc">📈 BTC/USD</div>
-    <div class="tab" data-chart="ethbtc">🔁 ETH/BTC</div>
-    <div class="tab" data-chart="solbtc">⚡ SOL/BTC</div>
-    <div class="tab" data-chart="btcdom">🦇 BTC Dominance</div>
-    <div class="tab" data-chart="feargreed">😱 Fear & Greed Index</div>
-    <div class="tab" data-chart="heatmap">🌡️ Altcoin Heatmap</div>
-    <div class="tab" data-chart="funding">💰 Funding Rates</div>
-  </div>
+  <div class="tab" data-chart="btc">📉 BTC/USD</div>
+  <div class="tab" data-chart="ethbtc">🟪 ETH/BTC</div>
+  <div class="tab" data-chart="solbtc">👻 SOL/BTC</div>
+  <div class="tab" data-chart="btcdom">🟠 BTC Dominance</div>
+  <div class="tab" data-chart="fear">😱 Fear & Greed Index</div>
+  <div class="tab" data-chart="heatmap">🌐 Altcoin Heatmap</div>
+  <div class="tab" data-chart="funding">📉 Funding Rates</div>
 
-<!-- Iframes -->
-<div id="iframe-container">
-  <iframe id="btc" src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?locale=en#%7B%22symbol%22%3A%22COINBASE%3ABTCUSD%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22550%22%2C%22locale%22%3A%22en%22%7D" style="display: block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+  <!-- Iframes -->
+  <iframe id="btc" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js?symbol=BINANCE:BTCUSDT&interval=D&theme=dark"></iframe>
+  <iframe id="ethbtc" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js?symbol=BINANCE:ETHBTC&interval=D&theme=dark"></iframe>
+  <iframe id="solbtc" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js?symbol=BINANCE:SOLBTC&interval=D&theme=dark"></iframe>
+  <iframe id="btcdom" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js?symbol=CRYPTOCAP:BTC.D&interval=D&theme=dark"></iframe>
 
-  <iframe id="ethbtc" src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?locale=en#%7B%22symbol%22%3A%22BINANCE%3AETHBTC%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22550%22%2C%22locale%22%3A%22en%22%7D" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+  <!-- External Links -->
+  <a href="https://alternative.me/crypto/fear-and-greed-index/" class="external-button" id="fear-button" target="_blank">😱 View Fear & Greed</a>
+  <a href="https://coin360.com/heatmap" class="external-button" id="heatmap-button" target="_blank">🌐 View Altcoin Heatmap</a>
+  <a href="https://coinglass.com/funding-rate" class="external-button" id="funding-button" target="_blank">📉 View Funding Rates</a>
 
-  <iframe id="solbtc" src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?locale=en#%7B%22symbol%22%3A%22BINANCE%3ASOLBTC%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22550%22%2C%22locale%22%3A%22en%22%7D" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
-
-  <iframe id="btcdom" src="https://www.tradingview.com/widgetembed/?symbol=CRYPTOCAP:BTC.D&interval=D&theme=dark" sandbox="allow-scripts allow-same-origin"></iframe>
-</div>
-
-  <!-- External link buttons -->
-  <a id="feargreed-button" class="external-button" href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank">🧠 View Fear & Greed Index</a>
-  <a id="heatmap-button" class="external-button" href="https://www.coingecko.com/en/heatmap" target="_blank">🗺️ View Altcoin Heatmap</a>
-  <a id="funding-button" class="external-button" href="https://coinglass.com/funding-rate" target="_blank">📊 View Funding Rates</a>
-
+  <!-- Back button -->
+  <br /><br />
   <a href="/home.html" class="back-button">⬅️ Back to Home</a>
 
   <script>
     const tabs = document.querySelectorAll(".tab");
     const iframes = document.querySelectorAll("iframe");
     const buttons = {
-      feargreed: document.getElementById("feargreed-button"),
+      fear: document.getElementById("fear-button"),
       heatmap: document.getElementById("heatmap-button"),
       funding: document.getElementById("funding-button")
     };
 
     tabs.forEach(tab => {
       tab.addEventListener("click", () => {
-        // Reset tab styles
         tabs.forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
 
-        // Hide all iframes and buttons
         iframes.forEach(f => f.style.display = "none");
         Object.values(buttons).forEach(b => b.style.display = "none");
 
@@ -132,11 +120,8 @@
         const iframe = document.getElementById(chartId);
         const button = buttons[chartId];
 
-        if (iframe) {
-          iframe.style.display = "block";
-        } else if (button) {
-          button.style.display = "inline-block";
-        }
+        if (iframe) iframe.style.display = "block";
+        else if (button) button.style.display = "inline-block";
       });
     });
   </script>

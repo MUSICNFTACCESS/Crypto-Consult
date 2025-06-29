@@ -5,17 +5,23 @@ document.getElementById("ask-btn").onclick = async () => {
   const input = document.getElementById("user-input");
   const chat = document.getElementById("bot-output");
   const question = input.value.trim();
-
   if (!question) return;
 
-  // Clear previous CrimznBot response
+  // Clear previous answer
   chat.innerHTML = `<div style="color: #f7931a"><strong>You:</strong> ${question}</div>`;
 
   if (questionCount >= maxQuestions) {
-    chat.innerHTML += `<div style="color: limegreen;"><strong>CrimznBot:</strong> Access limit reached. To <strong>continue</strong>, please send 0.025 SOL:</div>
-    <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CrimznConsult" target="_blank">
-      <img src="/solana-logo.svg" alt="Solana Pay" style="width:80px;" />
-    </a>`;
+    chat.innerHTML += `
+      <div style="color: limegreen;"><strong>CrimznBot:</strong> Access limit reached. To <strong>continue</strong>, please send 0.025 SOL:</div>
+      <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CrimznConsult" target="_blank">
+        <img src="/solana-logo.svg" alt="Solana Pay" style="width:80px;" />
+      </a>
+    `;
+
+    // 🔒 Disable input after hitting paywall
+    document.getElementById("user-input").disabled = true;
+    document.getElementById("ask-btn").disabled = true;
+
     return;
   }
 
@@ -25,42 +31,41 @@ document.getElementById("ask-btn").onclick = async () => {
     const res = await fetch("/api/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: question })
+      body: JSON.stringify({ question })
     });
-
     const data = await res.json();
-    chat.innerHTML += `<div style="color: limegreen;"><strong>CrimznBot:</strong> ${data.response}</div>
-      <div style="color: orange;"><strong>📊 PulseIt Sentiment:</strong> ${data.pulse}</div>`;
+
+    chat.innerHTML += `
+      <div style="color: limegreen;"><strong>CrimznBot:</strong> ${data.response}</div>
+      <div style="color: orange;"><strong>📊 PulseIt Sentiment:</strong> ${data.pulse}</div>
+    `;
+    input.value = "";
   } catch (err) {
     chat.innerHTML += `<div style="color: red;">⚠️ CrimznBot is offline or encountered an error.</div>`;
   }
 };
 
+// PulseIt Analyzer
 document.getElementById("analyze-btn").onclick = () => {
   const input = document.getElementById("pulse-input").value.toLowerCase();
   const output = document.getElementById("pulseOutput");
 
   let sentiment = "Neutral 🟡";
-  if (
-    input.includes("war") ||
-    input.includes("regulation") ||
-    input.includes("hacked") ||
-    input.includes("scam") ||
-    input.includes("dump")
-  ) {
-    sentiment = "Bearish 🔴";
-  } else if (
-    input.includes("etf") ||
-    input.includes("adoption") ||
-    input.includes("bullish") ||
-    input.includes("innovation")
-  ) {
+  let explanation = "No strong bias detected.";
+
+  if (input.includes("etf") || input.includes("adoption") || input.includes("bullish") || input.includes("crypto")) {
     sentiment = "Bullish 🟢";
+    explanation = "Positive developments or optimism detected.";
+  } else if (input.includes("war") || input.includes("regulation") || input.includes("dump") || input.includes("scam")) {
+    sentiment = "Bearish 🔴";
+    explanation = "Concerns or negative developments noted.";
   }
 
+  output.innerHTML = `<strong>PulseIt:</strong> ${sentiment}<br><em>${explanation}</em>`;
+  document.getElementById("pulse-input").value = "";
 };
 
-// Live Prices
+// 💸 Live Prices (CoinGecko)
 async function fetchPrices() {
   try {
     const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
@@ -73,9 +78,12 @@ async function fetchPrices() {
   }
 }
 fetchPrices();
-setInterval(fetchPrices, 30000); // every 30s
+setInterval(fetchPrices, 30000);
 
-// Wallet Connect
+// 🦙 Phantom Wallet Connect/Disconnect
+let walletConnected = false;
+let publicKey = "";
+
 async function connectWallet() {
   try {
     const provider = window.solana;
@@ -83,78 +91,22 @@ async function connectWallet() {
       alert("Phantom Wallet not found");
       return;
     }
-    const resp = await provider.connect();
-    document.getElementById("wallet-display").innerText = `🔐 ${resp.publicKey.toString()}`;
+
+    if (!walletConnected) {
+      const resp = await provider.connect();
+      publicKey = resp.publicKey.toString();
+      document.getElementById("wallet-display").innerText = `🔐 ${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`;
+      document.getElementById("wallet-button").innerText = "Disconnect Wallet";
+      walletConnected = true;
+    } else {
+      await provider.disconnect();
+      document.getElementById("wallet-display").innerText = "";
+      document.getElementById("wallet-button").innerText = "Connect Wallet";
+      walletConnected = false;
+    }
   } catch (err) {
-    console.error("Wallet connection failed:", err);
+    console.error("Wallet error:", err);
   }
 }
-// 🧼 UI Clean Patch: Removed footer logs, cleared chat input, scoped PulseIt
-        botReply = "⚠️ Sorry, something went sideways — try again or drop me a tip to keep me sharp."; // Crimzn-style fallback
 
-// 💬 CrimznBot Logic
-chatSubmit.onclick = async function () {
-  const input = chatInput.value.trim();
-  if (!input) return;
-  chatMessages.innerHTML = `<div class="user-msg">${input}</div>`;
-  chatInput.value = "";
-
-  try {
-    const res = await fetch("/ask", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: input })
-    });
-    const data = await res.json();
-    chatMessages.innerHTML += `<div class="bot-msg">${data.answer}</div>`;
-  } catch (err) {
-    chatMessages.innerHTML += `<div class="bot-msg">Error. Please try again later.</div>`;
-  }
-};
-
-// 📊 PulseIt Logic
-document.getElementById("analyzeButton").onclick = function () {
-  const userInput = document.getElementById("pulseInput").value.toLowerCase();
-  let sentiment = "Neutral", icon = "🟡", explanation = "No strong signals detected.";
-
-  if (userInput.includes("etf") || userInput.includes("bitcoin")) {
-    sentiment = "Bullish"; icon = "🟢"; explanation = "ETF flows suggest strong market support.";
-  } else if (userInput.includes("war") || userInput.includes("election")) {
-    sentiment = "Bearish"; icon = "🔴"; explanation = "Geopolitical uncertainty affecting sentiment.";
-  }
-
-  const output = document.getElementById("pulseOutput");
-  output.innerHTML = `<strong>PulseIt Sentiment:</strong> ${icon} ${sentiment}<br/><em>${explanation}</em>`;
-  document.getElementById("pulseInput").value = "";
-};
-function chatSubmit() {
-  const input = document.getElementById("chatInput").value.trim();
-  if (!input) return;
-  const chatMessages = document.getElementById("chatMessages");
-  chatMessages.innerHTML = "";
-  fetch("/ask", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ question: input })
-  })
-  .then(res => res.json())
-  .then(data => {
-    chatMessages.innerHTML = `<span style="color:#f7931a;"><strong>You:</strong> ${input}</span><br><span style="color:#00ff00;"><strong>CrimznBot:</strong> ${data.answer}</span>`;
-    document.getElementById("chatInput").value = "";
-  });
-}
-function pulseAnalyze() {
-  const input = document.getElementById("pulseInput").value.trim().toLowerCase();
-  const output = document.getElementById("pulseOutput");
-  let sentiment = "Neutral";
-  let explanation = "No strong bias detected.";
-  if (input.includes("etf") || input.includes("bullish") || input.includes("crypto")) {
-    sentiment = "Bullish";
-    explanation = "Positive developments or optimism detected.";
-  } else if (input.includes("war") || input.includes("regulation") || input.includes("dump")) {
-    sentiment = "Bearish";
-    explanation = "Concerns or negative developments noted.";
-  }
-  output.innerHTML = `<strong>PulseIt:</strong> ${sentiment}<br><em>${explanation}</em>`;
-  document.getElementById("pulseInput").value = "";
-}
+document.getElementById("wallet-button").onclick = connectWallet;

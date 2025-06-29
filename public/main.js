@@ -1,121 +1,113 @@
-console.log('🔥 main.js loaded');
-[Blet questionCount = 0;
+let questionCount = 0;
+const maxQuestions = 3;
 
-async function sendMessage() {
-  const input = document.getElementById('user-input');
-  const message = input.value.trim();
-  if (!message) return;
+document.getElementById("ask-btn").onclick = async () => {
+  const input = document.getElementById("user-input");
+  const chat = document.getElementById("bot-output");
+  const question = input.value.trim();
+  if (!question) return;
 
-  questionCount++;
-  document.getElementById('chat-box').innerHTML = `<p class="user">🟠 You: ${message}</p>`;
-  input.value = ''; // Clear after send
+  // Clear previous answer
+  chat.innerHTML = `<div style="color: #f7931a"><strong>You:</strong> ${question}</div>`;
 
-  if (questionCount > 3) {
-    document.getElementById('paywall').style.display = 'block';
+  if (questionCount >= maxQuestions) {
+    chat.innerHTML += `
+      <div style="color: limegreen;"><strong>CrimznBot:</strong> Access limit reached. To <strong>continue</strong>, please send 0.025 SOL:</div>
+      <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CrimznConsult" target="_blank">
+        <img src="/solana-logo.svg" alt="Solana Pay" style="width:80px;" />
+      </a>
+    `;
+
+    // 🔒 Disable input after hitting paywall
+    document.getElementById("user-input").disabled = true;
+    document.getElementById("ask-btn").disabled = true;
+
     return;
   }
 
-  try {
-    const res = await fetch('https://crypto-consult.onrender.com/api/ask', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: message })
-    });
-
-    const data = await res.json();
-    const botReply = data.response || "❌ CrimznBot couldn't process that.";
-    document.getElementById('chat-box').innerHTML = `<p class="bot">🟢 CrimznBot: ${botReply}</p>`;
-  } catch (err) {
-    document.getElementById('chat-box').innerHTML = `<p class="bot">❌ CrimznBot error: ${err.message}</p>`;
-  }
-}
-
-async function analyzePulse() {
-  const input = document.getElementById('pulse-input');
-  const topic = input.value.trim();
-  const output = document.getElementById('pulse-output');
-  input.value = ''; // Clear after analyze
-
-  if (!topic) return;
+  questionCount++;
 
   try {
-    const res = await fetch('/api/pulse', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: topic })
+    const res = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question })
     });
-
     const data = await res.json();
-    const response = data.response || "❌ PulseIt could not determine sentiment.";
-    let className = 'score-neutral';
 
-    if (response.includes('Bullish')) className = 'score-bullish';
-    else if (response.includes('Bearish')) className = 'score-bearish';
-
-    output.innerHTML = `<p class="radar-section ${className}">🧠 PulseIt: ${response}</p>`;
+    chat.innerHTML += `
+      <div style="color: limegreen;"><strong>CrimznBot:</strong> ${data.response}</div>
+      <div style="color: orange;"><strong>📊 PulseIt Sentiment:</strong> ${data.pulse}</div>
+    `;
+    input.value = "";
   } catch (err) {
-    output.innerHTML = `<p class="radar-section score-neutral">❌ PulseIt error: ${err.message}</p>`;
+    chat.innerHTML += `<div style="color: red;">⚠️ CrimznBot is offline or encountered an error.</div>`;
   }
-}
+};
 
-// --- Live Crypto Prices ---
+// PulseIt Analyzer
+document.getElementById("analyze-btn").onclick = () => {
+  const input = document.getElementById("pulse-input").value.toLowerCase();
+  const output = document.getElementById("pulseOutput");
+
+  let sentiment = "Neutral 🟡";
+  let explanation = "No strong bias detected.";
+
+  if (input.includes("etf") || input.includes("adoption") || input.includes("bullish") || input.includes("crypto")) {
+    sentiment = "Bullish 🟢";
+    explanation = "Positive developments or optimism detected.";
+  } else if (input.includes("war") || input.includes("regulation") || input.includes("dump") || input.includes("scam")) {
+    sentiment = "Bearish 🔴";
+    explanation = "Concerns or negative developments noted.";
+  }
+
+  output.innerHTML = `<strong>PulseIt:</strong> ${sentiment}<br><em>${explanation}</em>`;
+  document.getElementById("pulse-input").value = "";
+};
+
+// 💸 Live Prices (CoinGecko)
 async function fetchPrices() {
   try {
-    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd');
+    const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
     const data = await res.json();
-    document.getElementById('btc-price').textContent = `$${data.bitcoin.usd.toLocaleString()}`;
-    document.getElementById('eth-price').textContent = `$${data.ethereum.usd.toLocaleString()}`;
-    document.getElementById('sol-price').textContent = `$${data.solana.usd.toLocaleString()}`;
+    document.getElementById("price-btc").innerText = `BTC: $${data.bitcoin.usd}`;
+    document.getElementById("price-eth").innerText = `ETH: $${data.ethereum.usd}`;
+    document.getElementById("price-sol").innerText = `SOL: $${data.solana.usd}`;
   } catch (err) {
-    console.error('Price fetch error:', err);
+    console.error("Price fetch failed:", err);
   }
 }
 fetchPrices();
 setInterval(fetchPrices, 30000);
 
-// --- Solana Wallet Connect / Disconnect ---
-let wallet = null;
+// 🦙 Phantom Wallet Connect/Disconnect
+let walletConnected = false;
+let publicKey = "";
 
 async function connectWallet() {
   try {
     const provider = window.solana;
     if (!provider || !provider.isPhantom) {
-      alert("Phantom Wallet not found. Please install it.");
+      alert("Phantom Wallet not found");
       return;
     }
 
-    const resp = await provider.connect();
-    wallet = resp.publicKey.toString();
-    alert(`✅ Connected wallet: ${wallet}`);
-    document.getElementById("connect-button").style.display = "none";
-    document.getElementById("disconnect-button").style.display = "inline-block";
+    if (!walletConnected) {
+      const resp = await provider.connect();
+      publicKey = resp.publicKey.toString();
+      document.getElementById("wallet-display").innerText = `🔐 ${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`;
+      document.getElementById("wallet-button").innerText = "Disconnect Wallet";
+      walletConnected = true;
+    } else {
+      await provider.disconnect();
+      document.getElementById("wallet-display").innerText = "";
+      document.getElementById("wallet-button").innerText = "Connect Wallet";
+      walletConnected = false;
+    }
   } catch (err) {
-    console.error("Wallet connect error:", err);
-    alert("❌ Failed to connect wallet.");
+    console.error("Wallet error:", err);
   }
 }
 
-function disconnectWallet() {
-  if (window.solana && window.solana.disconnect) {
-    window.solana.disconnect();
-    alert("👋 Wallet disconnected.");
-    wallet = null;
-    document.getElementById("connect-button").style.display = "inline-block";
-    document.getElementById("disconnect-button").style.display = "none";
-  }
-}
-function connectSolana() {
-  alert('🪙 Solana Pay: 0.25 SOL required. This will open in your wallet.');
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("submit-button").addEventListener("click", sendMessage);
-  document.getElementById("pulse-button").addEventListener("click", analyzePulse);
-  document.getElementById("connect-button").addEventListener("click", connectWallet);
-  document.getElementById("disconnect-button").addEventListener("click", disconnectWallet);
-  document.getElementById("solana-pay-button").addEventListener("click", connectSolana);
-  
-  fetchPrices();
-  setInterval(fetchPrices, 30000);
-});
-document.body.insertAdjacentHTML('beforeend', '<p style="color:lime">✅ script.js is LIVE!</p>');
+document.getElementById("wallet-button").onclick = connectWallet;
+// force update

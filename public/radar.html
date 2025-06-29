@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>📡 Cycle Top Radar</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
       background-color: #000;
@@ -38,6 +38,7 @@
       height: 550px;
       border: none;
       margin-top: 0.7em;
+      display: none;
     }
     .back-button {
       display: inline-block;
@@ -56,112 +57,85 @@
       background-color: #d4790a;
       color: white;
     }
+    .external-button {
+      background-color: #222;
+      color: #f7931a;
+      padding: 0.7em 1.2em;
+      border: 1px solid #f7931a;
+      margin: 1em auto;
+      display: none;
+      font-family: monospace;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .external-button:hover {
+      background-color: #f7931a;
+      color: black;
+    }
   </style>
 </head>
 <body>
   <h1>📡 The Radar: Crypto Cycle Top Dashboard</h1>
   <p>Visualize key crypto metrics to time market cycles, spot tops, and confirm trends.</p>
 
-  <!-- Tabs for charts -->
+  <!-- Tabs -->
   <div id="chart-tabs">
     <div class="tab active" data-chart="btc">📈 BTC/USD</div>
     <div class="tab" data-chart="ethbtc">🔁 ETH/BTC</div>
     <div class="tab" data-chart="solbtc">⚡ SOL/BTC</div>
-    <div class="tab" data-chart="fear">😱 Fear & Greed Index</div>
-    <div class="tab" data-chart="heatmap">🌡️ Altcoin Heatmap</div>
     <div class="tab" data-chart="btcdom">🦇 BTC Dominance</div>
+    <div class="tab" data-chart="feargreed">😱 Fear & Greed Index</div>
+    <div class="tab" data-chart="heatmap">🌡️ Altcoin Heatmap</div>
     <div class="tab" data-chart="funding">💰 Funding Rates</div>
   </div>
 
-  <!-- Iframe containers -->
+  <!-- Iframes -->
   <div id="iframe-container">
-    <!-- BTC/USD TradingView Widget with full TA -->
-    <iframe
-      id="btc"
-      src="https://www.tradingview.com/chart/?symbol=BTCUSD"
-      style="display: block;"
-      allowfullscreen
-      sandbox="allow-scripts allow-same-origin allow-popups"
-      title="BTC/USD TradingView Chart"
-    ></iframe>
-
-    <!-- ETH/BTC TradingView Widget -->
-    <iframe
-      id="ethbtc"
-      src="https://www.tradingview.com/chart/?symbol=ETHBTC"
-      style="display: none;"
-      allowfullscreen
-      sandbox="allow-scripts allow-same-origin allow-popups"
-      title="ETH/BTC TradingView Chart"
-    ></iframe>
-
-    <!-- SOL/BTC TradingView Widget -->
-    <iframe
-      id="solbtc"
-      src="https://www.tradingview.com/chart/?symbol=SOLBTC"
-      style="display: none;"
-      allowfullscreen
-      sandbox="allow-scripts allow-same-origin allow-popups"
-      title="SOL/BTC TradingView Chart"
-    ></iframe>
-
-    <!-- Fear & Greed Index embed -->
-    <iframe
-      id="fear"
-      src="https://alternative.me/crypto/fear-and-greed-index/"
-      style="display: none;"
-      allowfullscreen
-      sandbox="allow-scripts allow-same-origin"
-      title="Crypto Fear and Greed Index"
-    ></iframe>
-
-    <!-- Altcoin Heatmap -->
-    <iframe
-      id="heatmap"
-      src="https://www.coingecko.com/en/heatmap"
-      style="display: none;"
-      allowfullscreen
-      sandbox="allow-scripts allow-same-origin"
-      title="Altcoin Heatmap"
-    ></iframe>
-
-    <!-- BTC Dominance -->
-    <iframe
-      id="btcdom"
-      src="https://www.tradingview.com/widgetembed/?symbol=CRYPTOCAP:BTC.D&interval=D&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark"
-      style="display: none;"
-      allowfullscreen
-      sandbox="allow-scripts allow-same-origin"
-      title="BTC Dominance TradingView Chart"
-    ></iframe>
-
-    <!-- Funding Rates -->
-    <iframe
-      id="funding"
-      src="https://coinglass.com/funding-rate"
-      style="display: none;"
-      allowfullscreen
-      sandbox="allow-scripts allow-same-origin"
-      title="Funding Rates from Coinglass"
-    ></iframe>
+    <iframe id="btc" src="https://www.tradingview.com/chart/?symbol=BTCUSD" style="display: block;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+    <iframe id="ethbtc" src="https://www.tradingview.com/chart/?symbol=ETHBTC" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+    <iframe id="solbtc" src="https://www.tradingview.com/chart/?symbol=SOLBTC" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+    <iframe id="btcdom" src="https://www.tradingview.com/widgetembed/?symbol=CRYPTOCAP:BTC.D&interval=D&theme=dark" sandbox="allow-scripts allow-same-origin"></iframe>
   </div>
+
+  <!-- External link buttons -->
+  <a id="feargreed-button" class="external-button" href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank">🧠 View Fear & Greed Index</a>
+  <a id="heatmap-button" class="external-button" href="https://www.coingecko.com/en/heatmap" target="_blank">🗺️ View Altcoin Heatmap</a>
+  <a id="funding-button" class="external-button" href="https://coinglass.com/funding-rate" target="_blank">📊 View Funding Rates</a>
 
   <a href="/home.html" class="back-button">⬅️ Back to Home</a>
 
   <script>
-    function setChart(chartId) {
-      const tabs = document.querySelectorAll(".tab");
-      const iframes = document.querySelectorAll("#iframe-container iframe");
+    const tabs = document.querySelectorAll(".tab");
+    const iframes = document.querySelectorAll("iframe");
+    const buttons = {
+      feargreed: document.getElementById("feargreed-button"),
+      heatmap: document.getElementById("heatmap-button"),
+      funding: document.getElementById("funding-button")
+    };
 
-      tabs.forEach(tab => tab.classList.remove("active"));
-      iframes.forEach(iframe => iframe.style.display = "none");
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        // Reset tab styles
+        tabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
 
-      document.getElementById(chartId).style.display = "block";
+        // Hide all iframes and buttons
+        iframes.forEach(f => f.style.display = "none");
+        Object.values(buttons).forEach(b => b.style.display = "none");
 
-      // Add active class to clicked tab by matching data-chart
-      const clickedTab = Array.from(tabs).find(tab => tab.dataset.chart === chartId);
-      if (clickedTab) clickedTab.classList.add("active");
-    }
+        const chartId = tab.getAttribute("data-chart");
+        const iframe = document.getElementById(chartId);
+        const button = buttons[chartId];
+
+        if (iframe) {
+          iframe.style.display = "block";
+        } else if (button) {
+          button.style.display = "inline-block";
+        }
+      });
+    });
   </script>
 </body>
 </html>

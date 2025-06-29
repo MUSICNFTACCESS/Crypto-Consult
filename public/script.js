@@ -39,7 +39,7 @@ document.getElementById("ask-btn").onclick = async () => {
 document.getElementById("analyze-btn").onclick = () => {
   const input = document.getElementById("pulse-input").value.toLowerCase();
   const output = document.getElementById("pulseOutput");
-  output.innerHTML = ""; // Clear previous
+  output.innerHTML = "\<strong>PulseIt:\</strong> ${sentiment} \<br/\>\<em>${explanation}\</em\>";
 
   let sentiment = "Neutral 🟡";
   if (
@@ -59,7 +59,7 @@ document.getElementById("analyze-btn").onclick = () => {
     sentiment = "Bullish 🟢";
   }
 
-  output.innerHTML = `<strong>PulseIt:</strong> ${sentiment}`;
+  output.innerHTML = "\<strong>PulseIt:\</strong> ${sentiment} \<br/\>\<em>${explanation}\</em\>";
 };
 
 // Live Prices

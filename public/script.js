@@ -110,3 +110,4 @@ async function connectWallet() {
 }
 
 document.getElementById("wallet-button").onclick = connectWallet;
+// force update

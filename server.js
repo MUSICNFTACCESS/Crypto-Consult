@@ -85,9 +85,24 @@ Make it quick, punchy, and emoji-coded.
   }
 });
 
+// 📈 Live price API for frontend polling
+app.get("/api/prices", async (req, res) => {
+  try {
+    const url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd";
+    const response = await fetch(url);
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error("Price API error:", error.message);
+    res.status(500).json({ error: "Failed to fetch live prices." });
+  }
+});
+
 // 🌐 Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`CryptoConsult backend running on port ${PORT}`);
 });
 // force update
+
+

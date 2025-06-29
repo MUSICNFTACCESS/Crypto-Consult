@@ -91,3 +91,4 @@ async function connectWallet() {
     console.error("Wallet connection failed:", err);
   }
 }
+// 🧼 UI Clean Patch: Removed footer logs, cleared chat input, scoped PulseIt

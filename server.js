@@ -32,7 +32,6 @@ app.post("/api/ask", async (req, res) => {
     pepe: "pepe", "pepe-coin": "pepe",
     bonk: "bonk", "bonk-token": "bonk",
     render: "render-token", rndr: "render-token",
-    sui: "sui", sui-token: "sui",
     wif: "dogwifhat", dogwifhat: "dogwifhat",
     usdt: "tether", tether: "tether",
     usdc: "usd-coin", "usd-coin": "usd-coin",

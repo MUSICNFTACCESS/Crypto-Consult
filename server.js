@@ -172,3 +172,23 @@ app.listen(PORT, () => {
 
 
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/home.html'));
+// 🔓 Solana Payment Unlock Check
+app.get("/api/check-solana-payment", async (req, res) => {
+  const HELIUS_URL = process.env.HELIUS_TX_URL;
+  if (!HELIUS_URL) return res.status(500).json({ error: "Missing Helius URL" });
+
+  try {
+    const response = await fetch(HELIUS_URL);
+    const data = await response.json();
+
+    const paid = Array.isArray(data) && data.some(tx => {
+      return tx?.type === "TRANSFER" &&
+             tx?.nativeTransfers?.some(n => n.toUserAccount === "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
+    });
+
+    res.json({ unlocked: paid });
+  } catch (err) {
+    console.error("Helius check error:", err.message);
+    res.status(500).json({ error: "Failed to check Solana payment" });
+  }
+});

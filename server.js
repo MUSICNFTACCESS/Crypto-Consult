@@ -13,7 +13,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
 const SOLANA_ADDRESS = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
 
-// ✅ 1. CrimznBot — Crypto Price + GPT-4 Hybrid AI
+// ✅ CrimznBot — Crypto Price + GPT-4 Hybrid AI
 app.post("/api/crimznbot", async (req, res) => {
   const question = (req.body.prompt || req.body.question || req.body.message || "").toLowerCase();
   if (!question) return res.status(400).json({ response: "No question provided." });
@@ -76,16 +76,16 @@ app.post("/api/crimznbot", async (req, res) => {
 
     const reply = chat.choices?.[0]?.message?.content || "🤖 CrimznBot is offline.";
     res.json({ response: reply });
-  } catch (error) {
-    console.error("CrimznBot error:", error.message);
+  } catch (err) {
+    console.error("❌ CrimznBot error:", err.message);
     res.status(500).json({ response: "❌ CrimznBot failed to respond." });
   }
 });
 
-// ✅ 2. PulseIt — Simple News Sentiment Classifier
+// ✅ PulseIt — Market News Sentiment Classifier
 app.post("/api/pulseit", async (req, res) => {
-  const input = req.body.text || "";
-  if (!input) return res.status(400).json({ sentiment: "neutral", emoji: "🟡", explanation: "No input provided." });
+  const input = req.body.input;
+  if (!input) return res.status(400).json({ sentiment: "neutral", emoji: "🟠", explanation: "No input provided." });
 
   try {
     const pulse = await openai.chat.completions.create({
@@ -93,7 +93,7 @@ app.post("/api/pulseit", async (req, res) => {
       messages: [
         {
           role: "system",
-          content: "You're PulseIt — a crypto news sentiment classifier. Respond with one word: bullish, bearish, or neutral. No extra text."
+          content: `You are PulseIt — a crypto news sentiment classifier. Respond with one word: bullish, bearish, or neutral. No extra text.`
         },
         {
           role: "user",
@@ -103,43 +103,48 @@ app.post("/api/pulseit", async (req, res) => {
     });
 
     const output = pulse.choices?.[0]?.message?.content.trim().toLowerCase();
-    let emoji = "🟡";
-
+    let emoji = "🟠";
     if (output.includes("bullish")) emoji = "🟢";
-    else if (output.includes("bearish")) emoji = "🔴";
+    if (output.includes("bearish")) emoji = "🔴";
 
     res.json({ sentiment: output, emoji });
   } catch (err) {
-    console.error("PulseIt Error:", err.message);
-    res.status(500).json({ sentiment: "neutral", emoji: "🟡", explanation: "AI error" });
+    console.error("PulseIt error:", err.message);
+    res.status(500).json({ sentiment: "neutral", emoji: "🟠", explanation: "AI error" });
   }
 });
 
-// ✅ 3. Verify Solana Pay Payment via Helius
-app.post("/api/verify-solana-payment", async (req, res) => {
+// ✅ Solana Pay unlock verifier
+app.post("/api/verify", async (req, res) => {
   const wallet = req.body.wallet;
   if (!wallet) return res.status(400).json({ paid: false, message: "No wallet provided." });
 
   try {
     const url = `https://api.helius.xyz/v0/addresses/${wallet}/transactions?api-key=${HELIUS_API_KEY}&limit=10`;
     const txRes = await fetch(url);
-    const txs = await txRes.json();
+    const txData = await txRes.json();
 
-    const hasPaid = txs?.some(tx => {
-      return tx.transfers?.some(t =>
+    const hasPaid = txData?.some(tx =>
+      tx.description === "transfer" &&
+      tx.transfers?.some(t =>
         t.to === SOLANA_ADDRESS &&
-        parseFloat(t.amount) >= 0.025
-      );
-    });
+        parseFloat(t.amount || 0) >= 0.025
+      )
+    );
 
     res.json({ paid: hasPaid });
   } catch (err) {
-    console.error("Helius Error:", err.message);
+    console.error("Helius error:", err.message);
     res.status(500).json({ paid: false, error: "Failed to check payment." });
   }
 });
 
-// ✅ Start Server
+// ✅ Fallback route — serve index.html for all unmatched routes
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// ✅ Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server live on http://localhost:${PORT}`);

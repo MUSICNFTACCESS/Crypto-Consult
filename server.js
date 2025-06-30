@@ -41,7 +41,6 @@ app.post("/api/ask", async (req, res) => {
     gmx: "gmx", blur: "blur", not: "notcoin",
     wif: "dogwifhat", bob: "bob", memecoin: "memecoin",
     aevo: "aevo", io: "io-net", tia: "celestia"
-    // Add more aliases as needed
   };
 
   const match = Object.keys(tokenMap).find(key => question.includes(key));
@@ -72,11 +71,11 @@ app.post("/api/ask", async (req, res) => {
         {
           role: "system",
           content: `
-You are CrimznBot — a crypto-native assistant on CryptoConsult.
-You speak with alpha, clarity, and conviction.
-Always try to give real prices and market info.
-If you can’t access a live feed, say so — don't guess prices.
-        `.trim()
+You are CrimznBot — a sharp crypto-native AI built into CryptoConsult.
+Answer with clarity, brevity, and confidence.
+If the user asks about crypto prices or markets, be precise.
+If price data is missing, just say so — never guess or hallucinate.
+          `.trim()
         },
         { role: "user", content: question }
       ]
@@ -94,7 +93,10 @@ If you can’t access a live feed, say so — don't guess prices.
 app.post("/pulseit", async (req, res) => {
   const topic = req.body.topic;
   if (!topic) {
-    return res.status(400).json({ sentiment: "Neutral 🟡", explanation: "No topic provided." });
+    return res.status(400).json({
+      sentiment: "Neutral 🟡",
+      explanation: "No topic provided."
+    });
   }
 
   try {
@@ -104,24 +106,26 @@ app.post("/pulseit", async (req, res) => {
         {
           role: "system",
           content: `
-You are PulseIt — a fast crypto sentiment and news signaler.
-Reply with a sentiment label (Bullish 🟢, Bearish 🔴, or Neutral 🟡) and a one-line explanation.
-Make it quick, punchy, and emoji-coded.
+You are PulseIt — a fast crypto sentiment AI.
+Reply with 1 line only in this format:
+[Sentiment emoji] — [Short explanation].
+Be bold. Use emojis: 🟢 Bullish, 🔴 Bearish, 🟡 Neutral.
+Never add extra text or greetings.
           `.trim()
         },
         {
           role: "user",
-          content: `Analyze the sentiment of: ${topic}`
+          content: `Sentiment analysis: ${topic}`
         }
       ]
     });
 
-    const text = completion.choices?.[0]?.message?.content || "Neutral 🟡 — No strong signal detected.";
-    const [sentimentLine, ...rest] = text.split("\n");
-    const sentiment = sentimentLine.trim();
-    const explanation = rest.join(" ").trim() || "No explanation provided.";
-
-    res.json({ sentiment, explanation });
+    const raw = completion.choices?.[0]?.message?.content || "Neutral 🟡 — No signal.";
+    const [sentiment, ...rest] = raw.split("—");
+    res.json({
+      sentiment: (sentiment || "").trim(),
+      explanation: (rest.join("—") || "").trim()
+    });
   } catch (error) {
     console.error("PulseIt error:", error.message);
     res.status(500).json({
@@ -146,34 +150,6 @@ app.get("/api/prices", async (req, res) => {
 
 // 🔓 Solana payment unlock check (via Helius API)
 app.get("/api/check-solana-payment", async (req, res) => {
-  try {
-    const HELIUS_TX_URL = process.env.HELIUS_TX_URL;
-    const response = await fetch(HELIUS_TX_URL);
-    const data = await response.json();
-
-    const isPaid = Array.isArray(data) && data.length > 0;
-    res.json({ unlocked: isPaid });
-  } catch (err) {
-    console.error("Helius check error:", err.message);
-    res.status(500).json({ unlocked: false });
-  }
-});
-
-// 🌐 Start server
-const PORT = process.env.PORT || 3000;
-// Serve renamed HTML
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "home.html"));
-});
-app.listen(PORT, () => {
-  console.log(`CryptoConsult backend running on port ${PORT}`);
-});
-// force update
-
-
-app.get('/', (req, res) => res.sendFile(__dirname + '/public/home.html'));
-// 🔓 Solana Payment Unlock Check
-app.get("/api/check-solana-payment", async (req, res) => {
   const HELIUS_URL = process.env.HELIUS_TX_URL;
   if (!HELIUS_URL) return res.status(500).json({ error: "Missing Helius URL" });
 
@@ -191,4 +167,13 @@ app.get("/api/check-solana-payment", async (req, res) => {
     console.error("Helius check error:", err.message);
     res.status(500).json({ error: "Failed to check Solana payment" });
   }
+});
+
+// 🌐 Start server
+const PORT = process.env.PORT || 3000;
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "home.html"));
+});
+app.listen(PORT, () => {
+  console.log(`CryptoConsult backend running on port ${PORT}`);
 });

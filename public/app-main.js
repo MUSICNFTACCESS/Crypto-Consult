@@ -1,5 +1,7 @@
+// 💬 CrimznBot Handler with 3-question paywall
 let questionCount = 0;
 const maxQuestions = 3;
+let solanaUnlocked = false;
 
 document.getElementById("ask-btn").onclick = async () => {
   const input = document.getElementById("user-input");
@@ -7,21 +9,17 @@ document.getElementById("ask-btn").onclick = async () => {
   const question = input.value.trim();
   if (!question) return;
 
-  // Clear previous answer
   chat.innerHTML = `<div style="color: #f7931a"><strong>You:</strong> ${question}</div>`;
 
-  if (questionCount >= maxQuestions) {
+  if (questionCount >= maxQuestions && !solanaUnlocked) {
     chat.innerHTML += `
-      <div style="color: limegreen;"><strong>CrimznBot:</strong> Access limit reached. To <strong>continue</strong>, please send 0.025 SOL:</div>
-      <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF?amount=0.025&label=CrimznConsult" target="_blank">
-        <img src="/solana-logo.svg" alt="Solana Pay" style="width:80px;" />
+      <div style="color: limegreen;"><strong>CrimznBot:</strong> Access limit reached. Unlock to continue.</div>
+      <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF">
+        <img src="/solana-logo.svg" alt="Solana Pay" style="width: 120px; margin: 10px auto;" />
       </a>
     `;
-
-    // 🔒 Disable input after hitting paywall
     document.getElementById("user-input").disabled = true;
     document.getElementById("ask-btn").disabled = true;
-
     return;
   }
 
@@ -31,21 +29,38 @@ document.getElementById("ask-btn").onclick = async () => {
     const res = await fetch("/api/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question })
+      body: JSON.stringify({ question }),
     });
     const data = await res.json();
-
-    chat.innerHTML += `
-      <div style="color: limegreen;"><strong>CrimznBot:</strong> ${data.response}</div>
-      <div style="color: orange;"><strong>📊 PulseIt Sentiment:</strong> ${data.pulse}</div>
-    `;
+    chat.innerHTML += `<div style="color: limegreen;"><strong>CrimznBot:</strong> ${data.response}</div>`;
     input.value = "";
   } catch (err) {
-    chat.innerHTML += `<div style="color: red;">⚠️ CrimznBot is offline or encountered an error.</div>`;
+    chat.innerHTML += `<div style="color:red;"><strong>Error:</strong> Failed to get response.</div>`;
+    console.error(err);
   }
 };
 
-// PulseIt Analyzer
+// 🔓 Solana unlock checker using backend Helius check
+async function checkSolanaUnlock() {
+  try {
+    const res = await fetch("/api/check-solana-payment");
+    const data = await res.json();
+    if (data.unlocked) {
+      solanaUnlocked = true;
+      document.getElementById("paywall").style.display = "none";
+      document.getElementById("user-input").disabled = false;
+      document.getElementById("ask-btn").disabled = false;
+      document.getElementById("bot-output").innerHTML += `
+        ✅ <strong>Access Unlocked!</strong> You can now continue asking questions.
+      `;
+    }
+  } catch (err) {
+    console.error("Solana unlock check error:", err);
+  }
+}
+setInterval(checkSolanaUnlock, 10000);
+
+// 📊 PulseIt Analyzer
 document.getElementById("analyze-btn").onclick = () => {
   const input = document.getElementById("pulse-input").value.toLowerCase();
   const output = document.getElementById("pulseOutput");
@@ -108,6 +123,21 @@ async function connectWallet() {
     console.error("Wallet error:", err);
   }
 }
-
 document.getElementById("wallet-button").onclick = connectWallet;
-// force update
+
+// 🔓 Solana unlock check on page load
+async function checkUnlock() {
+  try {
+    const res = await fetch("/api/check-solana-payment");
+    const data = await res.json();
+    if (data.unlocked) {
+      console.log("🔓 Solana payment detected. Unlocking CrimznBot.");
+      document.getElementById("paywall").style.display = "none";
+    } else {
+      console.log("🔒 No payment detected. Paywall remains.");
+    }
+  } catch (err) {
+    console.error("❌ Unlock check failed:", err.message);
+  }
+}
+window.addEventListener("DOMContentLoaded", checkUnlock);

@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
     input.value = "";
 
     try {
-      const res = await fetch("/api/crimznbot", {
+      const res = await fetch("https://crypto-consult.onrender.com/api/crimznbot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
@@ -34,7 +34,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
       responseBox.innerHTML = `<span class="response green">${data.response}</span>`;
 
-      // ✅ Count only after successful response
       if (!hasPaid) {
         questionCount++;
         localStorage.setItem("questionCount", questionCount);
@@ -57,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     resultBox.innerText = "🔄 analyzing...";
     try {
-      const res = await fetch("/api/pulseit", {
+      const res = await fetch("https://crypto-consult.onrender.com/api/pulseit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ input: topic }),
@@ -131,7 +130,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("analyze-btn")?.addEventListener("click", analyzePulseIt);
   document.getElementById("connectWalletBtn")?.addEventListener("click", connectWallet);
 
-  // ⏯️ Auto-unlock if already paid
   if (hasPaid) {
     document.getElementById("paywall").style.display = "none";
   }

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>📊 Cycle Top Radar</title>
+  <title>📉 Cycle Top Radar</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
@@ -12,49 +12,38 @@
       text-align: center;
       padding: 20px;
     }
-    h1 {
-      font-size: 22px;
-      margin-top: 0.5em;
-    }
+    h1 { font-size: 22px; margin-top: 0.5em; }
     .tab {
       background: #111;
       display: inline-block;
       padding: 10px 12px;
-      margin: 5px;
+      margin: 4px;
       border: 1px solid #f7931a;
       border-radius: 8px;
-      font-size: 14px;
-      cursor: pointer;
+      font-size: 12px;
       user-select: none;
+      cursor: pointer;
     }
     .tab.active {
-      background: #f7931a;
-      color: #000;
+      background-color: #f7931a;
+      color: black;
     }
     .iframe-wrap {
+      display: none;
       margin-top: 20px;
+      width: 100%;
+      height: 500px;
     }
     iframe {
       border: none;
       width: 100%;
-      height: 400px;
-    }
-    .external-button {
-      display: inline-block;
-      margin: 6px;
-      padding: 10px 14px;
-      background-color: #1e1e1e;
-      border: 1px solid #f7931a;
-      border-radius: 8px;
-      color: #f7931a;
-      text-decoration: none;
-      font-family: monospace;
+      height: 100%;
     }
     .back-button {
       margin-top: 1em;
       display: inline-block;
       background-color: #f7931a;
-      color: #000;
+      color: black;
       padding: 10px 14px;
       border-radius: 8px;
       font-family: monospace;
@@ -68,55 +57,43 @@
 
   <!-- Tab Buttons -->
   <div class="tab active" data-id="btc">🟧 BTC/USD</div>
-  <div class="tab" data-id="eth">🟣 ETH/BTC</div>
-  <div class="tab" data-id="sol">🟡 SOL/BTC</div>
-  <div class="tab" data-id="dominance">📘 BTC Dominance</div>
-  <div class="tab" data-id="fear">🧠 Fear & Greed Index</div>
-  <div class="tab" data-id="heatmap">💗 Altcoin Heatmap</div>
-  <div class="tab" data-id="funding">🧾 Funding Rates</div>
+  <div class="tab" data-id="ethbtc">🟣 ETH/BTC</div>
+  <div class="tab" data-id="solbtc">🟡 SOL/BTC</div>
+  <div class="tab" data-id="btcd">📘 BTC Dominance</div>
 
-  <!-- Tab Sections -->
+  <!-- Tab Content -->
   <div id="btc" class="iframe-wrap" style="display: block;">
-    <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?locale=en#%7B%22symbol%22%3A%22BITSTAMP%3ABTCUSD%22%2C%22width%22%3A%22100%25%22%2C%22height%22%3A%22400%22%2C%22colorTheme%22%3A%22dark%22%2C%22autosize%22%3Atrue%7D" frameborder="0"></iframe>
+    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_btc&symbol=BITSTAMP%3ABTCUSD&interval=D&hidesidetoolbar=1&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hidevolume=1" allowfullscreen></iframe>
   </div>
 
-  <div id="eth" class="iframe-wrap" style="display: none;">
-    <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?locale=en#%7B%22symbol%22%3A%22BINANCE%3AETHBTC%22%2C%22colorTheme%22%3A%22dark%22%7D" frameborder="0"></iframe>
+  <div id="ethbtc" class="iframe-wrap">
+    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_ethbtc&symbol=BINANCE%3AETHBTC&interval=D&hidesidetoolbar=1&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hidevolume=1" allowfullscreen></iframe>
   </div>
 
-  <div id="sol" class="iframe-wrap" style="display: none;">
-    <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?locale=en#%7B%22symbol%22%3A%22BINANCE%3ASOLBTC%22%2C%22colorTheme%22%3A%22dark%22%7D" frameborder="0"></iframe>
+  <div id="solbtc" class="iframe-wrap">
+    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_solbtc&symbol=BINANCE%3ASOLBTC&interval=D&hidesidetoolbar=1&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hidevolume=1" allowfullscreen></iframe>
   </div>
 
-  <div id="dominance" class="iframe-wrap" style="display: none;">
-    <iframe src="https://s.tradingview.com/embed-widget/mini-symbol-overview/?locale=en#%7B%22symbol%22%3A%22CRYPTOCAP%3ABTC.D%22%2C%22colorTheme%22%3A%22dark%22%7D" frameborder="0"></iframe>
+  <div id="btcd" class="iframe-wrap">
+    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_btcd&symbol=CRYPTOCAP%3ABTC.D&interval=D&hidesidetoolbar=1&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&hidevolume=1" allowfullscreen></iframe>
   </div>
 
-  <div id="fear" class="iframe-wrap" style="display: none;">
-    <a href="https://alternative.me/crypto/fear-and-greed-index/" class="external-button" target="_blank">🧠 View Fear & Greed Index</a>
-  </div>
+  <br />
+  <a href="/" class="back-button">🔙 Back to Home</a>
 
-  <div id="heatmap" class="iframe-wrap" style="display: none;">
-    <a href="https://coin360.com" class="external-button" target="_blank">💗 View Altcoin Heatmap</a>
-  </div>
-
-  <div id="funding" class="iframe-wrap" style="display: none;">
-    <a href="https://coinglass.com/funding" class="external-button" target="_blank">🧾 View Funding Rates</a>
-  </div>
-
-  <a href="/" class="back-button">📂 Back to Home</a>
-
+  <!-- Script -->
   <script>
-    const tabs = document.querySelectorAll('.tab');
-    const sections = document.querySelectorAll('.iframe-wrap');
+    const tabs = document.querySelectorAll(".tab");
+    const sections = document.querySelectorAll(".iframe-wrap");
 
     tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        const id = tab.getAttribute('data-id');
-        sections.forEach(sec => sec.style.display = 'none');
-        document.getElementById(id).style.display = 'block';
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+
+        const id = tab.getAttribute("data-id");
+        sections.forEach(sec => sec.style.display = "none");
+        document.getElementById(id).style.display = "block";
       });
     });
   </script>

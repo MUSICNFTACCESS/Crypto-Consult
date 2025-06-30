@@ -2,14 +2,13 @@ const express = require("express");
 const fetch = require("node-fetch");
 const path = require("path");
 const app = express();
-
 app.use(express.static("public"));
 app.use(express.json());
 
 const { OpenAI } = require("openai");
 const openai = new OpenAI();
 
-// 🧠 CrimznBot — Real-Time Crypto Assistant with Extended Token Alias Support
+// 🤖 CrimznBot — Real-Time Crypto Assistant with Extended Token Alias Support
 app.post("/api/ask", async (req, res) => {
   const question = (req.body.question || req.body.message || "").toLowerCase().trim();
   if (!question) return res.status(400).json({ response: "No question provided." });
@@ -18,29 +17,28 @@ app.post("/api/ask", async (req, res) => {
     btc: "bitcoin", bitcoin: "bitcoin", "btc-usd": "bitcoin",
     eth: "ethereum", ethereum: "ethereum", "eth-usd": "ethereum",
     sol: "solana", solana: "solana", "sol-usd": "solana",
-    ondo: "ondo-finance", "ondo-usd": "ondo-finance",
-    link: "chainlink", chainlink: "chainlink",
-    matic: "matic-network", polygon: "matic-network",
-    ada: "cardano", cardano: "cardano",
-    xrp: "ripple", ripple: "ripple",
-    doge: "dogecoin", dogecoin: "dogecoin",
-    dot: "polkadot", polkadot: "polkadot",
-    avax: "avalanche-2", avalanche: "avalanche-2",
-    bnb: "binancecoin", binance: "binancecoin",
-    ltc: "litecoin", litecoin: "litecoin",
+    link: "chainlink", "chainlink": "chainlink",
+    jup: "jupiter-exchange", jupiter: "jupiter-exchange",
+    mstr: "microstrategy", microstrategy: "microstrategy",
+    stx: "stacks", stacks: "stacks",
+    py: "pyth-network", pyth: "pyth-network",
+    ondo: "ondo-finance", "ondo-finance": "ondo-finance",
+    ldo: "lido-dao", lido: "lido-dao",
+    metaplanet: "metaplanet",
     arb: "arbitrum", arbitrum: "arbitrum",
     op: "optimism", optimism: "optimism",
-    apt: "aptos", aptos: "aptos",
-    sui: "sui", near: "near", atom: "cosmos",
-    uni: "uniswap", uniswap: "uniswap",
-    stx: "stacks", stacks: "stacks",
-    pyth: "pyth-network", pepe: "pepe", bonk: "bonk",
-    jup: "jupiter-exchange", jupiter: "jupiter-exchange",
-    usdc: "usd-coin", usdt: "tether", dai: "dai",
-    kas: "kaspa", cel: "celsius-degree-token", rndr: "render-token",
-    gmx: "gmx", blur: "blur", not: "notcoin",
-    wif: "dogwifhat", bob: "bob", memecoin: "memecoin",
-    aevo: "aevo", io: "io-net", tia: "celestia"
+    avax: "avalanche-2", avalanche: "avalanche-2",
+    doge: "dogecoin", dogecoin: "dogecoin",
+    pepe: "pepe", "pepe-coin": "pepe",
+    bonk: "bonk", "bonk-token": "bonk",
+    render: "render-token", rndr: "render-token",
+    sui: "sui", sui-token: "sui",
+    wif: "dogwifhat", dogwifhat: "dogwifhat",
+    usdt: "tether", tether: "tether",
+    usdc: "usd-coin", "usd-coin": "usd-coin",
+    tip: "tipcoin", tipcoin: "tipcoin",
+    jto: "jito", jito: "jito",
+    ray: "raydium", raydium: "raydium"
   };
 
   const match = Object.keys(tokenMap).find(key => question.includes(key));
@@ -49,21 +47,18 @@ app.post("/api/ask", async (req, res) => {
   if (tokenId) {
     try {
       const cgRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${tokenId}&vs_currencies=usd`);
-      if (!cgRes.ok) throw new Error(`CoinGecko error: ${cgRes.status}`);
+      if (!cgRes.ok) throw new Error(`Coingecko error: ${cgRes.status}`);
       const data = await cgRes.json();
       const price = data[tokenId]?.usd;
-
       if (price) {
-        return res.json({
-          response: `💸 The current price of **${match.toUpperCase()}** is **$${price.toLocaleString()} USD**.`
-        });
+        return res.json({ response: `The current price of **${match.toUpperCase()}** is **$${price.toLocaleString()} USD**.` });
       }
     } catch (err) {
-      console.error("🔁 CoinGecko failed, falling back to GPT:", err.message);
+      console.error("🟥 Coingecko failed, falling back to GPT:", err.message);
     }
   }
 
-  // 🧠 GPT-4o fallback if no price or no token found
+  // 🧠 GPT-4o fallback if no price or token found
   try {
     const chatCompletion = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -77,27 +72,25 @@ If the user asks about crypto prices or markets, be precise.
 If price data is missing, just say so — never guess or hallucinate.
           `.trim()
         },
-        { role: "user", content: question }
+        {
+          role: "user",
+          content: question
+        }
       ]
     });
 
     const reply = chatCompletion.choices?.[0]?.message?.content || "No response.";
     res.json({ response: reply });
   } catch (error) {
-    console.error("🧠 GPT-4o Fallback failed:", error.message);
+    console.error("⚠️ GPT-4o fallback failed:", error.message);
     res.status(500).json({ response: "⚠️ CrimznBot backend error. Please try again." });
   }
 });
 
-// 📣 PulseIt (sentiment analysis tool)
-app.post("/pulseit", async (req, res) => {
-  const topic = req.body.topic;
-  if (!topic) {
-    return res.status(400).json({
-      sentiment: "Neutral 🟡",
-      explanation: "No topic provided."
-    });
-  }
+// 📣 PulseIt (Sentiment analysis tool)
+app.post("/api/pulseit", async (req, res) => {
+  const topic = (req.body.topic || "").toLowerCase().trim();
+  if (!topic) return res.status(400).json({ explanation: "No topic provided." });
 
   try {
     const completion = await openai.chat.completions.create({
@@ -157,10 +150,13 @@ app.get("/api/check-solana-payment", async (req, res) => {
     const response = await fetch(HELIUS_URL);
     const data = await response.json();
 
-    const paid = Array.isArray(data) && data.some(tx => {
-      return tx?.type === "TRANSFER" &&
-             tx?.nativeTransfers?.some(n => n.toUserAccount === "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
-    });
+    const paid = Array.isArray(data) && data.some(tx =>
+      tx?.type === "TRANSFER" &&
+      tx?.nativeTransfers?.some(n =>
+        n.toUserAccount === "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF" &&
+        n.amount >= 25000000 // 0.025 SOL in lamports
+      )
+    );
 
     res.json({ unlocked: paid });
   } catch (err) {

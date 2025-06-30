@@ -9,13 +9,62 @@ app.use(express.json());
 const { OpenAI } = require("openai");
 const openai = new OpenAI();
 
-// 🧠 CrimznBot (crypto advisor tone)
+// 🧠 CrimznBot — Real-Time Crypto Assistant with Extended Token Alias Support
 app.post("/api/ask", async (req, res) => {
-  const question = req.body.question || req.body.message;
-  if (!question) {
-    return res.status(400).json({ response: "No question provided." });
+  const question = (req.body.question || req.body.message || "").toLowerCase().trim();
+  if (!question) return res.status(400).json({ response: "No question provided." });
+
+  const tokenMap = {
+    btc: "bitcoin", bitcoin: "bitcoin", "btc-usd": "bitcoin",
+    eth: "ethereum", ethereum: "ethereum", "eth-usd": "ethereum",
+    sol: "solana", solana: "solana", "sol-usd": "solana",
+    ondo: "ondo-finance", "ondo-usd": "ondo-finance",
+    link: "chainlink", chainlink: "chainlink",
+    matic: "matic-network", polygon: "matic-network",
+    ada: "cardano", cardano: "cardano",
+    xrp: "ripple", ripple: "ripple",
+    doge: "dogecoin", dogecoin: "dogecoin",
+    dot: "polkadot", polkadot: "polkadot",
+    avax: "avalanche-2", avalanche: "avalanche-2",
+    bnb: "binancecoin", binance: "binancecoin",
+    ltc: "litecoin", litecoin: "litecoin",
+    arb: "arbitrum", arbitrum: "arbitrum",
+    op: "optimism", optimism: "optimism",
+    apt: "aptos", aptos: "aptos",
+    sui: "sui", near: "near", atom: "cosmos",
+    uni: "uniswap", uniswap: "uniswap",
+    stx: "stacks", stacks: "stacks",
+    pyth: "pyth-network", pepe: "pepe", bonk: "bonk",
+    jup: "jupiter-exchange", jupiter: "jupiter-exchange",
+    usdc: "usd-coin", usdt: "tether", dai: "dai",
+    kas: "kaspa", cel: "celsius-degree-token", rndr: "render-token",
+    gmx: "gmx", blur: "blur", not: "notcoin",
+    wif: "dogwifhat", bob: "bob", memecoin: "memecoin",
+    aevo: "aevo", io: "io-net", tia: "celestia"
+    // Add more aliases as needed
+  };
+
+  const match = Object.keys(tokenMap).find(key => question.includes(key));
+  const tokenId = match ? tokenMap[match] : null;
+
+  if (tokenId) {
+    try {
+      const cgRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${tokenId}&vs_currencies=usd`);
+      if (!cgRes.ok) throw new Error(`CoinGecko error: ${cgRes.status}`);
+      const data = await cgRes.json();
+      const price = data[tokenId]?.usd;
+
+      if (price) {
+        return res.json({
+          response: `💸 The current price of **${match.toUpperCase()}** is **$${price.toLocaleString()} USD**.`
+        });
+      }
+    } catch (err) {
+      console.error("🔁 CoinGecko failed, falling back to GPT:", err.message);
+    }
   }
 
+  // 🧠 GPT-4o fallback if no price or no token found
   try {
     const chatCompletion = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -23,24 +72,21 @@ app.post("/api/ask", async (req, res) => {
         {
           role: "system",
           content: `
-You are CrimznBot — a crypto-native AI trained in the styles of Raoul Pal, Michael Saylor, and Tom Crown.
-Speak like a high-conviction visionary. Be educational, bold, strategic, and degen-friendly.
-You are helping users of CryptoConsult understand markets, blockchain, DeFi, and crypto investing.
-Always answer clearly, with conviction, and include real insights in your tone.
-          `.trim()
+You are CrimznBot — a crypto-native assistant on CryptoConsult.
+You speak with alpha, clarity, and conviction.
+Always try to give real prices and market info.
+If you can’t access a live feed, say so — don't guess prices.
+        `.trim()
         },
-        {
-          role: "user",
-          content: question
-        }
+        { role: "user", content: question }
       ]
     });
 
-    const response = chatCompletion.choices?.[0]?.message?.content || "CrimznBot is unsure how to answer.";
-    res.json({ response });
+    const reply = chatCompletion.choices?.[0]?.message?.content || "No response.";
+    res.json({ response: reply });
   } catch (error) {
-    console.error("CrimznBot error:", error.message);
-    res.status(500).json({ response: "⚠️ CrimznBot backend error." });
+    console.error("🧠 GPT-4o Fallback failed:", error.message);
+    res.status(500).json({ response: "⚠️ CrimznBot backend error. Please try again." });
   }
 });
 
@@ -95,6 +141,21 @@ app.get("/api/prices", async (req, res) => {
   } catch (error) {
     console.error("Price API error:", error.message);
     res.status(500).json({ error: "Failed to fetch live prices." });
+  }
+});
+
+// 🔓 Solana payment unlock check (via Helius API)
+app.get("/api/check-solana-payment", async (req, res) => {
+  try {
+    const HELIUS_TX_URL = process.env.HELIUS_TX_URL;
+    const response = await fetch(HELIUS_TX_URL);
+    const data = await response.json();
+
+    const isPaid = Array.isArray(data) && data.length > 0;
+    res.json({ unlocked: isPaid });
+  } catch (err) {
+    console.error("Helius check error:", err.message);
+    res.status(500).json({ unlocked: false });
   }
 });
 

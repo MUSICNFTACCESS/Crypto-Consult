@@ -5,6 +5,11 @@
   <title>CryptoConsult by Crimzn</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/app-style.css" />
+  <style>
+    .hidden {
+      display: none;
+    }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
 </head>
 <body>
@@ -12,6 +17,7 @@
     <h1 style="color: orange;">CryptoConsult by Crimzn</h1>
     <button id="connectWalletBtn" class="solana-button">Connect Wallet</button>
   </div>
+
   <p>Welcome to your one-stop crypto consultation portal. Connect, learn, and earn with Crimzn.</p>
 
   <h2 style="color: orange;">🛠️ Available Services</h2>
@@ -26,23 +32,23 @@
     <li>📞 One-on-One Consultations</li>
   </ul>
 
-<!-- CrimznBot Chat -->
-<h2 style="color: orange;">🤖 Ask CrimznBot</h2>
-<input id="prompt" placeholder="Ask anything..." />
-<button id="send-btn" class="submit-button">Send</button>
-<div id="response-box" style="margin-top: 20px;"></div>
+  <!-- CrimznBot Chat -->
+  <h2 style="color: orange;">🤖 Ask CrimznBot</h2>
+  <input id="prompt" placeholder="Ask anything..." />
+  <button id="send-btn" class="submit-button">Send</button>
+  <div id="response-box" style="margin-top: 20px;"></div>
 
-<!-- Paywall -->
-<div id="paywall" class="hidden">
-  <p>You've hit the free limit. Pay 0.025 SOL to continue asking CrimznBot:</p>
-  <button id="solana-pay-btn" class="solana-button">🔓 Unlock with Solana Pay</button>
-</div>
+  <!-- Paywall -->
+  <div id="paywall" class="hidden">
+    <p>You've hit the free limit. Pay 0.025 SOL to continue asking CrimznBot:</p>
+    <button id="solana-pay-btn" class="solana-button">🔓 Unlock with Solana Pay</button>
+  </div>
 
-<!-- PulseIt Sentiment Analyzer -->
-<h2 style="color: orange;">📊 PulseIt Sentiment Analyzer</h2>
-<input id="pulseit-input" placeholder="Type a topic like 'ETF' or 'war'" />
-<button id="analyze-btn" class="submit-button">Analyze</button>
-<div id="pulseit-result" style="margin-top: 10px;"></div>
+  <!-- PulseIt Sentiment Analyzer -->
+  <h2 style="color: orange;">📊 PulseIt Sentiment Analyzer</h2>
+  <input id="pulseit-input" placeholder="Type a topic like 'ETF' or 'war'" />
+  <button id="analyze-btn" class="submit-button">Analyze</button>
+  <div id="pulseit-result" style="margin-top: 10px;"></div>
 
   <!-- Whitepaper & Radar -->
   <h2 style="color: orange;">📄 Whitepaper & 📡 Cycle Top Radar</h2>

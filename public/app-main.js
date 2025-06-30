@@ -1,17 +1,18 @@
 let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
 let paywallShown = false;
 let connectedWallet = null;
+let hasPaid = false;
 
 // 🔐 Check for payment using Helius API
 async function checkPayment() {
-  const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
-  const HELIUS_TX_URL = process.env.HELIUS_TX_URL;
+  const HELIUS_API_KEY = "REPLACE_WITH_STATIC_KEY";
+  const HELIUS_TX_URL = "REPLACE_WITH_STATIC_URL";
 
   try {
     const res = await fetch(`${HELIUS_TX_URL}?api-key=${HELIUS_API_KEY}`);
     const data = await res.json();
 
-    const hasPaid = data?.transactions?.some(tx =>
+    hasPaid = data?.transactions?.some(tx =>
       tx.account === "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF" &&
       tx.amount >= 0.025
     );
@@ -21,11 +22,11 @@ async function checkPayment() {
       paywallShown = false;
     }
   } catch (err) {
-    console.error("Payment check failed:", err);
+    console.error("💸 Payment check failed:", err);
   }
 }
 
-// 🔌 Wallet Connect
+// 🔌 Connect Phantom Wallet
 async function connectWallet() {
   if (!window.solana || !window.solana.isPhantom) {
     alert("Phantom Wallet not found.");
@@ -36,21 +37,31 @@ async function connectWallet() {
     const resp = await window.solana.connect();
     connectedWallet = resp.publicKey.toString();
 
-    document.getElementById("connectWalletBtn").textContent = connectedWallet.slice(0, 4) + "..." + connectedWallet.slice(-4);
-    document.getElementById("connectWalletBtn").style.display = "none";
-    document.getElementById("disconnect-wallet").style.display = "inline-block";
+    const btn = document.getElementById("connectWalletBtn");
+    btn.textContent = connectedWallet;
+    btn.style.display = "none";
 
-    checkPayment(); // 🔁 Check for payment on wallet connect
+    const disconnectBtn = document.createElement("button");
+    disconnectBtn.id = "disconnect-wallet";
+    disconnectBtn.className = "solana-button";
+    disconnectBtn.textContent = "Disconnect Wallet";
+    disconnectBtn.onclick = disconnectWallet;
+    btn.after(disconnectBtn);
+
+    await checkPayment();
   } catch (err) {
-    console.error("Wallet connection failed:", err);
+    console.error("🔌 Wallet connection failed:", err);
   }
 }
 
 function disconnectWallet() {
   connectedWallet = null;
-  document.getElementById("connectWalletBtn").textContent = "Connect Wallet";
-  document.getElementById("connectWalletBtn").style.display = "inline-block";
-  document.getElementById("disconnect-wallet").style.display = "none";
+  const btn = document.getElementById("connectWalletBtn");
+  btn.textContent = "Connect Wallet";
+  btn.style.display = "inline-block";
+
+  const disconnectBtn = document.getElementById("disconnect-wallet");
+  if (disconnectBtn) disconnectBtn.remove();
 }
 
 // 🤖 CrimznBot Logic
@@ -64,7 +75,7 @@ document.getElementById("ask-btn").addEventListener("click", async () => {
   questionCount++;
   localStorage.setItem("questionCount", questionCount);
 
-  if (questionCount > 3 && !paywallShown) {
+  if (questionCount > 3 && !hasPaid) {
     document.getElementById("paywall").style.display = "block";
     paywallShown = true;
     return;
@@ -74,48 +85,45 @@ document.getElementById("ask-btn").addEventListener("click", async () => {
     const res = await fetch("https://crypto-consult.onrender.com/api/crimznbot", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: input })
+      body: JSON.stringify({ prompt: input })
     });
 
     const data = await res.json();
-    const reply = data.reply || "CrimznBot is recharging. Try again.";
-
-    output.innerHTML = `<span style="color: limegreen;">${reply}</span>`;
+    output.innerHTML = `<p style="color: #00ff00;"><strong>${data.reply}</strong></p>`;
   } catch (err) {
-    console.error("Bot error:", err);
-    output.textContent = "❌ Error contacting CrimznBot.";
+    output.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
   }
 });
 
-// 📊 PulseIt Sentiment Analyzer
-document.getElementById("analyze-btn").addEventListener("click", () => {
-  const keyword = document.getElementById("pulse-input").value.toLowerCase().trim();
-  const pulseOutput = document.getElementById("pulse-output");
-  if (!keyword) return;
+// 📊 PulseIt Logic
+document.getElementById("analyze-btn").addEventListener("click", async () => {
+  const topic = document.getElementById("pulse-input").value.trim();
+  const output = document.getElementById("pulse-output");
+  output.innerHTML = "";
 
-  let sentiment = "neutral";
-  let comment = "🔶 Market sentiment appears neutral.";
+  if (!topic) return;
 
-  if (/war|rate hike|inflation|lawsuit|hacked|rug/i.test(keyword)) {
-    sentiment = "bearish";
-    comment = "🔴 BEARISH: Bearish outlook based on current conditions.";
-  } else if (/etf|bullish|pump|spot|regulation|institutional|fund|mint/i.test(keyword)) {
-    sentiment = "bullish";
-    comment = "🟢 BULLISH: Bullish sentiment detected for this topic.";
+  try {
+    const res = await fetch("https://crypto-consult.onrender.com/api/pulseit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ topic })
+    });
+
+    const data = await res.json();
+    const color = data.sentiment === "Bullish" ? "green" :
+                  data.sentiment === "Bearish" ? "red" : "yellow";
+
+    output.innerHTML = `<p style="color: ${color};"><strong>${data.sentiment}</strong>: ${data.message}</p>`;
+  } catch (err) {
+    output.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
   }
 
-  pulseOutput.innerHTML = `<span style="color: ${sentiment === "bullish" ? "limegreen" : sentiment === "bearish" ? "red" : "gold"};">
-    ${comment}</span>`;
+  document.getElementById("pulse-input").value = "";
 });
 
-// ⚙️ Event listeners for Wallet
-document.getElementById("connectWalletBtn").addEventListener("click", connectWallet);
-document.getElementById("disconnect-wallet").addEventListener("click", disconnectWallet);
-
-// ✅ Auto check for paywall on load + wallet
-window.addEventListener("load", () => {
-  if (window.solana?.isConnected) {
-    connectWallet();
-  }
-  checkPayment(); // 🧠 Check payment status even on page visit
+// 👻 Phantom Wallet button hookup
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("connectWalletBtn");
+  if (btn) btn.addEventListener("click", connectWallet);
 });

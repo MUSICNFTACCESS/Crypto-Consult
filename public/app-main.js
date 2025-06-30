@@ -1,8 +1,8 @@
-let questionCount = 0;
+let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
 let paywallShown = false;
 let connectedWallet = null;
 
-// 🌐 Check for payment using Helius API
+// 🔐 Check for payment using Helius API
 async function checkPayment() {
   const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
   const HELIUS_TX_URL = process.env.HELIUS_TX_URL;
@@ -11,9 +11,10 @@ async function checkPayment() {
     const res = await fetch(`${HELIUS_TX_URL}?api-key=${HELIUS_API_KEY}`);
     const data = await res.json();
 
-    const hasPaid = data?.transactions?.some(tx => {
-      return tx.account === "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF" && tx.amount >= 0.025;
-    });
+    const hasPaid = data?.transactions?.some(tx =>
+      tx.account === "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF" &&
+      tx.amount >= 0.025
+    );
 
     if (hasPaid) {
       document.getElementById("paywall").style.display = "none";
@@ -24,22 +25,22 @@ async function checkPayment() {
   }
 }
 
-// 🔗 Wallet Connect
+// 🔌 Wallet Connect
 async function connectWallet() {
-  try {
-    const provider = window.solana;
-    if (!provider?.isPhantom) {
-      alert("Phantom Wallet not found.");
-      return;
-    }
+  if (!window.solana || !window.solana.isPhantom) {
+    alert("Phantom Wallet not found.");
+    return;
+  }
 
-    const resp = await provider.connect();
+  try {
+    const resp = await window.solana.connect();
     connectedWallet = resp.publicKey.toString();
-    document.getElementById("wallet-address").textContent =
-      connectedWallet.slice(0, 4) + "..." + connectedWallet.slice(-4);
+
+    document.getElementById("connectWalletBtn").textContent = connectedWallet.slice(0, 4) + "..." + connectedWallet.slice(-4);
+    document.getElementById("connectWalletBtn").style.display = "none";
     document.getElementById("disconnect-wallet").style.display = "inline-block";
 
-    await checkPayment();
+    checkPayment(); // 🔁 Check for payment on wallet connect
   } catch (err) {
     console.error("Wallet connection failed:", err);
   }
@@ -47,7 +48,8 @@ async function connectWallet() {
 
 function disconnectWallet() {
   connectedWallet = null;
-  document.getElementById("wallet-address").textContent = "";
+  document.getElementById("connectWalletBtn").textContent = "Connect Wallet";
+  document.getElementById("connectWalletBtn").style.display = "inline-block";
   document.getElementById("disconnect-wallet").style.display = "none";
 }
 
@@ -60,9 +62,11 @@ document.getElementById("ask-btn").addEventListener("click", async () => {
   if (!input) return;
 
   questionCount++;
+  localStorage.setItem("questionCount", questionCount);
 
-  if (questionCount > 3 && paywallShown) {
+  if (questionCount > 3 && !paywallShown) {
     document.getElementById("paywall").style.display = "block";
+    paywallShown = true;
     return;
   }
 
@@ -74,11 +78,11 @@ document.getElementById("ask-btn").addEventListener("click", async () => {
     });
 
     const data = await res.json();
-    const reply = document.createElement("p");
-    reply.style.color = "limegreen";
-    reply.textContent = `🤖 ${data.reply || "CrimznBot is recharging. Try again."}`;
-    output.appendChild(reply);
+    const reply = data.reply || "CrimznBot is recharging. Try again.";
+
+    output.innerHTML = `<span style="color: limegreen;">${reply}</span>`;
   } catch (err) {
+    console.error("Bot error:", err);
     output.textContent = "❌ Error contacting CrimznBot.";
   }
 });
@@ -86,36 +90,32 @@ document.getElementById("ask-btn").addEventListener("click", async () => {
 // 📊 PulseIt Sentiment Analyzer
 document.getElementById("analyze-btn").addEventListener("click", () => {
   const keyword = document.getElementById("pulse-input").value.toLowerCase().trim();
-  const output = document.getElementById("pulse-output");
-  output.innerHTML = "";
+  const pulseOutput = document.getElementById("pulse-output");
+  if (!keyword) return;
 
   let sentiment = "neutral";
-  let icon = "🟡";
-  let comment = "Market sentiment appears neutral.";
+  let comment = "🔶 Market sentiment appears neutral.";
 
-  if (/war|inflation|dump|lawsuit|hack|rug/.test(keyword)) {
+  if (/war|rate hike|inflation|lawsuit|hacked|rug/i.test(keyword)) {
     sentiment = "bearish";
-    icon = "🔴";
-    comment = "Bearish outlook based on current conditions.";
-  } else if (/etf|bull|pump|trump|spot|halving|institutional|fund|mint/.test(keyword)) {
+    comment = "🔴 BEARISH: Bearish outlook based on current conditions.";
+  } else if (/etf|bullish|pump|spot|regulation|institutional|fund|mint/i.test(keyword)) {
     sentiment = "bullish";
-    icon = "🟢";
-    comment = "Bullish indicators detected for this topic.";
+    comment = "🟢 BULLISH: Bullish sentiment detected for this topic.";
   }
 
-  const result = document.createElement("p");
-  result.textContent = `${icon} ${sentiment.toUpperCase()}: ${comment}`;
-  result.style.color = sentiment === "bullish" ? "limegreen" : sentiment === "bearish" ? "red" : "gold";
-  output.appendChild(result);
+  pulseOutput.innerHTML = `<span style="color: ${sentiment === "bullish" ? "limegreen" : sentiment === "bearish" ? "red" : "gold"};">
+    ${comment}</span>`;
 });
 
-// 🔄 Event listeners for wallet
-document.getElementById("connect-wallet").addEventListener("click", connectWallet);
+// ⚙️ Event listeners for Wallet
+document.getElementById("connectWalletBtn").addEventListener("click", connectWallet);
 document.getElementById("disconnect-wallet").addEventListener("click", disconnectWallet);
 
-// 🕒 Auto check for paywall on load if wallet connected
+// ✅ Auto check for paywall on load + wallet
 window.addEventListener("load", () => {
   if (window.solana?.isConnected) {
     connectWallet();
   }
+  checkPayment(); // 🧠 Check payment status even on page visit
 });

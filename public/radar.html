@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>🧠 Cycle Top Radar</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
   <style>
     body {
       background-color: #000;
@@ -30,14 +31,12 @@
       background-color: #f7931a;
       color: black;
     }
-    iframe {
+    .chart-container {
       display: none;
-      width: 100%;
-      height: 600px;
-      border: none;
-    }
-    .iframe-wrap {
       margin-top: 20px;
+    }
+    .chart-container.active {
+      display: block;
     }
     .back-button {
       margin-top: 1em;
@@ -52,53 +51,152 @@
   </style>
 </head>
 <body>
-  <h1>📡 On The Radar: Crypto Cycle Top Dashboard</h1>
-  <p>🧠 Visualize key crypto metrics to time market cycles, spot tops, and confirm trends.</p>
+  <h1>📊 On The Radar: Crypto Cycle Top Dashboard</h1>
+  <p>🔴 Visualize key crypto metrics to time market cycles, spot tops, and confirm trends.</p>
 
   <!-- Tab Buttons -->
-  <div class="tab active" data-id="btc-usd">BTC/USD</div>
-  <div class="tab" data-id="eth-usd">ETH/USD</div>
-  <div class="tab" data-id="sol-usd">SOL/USD</div>
-  <div class="tab" data-id="eth-btc">ETH/BTC</div>
-  <div class="tab" data-id="sol-btc">SOL/BTC</div>
-  <div class="tab" data-id="btc-dominance">BTC Dominance</div>
+  <div class="tab" data-id="btc">BTC/USD</div>
+  <div class="tab" data-id="eth">ETH/USD</div>
+  <div class="tab" data-id="sol">SOL/USD</div>
+  <div class="tab" data-id="ethbtc">ETH/BTC</div>
+  <div class="tab" data-id="solbtc">SOL/BTC</div>
+  <div class="tab" data-id="dominance">BTC Dominance</div>
 
-  <!-- Tab Content -->
-  <div class="iframe-wrap">
-    <iframe id="btc-usd" style="display: block;"
-      src="https://s.tradingview.com/widgetembed/?symbol=BITSTAMP:BTCUSD&interval=1D&theme=dark&style=1&toolbarbg=F1F3F6&withdateranges=1&hide_side_toolbar=false&allow_symbol_change=1&hideideas=1">
-    </iframe>
-    <iframe id="eth-usd"
-      src="https://s.tradingview.com/widgetembed/?symbol=BINANCE:ETHUSDT&interval=1D&theme=dark&style=1&toolbarbg=F1F3F6&withdateranges=1&hide_side_toolbar=false&allow_symbol_change=1&hideideas=1">
-    </iframe>
-    <iframe id="sol-usd"
-      src="https://s.tradingview.com/widgetembed/?symbol=BINANCE:SOLUSDT&interval=1D&theme=dark&style=1&toolbarbg=F1F3F6&withdateranges=1&hide_side_toolbar=false&allow_symbol_change=1&hideideas=1">
-    </iframe>
-    <iframe id="eth-btc"
-      src="https://s.tradingview.com/widgetembed/?symbol=BINANCE:ETHBTC&interval=1D&theme=dark&style=1&toolbarbg=F1F3F6&withdateranges=1&hide_side_toolbar=false&allow_symbol_change=1&hideideas=1">
-    </iframe>
-    <iframe id="sol-btc"
-      src="https://s.tradingview.com/widgetembed/?symbol=BINANCE:SOLBTC&interval=1D&theme=dark&style=1&toolbarbg=F1F3F6&withdateranges=1&hide_side_toolbar=false&allow_symbol_change=1&hideideas=1">
-    </iframe>
-    <iframe id="btc-dominance"
-      src="https://s.tradingview.com/widgetembed/?symbol=CRYPTOCAP:BTC.D&interval=1D&theme=dark&style=1&toolbarbg=F1F3F6&withdateranges=1&hide_side_toolbar=false&allow_symbol_change=1&hideideas=1">
-    </iframe>
+  <!-- Charts -->
+  <div id="btc" class="chart-container active">
+    <div id="btc-chart"></div>
+  </div>
+  <div id="eth" class="chart-container">
+    <div id="eth-chart"></div>
+  </div>
+  <div id="sol" class="chart-container">
+    <div id="sol-chart"></div>
+  </div>
+  <div id="ethbtc" class="chart-container">
+    <div id="ethbtc-chart"></div>
+  </div>
+  <div id="solbtc" class="chart-container">
+    <div id="solbtc-chart"></div>
+  </div>
+  <div id="dominance" class="chart-container">
+    <div id="dominance-chart"></div>
   </div>
 
-  <a href="/index.html" class="back-button">🔙 Back to Home</a>
+  <!-- Back -->
+  <a href="/index.html" class="back-button">⬅️ Back to Home</a>
 
-  <!-- Script -->
+  <!-- Chart Scripts -->
+  <script type="text/javascript">
+    new TradingView.widget({
+      container_id: "btc-chart",
+      width: "100%",
+      height: 600,
+      symbol: "BITSTAMP:BTCUSD",
+      interval: "1D",
+      timezone: "Etc/UTC",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      toolbar_bg: "#f1f3f6",
+      enable_publishing: false,
+      hide_side_toolbar: false,
+      allow_symbol_change: true
+    });
+
+    new TradingView.widget({
+      container_id: "eth-chart",
+      width: "100%",
+      height: 600,
+      symbol: "BINANCE:ETHUSDT",
+      interval: "1D",
+      timezone: "Etc/UTC",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      toolbar_bg: "#f1f3f6",
+      enable_publishing: false,
+      hide_side_toolbar: false,
+      allow_symbol_change: true
+    });
+
+    new TradingView.widget({
+      container_id: "sol-chart",
+      width: "100%",
+      height: 600,
+      symbol: "BINANCE:SOLUSDT",
+      interval: "1D",
+      timezone: "Etc/UTC",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      toolbar_bg: "#f1f3f6",
+      enable_publishing: false,
+      hide_side_toolbar: false,
+      allow_symbol_change: true
+    });
+
+    new TradingView.widget({
+      container_id: "ethbtc-chart",
+      width: "100%",
+      height: 600,
+      symbol: "BINANCE:ETHBTC",
+      interval: "1D",
+      timezone: "Etc/UTC",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      toolbar_bg: "#f1f3f6",
+      enable_publishing: false,
+      hide_side_toolbar: false,
+      allow_symbol_change: true
+    });
+
+    new TradingView.widget({
+      container_id: "solbtc-chart",
+      width: "100%",
+      height: 600,
+      symbol: "BINANCE:SOLBTC",
+      interval: "1D",
+      timezone: "Etc/UTC",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      toolbar_bg: "#f1f3f6",
+      enable_publishing: false,
+      hide_side_toolbar: false,
+      allow_symbol_change: true
+    });
+
+    new TradingView.widget({
+      container_id: "dominance-chart",
+      width: "100%",
+      height: 600,
+      symbol: "CRYPTOCAP:BTC.D",
+      interval: "1D",
+      timezone: "Etc/UTC",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      toolbar_bg: "#f1f3f6",
+      enable_publishing: false,
+      hide_side_toolbar: false,
+      allow_symbol_change: true
+    });
+  </script>
+
+  <!-- Tab Logic -->
   <script>
     const tabs = document.querySelectorAll('.tab');
-    const sections = document.querySelectorAll('.iframe-wrap iframe');
+    const sections = document.querySelectorAll('.chart-container');
 
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
         tabs.forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
+
         const id = tab.getAttribute('data-id');
-        sections.forEach(sec => sec.style.display = 'none');
-        document.getElementById(id).style.display = 'block';
+        sections.forEach(sec => sec.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
       });
     });
   </script>

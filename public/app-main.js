@@ -2,6 +2,7 @@
 let questionCount = 0;
 const maxQuestions = 3;
 let solanaUnlocked = false;
+let unlockMessageShown = false; // ✅ Prevents repeat unlock messages
 
 document.getElementById("ask-btn").onclick = async () => {
   const input = document.getElementById("user-input");
@@ -10,6 +11,7 @@ document.getElementById("ask-btn").onclick = async () => {
 
   if (!question) return;
 
+  chat.innerHTML = ""; // 🧼 Clear all previous messages
   chat.innerHTML += `<div style="color:#f7931a"><strong>You:</strong> ${question}</div>`;
 
   if (questionCount >= maxQuestions && !solanaUnlocked) {
@@ -34,7 +36,7 @@ document.getElementById("ask-btn").onclick = async () => {
     const data = await res.json();
     chat.innerHTML += `<div style="color:limegreen;"><strong>CrimznBot:</strong> ${data.response}</div>`;
     input.value = "";
-    questionCount++; // ✅ Only increments after successful bot reply
+    questionCount++;
   } catch (err) {
     chat.innerHTML += `<div style="color:red;"><strong>Error:</strong> Failed to get response.</div>`;
     console.error("Bot fetch failed:", err);
@@ -47,8 +49,9 @@ async function checkSolanaUnlock() {
     const res = await fetch("/api/check-solana-payment");
     const data = await res.json();
 
-    if (data.unlocked) {
+    if (data.unlocked && !unlockMessageShown) {
       solanaUnlocked = true;
+      unlockMessageShown = true; // ✅ Set true to block repeats
       document.getElementById("user-input").disabled = false;
       document.getElementById("ask-btn").disabled = false;
       document.getElementById("bot-output").innerHTML +=
@@ -58,7 +61,6 @@ async function checkSolanaUnlock() {
     console.error("Solana unlock check error:", err);
   }
 }
-
 setInterval(checkSolanaUnlock, 10000); // 🔁 Re-check every 10s
 
 // 🧠 PulseIt Analyzer
@@ -133,25 +135,7 @@ async function connectWallet() {
       walletConnected = false;
     }
   } catch (err) {
-    console.error("Wallet error:", err);
+    console.error("Wallet connect/disconnect error:", err);
   }
 }
-document.getElementById("wallet-button").onclick = connectWallet;
-
-// 🔓 Solana unlock check on page load
-async function checkUnlock() {
-  try {
-    const res = await fetch("/api/check-solana-payment");
-    const data = await res.json();
-    if (data.unlocked) {
-      console.log("🔓 Solana payment detected. Unlocking CrimznBot.");
-      solanaUnlocked = true;
-      document.getElementById("paywall").style.display = "none";
-    } else {
-      console.log("🔒 No payment detected. Paywall remains.");
-    }
-  } catch (err) {
-    console.error("❌ Unlock check failed:", err.message);
-  }
-}
-window.addEventListener("DOMContentLoaded", checkUnlock);
+document.getElementById("wallet-button").addEventListener("click", connectWallet);

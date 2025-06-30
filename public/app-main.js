@@ -1,4 +1,4 @@
-// 💬 CrimznBot Handler with 3-question paywall
+// 🧠 CrimznBot Handler with 3-question paywall
 let questionCount = 0;
 const maxQuestions = 3;
 let solanaUnlocked = false;
@@ -7,14 +7,15 @@ document.getElementById("ask-btn").onclick = async () => {
   const input = document.getElementById("user-input");
   const chat = document.getElementById("bot-output");
   const question = input.value.trim();
+
   if (!question) return;
 
-  chat.innerHTML = `<div style="color: #f7931a"><strong>You:</strong> ${question}</div>`;
+  chat.innerHTML += `<div style="color:#f7931a"><strong>You:</strong> ${question}</div>`;
 
   if (questionCount >= maxQuestions && !solanaUnlocked) {
     chat.innerHTML += `
-      <div style="color: limegreen;"><strong>CrimznBot:</strong> Access limit reached. Unlock to continue.</div>
-      <a href="solana:Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF">
+      <div style="color:red"><strong>CrimznBot:</strong> Access limit reached. Unlock to continue.</div>
+      <a href="https://solana.com/pay" target="_blank" rel="noopener">
         <img src="/solana-logo.svg" alt="Solana Pay" style="width: 120px; margin: 10px auto;" />
       </a>
     `;
@@ -23,20 +24,20 @@ document.getElementById("ask-btn").onclick = async () => {
     return;
   }
 
-  questionCount++;
-
   try {
     const res = await fetch("/api/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question }),
     });
+
     const data = await res.json();
-    chat.innerHTML += `<div style="color: limegreen;"><strong>CrimznBot:</strong> ${data.response}</div>`;
+    chat.innerHTML += `<div style="color:limegreen;"><strong>CrimznBot:</strong> ${data.response}</div>`;
     input.value = "";
+    questionCount++; // ✅ Only increments after successful bot reply
   } catch (err) {
     chat.innerHTML += `<div style="color:red;"><strong>Error:</strong> Failed to get response.</div>`;
-    console.error(err);
+    console.error("Bot fetch failed:", err);
   }
 };
 
@@ -45,42 +46,54 @@ async function checkSolanaUnlock() {
   try {
     const res = await fetch("/api/check-solana-payment");
     const data = await res.json();
+
     if (data.unlocked) {
       solanaUnlocked = true;
-      document.getElementById("paywall").style.display = "none";
       document.getElementById("user-input").disabled = false;
       document.getElementById("ask-btn").disabled = false;
-      document.getElementById("bot-output").innerHTML += `
-        ✅ <strong>Access Unlocked!</strong> You can now continue asking questions.
-      `;
+      document.getElementById("bot-output").innerHTML +=
+        `<div style="color:limegreen;"><strong>✅ Access unlocked</strong>. You can now continue asking questions.</div>`;
     }
   } catch (err) {
     console.error("Solana unlock check error:", err);
   }
 }
-setInterval(checkSolanaUnlock, 10000);
 
-// 📊 PulseIt Analyzer
+setInterval(checkSolanaUnlock, 10000); // 🔁 Re-check every 10s
+
+// 🧠 PulseIt Analyzer
 document.getElementById("analyze-btn").onclick = () => {
   const input = document.getElementById("pulse-input").value.toLowerCase();
-  const output = document.getElementById("pulseOutput");
+  const output = document.getElementById("pulse-output");
 
-  let sentiment = "Neutral 🟡";
+  let sentiment = "neutral";
   let explanation = "No strong bias detected.";
 
-  if (input.includes("etf") || input.includes("adoption") || input.includes("bullish") || input.includes("crypto")) {
-    sentiment = "Bullish 🟢";
-    explanation = "Positive developments or optimism detected.";
-  } else if (input.includes("war") || input.includes("regulation") || input.includes("dump") || input.includes("scam")) {
-    sentiment = "Bearish 🔴";
-    explanation = "Concerns or negative developments noted.";
+  if (
+    input.includes("etf") ||
+    input.includes("adoption") ||
+    input.includes("bullish") ||
+    input.includes("crypto")
+  ) {
+    sentiment = "bullish";
+    explanation = "Positive sentiment or optics detected.";
+  } else if (
+    input.includes("regulation") ||
+    input.includes("dump") ||
+    input.includes("scam")
+  ) {
+    sentiment = "bearish";
+    explanation = "Negative or adverse developments noted.";
   }
 
-  output.innerHTML = `<strong>PulseIt:</strong> ${sentiment}<br><em>${explanation}</em>`;
+  output.innerHTML = `<strong>PulseIt:</strong> <span style="color:${
+    sentiment === "bullish" ? "lime" : sentiment === "bearish" ? "red" : "orange"
+  }">${sentiment.toUpperCase()}</span><br><em>${explanation}</em>`;
+
   document.getElementById("pulse-input").value = "";
 };
 
-// 💸 Live Prices (CoinGecko)
+// 📈 Live Prices (CoinGecko)
 async function fetchPrices() {
   try {
     const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
@@ -132,6 +145,7 @@ async function checkUnlock() {
     const data = await res.json();
     if (data.unlocked) {
       console.log("🔓 Solana payment detected. Unlocking CrimznBot.");
+      solanaUnlocked = true;
       document.getElementById("paywall").style.display = "none";
     } else {
       console.log("🔒 No payment detected. Paywall remains.");

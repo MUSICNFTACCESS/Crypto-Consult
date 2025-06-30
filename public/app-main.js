@@ -7,40 +7,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const responseBox = document.getElementById("response-box");
 
-  // 🤖 CrimznBot
-  async function askCrimznBot() {
-    const input = document.getElementById("prompt");
-    const prompt = input.value.trim();
-    if (!prompt) return;
+// 🤖 CrimznBot
+async function askCrimznBot() {
+  const input = document.getElementById("prompt");
+  const prompt = input.value.trim();
+  if (!prompt) return;
 
-    if (!hasPaid && questionCount >= maxFreeQuestions) {
-      if (!paywallShown) {
-        document.getElementById("paywall").style.display = "block";
-        paywallShown = true;
-      }
-      return;
+  if (!hasPaid && questionCount >= maxFreeQuestions) {
+    if (!paywallShown) {
+      document.getElementById("paywall").style.display = "block";
+      paywallShown = true;
     }
+    return;
+  }
 
+  responseBox.innerHTML = `<span class="response">🟡 Thinking...</span>`;
+  input.value = "";
+
+  try {
+    const res = await fetch("/api/crimznbot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+
+    const data = await res.json();
+    responseBox.innerHTML = `<span class="response green">${data.response}</span>`;
+
+    // ✅ Only count the question after a successful response
     questionCount++;
     localStorage.setItem("questionCount", questionCount);
-    input.value = "";
-
-    responseBox.innerHTML = `<span class="response">🟡 Thinking...</span>`;
-
-    try {
-      const res = await fetch("/api/crimznbot", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
-
-      const data = await res.json();
-      responseBox.innerHTML = `<span class="response green">${data.response}</span>`;
-    } catch (err) {
-      responseBox.innerHTML = `<span class="response">❌ Error talking to CrimznBot</span>`;
-      console.error("Bot error:", err);
-    }
+  } catch (err) {
+    responseBox.innerHTML = `<span class="response">❌ Error talking to CrimznBot.</span>`;
+    console.error("Bot error:", err);
   }
+}
 
   // 📈 PulseIt
   async function analyzePulseIt() {

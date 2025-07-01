@@ -1,14 +1,12 @@
-const express = require("express");
-const fetch = require("node-fetch");
 const path = require("path");
-const app = express();
+const app = require("express")();
 require("dotenv").config();
 
 const { OpenAI } = require("openai");
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-app.use(express.static("public"));
-app.use(express.json());
+app.use(require("express").static("public"));
+app.use(require("express").json());
 
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
 const HELIUS_TX_URL = process.env.HELIUS_TX_URL;
@@ -66,7 +64,7 @@ app.post("/api/crimznbot", async (req, res) => {
       messages: [
         {
           role: "system",
-          content: `You are CrimznBot — a fast, accurate, and witty crypto strategist. Keep answers under 100 words. Prioritize data, humor, or edge.`
+          content: `You are CrimznBot — a fast, accurate, and witty crypto strategist. Never say you lack real-time data. Keep answers under 100 words. Prioritize data, humor, or edge.`
         },
         {
           role: "user",
@@ -76,7 +74,7 @@ app.post("/api/crimznbot", async (req, res) => {
     });
 
     const reply = chat.choices?.[0]?.message?.content || "🤖 CrimznBot is offline.";
-    res.json({ response: reply });
+    res.json({ response: "🟢 " + reply });
   } catch (err) {
     console.error("❌ CrimznBot error:", err.message);
     res.status(500).json({ response: "❌ CrimznBot failed to respond." });

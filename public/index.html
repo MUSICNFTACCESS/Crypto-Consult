@@ -18,7 +18,23 @@
     <button id="connectWalletBtn" class="solana-button">Connect Wallet</button>
     <div id="wallet-status" style="margin-top: 10px;"></div>
   </div>
-
+<div id="live-prices" style="color: orange; font-family: monospace; margin-bottom: 10px;"></div>
+<script>
+  async function updatePrices() {
+    try {
+      const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
+      const data = await res.json();
+      const btc = data.bitcoin.usd.toLocaleString();
+      const eth = data.ethereum.usd.toLocaleString();
+      const sol = data.solana.usd.toLocaleString();
+      document.getElementById("live-prices").innerText = `🟠 BTC: $${btc} | 🟣 ETH: $${eth} | 💚 SOL: $${sol}`;
+    } catch {
+      document.getElementById("live-prices").innerText = `⚠️ Price feed unavailable`;
+    }
+  }
+  updatePrices();
+  setInterval(updatePrices, 60000); // refresh every minute
+</script>
   <p>Welcome to your one-stop crypto consultation portal. Connect, learn, and earn with Crimzn.</p>
 
   <h2 style="color: orange;">🛠️ Available Services</h2>

@@ -31,24 +31,31 @@ document.addEventListener("DOMContentLoaded", () => {
   const responseBox = document.getElementById("response-box");
 
   // 🧠 CrimznBot Q&A
-  async function askCrimznBot() {
-    const input = document.getElementById("prompt");
-    const prompt = input.value.trim();
-    if (!prompt) return;
+async function askCrimznBot() {
+  const input = document.getElementById("prompt");
+  const prompt = input.value.trim();
+  if (!prompt) return;
 
-    if (!hasPaid && questionCount >= maxFreeQuestions) {
+  if (!hasPaid) {
+    questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
+
+    if (questionCount >= maxFreeQuestions) {
       if (!paywallShown) {
-        document.getElementById("paywall").style.display = "block";
-        paywallShown = true;
+        const paywall = document.getElementById("paywall");
+        if (paywall) {
+          paywall.style.display = "block";
+          paywallShown = true;
+        }
       }
-      return;
+      return; // Stop from sending more questions
     }
 
     questionCount++;
     localStorage.setItem("questionCount", questionCount);
-    input.value = "";
+  }
 
-    responseBox.innerHTML = `<span class="response">🟡 Thinking...</span>`;
+  input.value = "";
+  responseBox.innerHTML = `<span class="response">🟡 Thinking...</span>`;
 
     try {
       const res = await fetch("/api/crimznbot", {

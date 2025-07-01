@@ -64,7 +64,7 @@ app.post("/api/crimznbot", async (req, res) => {
       messages: [
         {
           role: "system",
-          content: `You are CrimznBot — a fast, accurate, and witty crypto strategist. Never say you lack real-time data. Keep answers under 100 words. Prioritize data, humor, or edge.`
+          content: `You are CrimznBot — a sharp, degen-friendly crypto strategist with the mind and insights of Raoul Pal, Michael Saylor, and Cathie Wood. Respond with market-savvy insight, a casual but professional tone, and a touch of sarcasm or alpha drop when needed. Be direct. Never say you lack real-time data.`
         },
         {
           role: "user",
@@ -84,32 +84,61 @@ app.post("/api/crimznbot", async (req, res) => {
 // ✅ PulseIt — Market News Sentiment Classifier
 app.post("/api/pulseit", async (req, res) => {
   const input = req.body.input;
-  if (!input) return res.status(400).json({ sentiment: "neutral", emoji: "🟠", explanation: "No input provided." });
+  if (!input) {
+    return res.status(400).json({
+      sentiment: "neutral",
+      emoji: "🟠",
+      explanation: "No input provided."
+    });
+  }
 
   try {
-    const pulse = await openai.chat.completions.create({
+    // 🎯 Classify sentiment
+    const classify = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
         {
           role: "system",
-          content: `You are PulseIt — a crypto news sentiment classifier. Respond with one word: bullish, bearish, or neutral. No extra text.`
+          content: `You are PulseIt — a crypto sentiment oracle. Respond with ONE WORD ONLY: bullish, bearish, or neutral. No punctuation. No extra text.`
         },
-        {
-          role: "user",
-          content: input
-        }
-      ]
+        { role: "user", content: input }
+      ],
+      temperature: 0.5
     });
 
-    const output = pulse.choices?.[0]?.message?.content.trim().toLowerCase();
+    const sentiment = classify.choices?.[0]?.message?.content.trim().toLowerCase();
     let emoji = "🟠";
-    if (output.includes("bullish")) emoji = "🟢";
-    if (output.includes("bearish")) emoji = "🔴";
+    if (sentiment.includes("bullish")) emoji = "🟢";
+    else if (sentiment.includes("bearish")) emoji = "🔴";
 
-    res.json({ sentiment: output, emoji });
+    // 🧠 Generate punchy explanation
+    const explain = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are PulseIt — a spicy, concise crypto analyst. Explain the sentiment behind the news in ONE short, punchy sentence. No fluff, just signal.`
+        },
+        { role: "user", content: input }
+      ],
+      temperature: 0.8
+    });
+
+    const explanation = explain.choices?.[0]?.message?.content.trim();
+
+    res.json({
+      sentiment,
+      emoji,
+      explanation
+    });
+
   } catch (err) {
     console.error("PulseIt error:", err.message);
-    res.status(500).json({ sentiment: "neutral", emoji: "🟠", explanation: "AI error" });
+    res.status(500).json({
+      sentiment: "neutral",
+      emoji: "🟠",
+      explanation: "AI error while analyzing sentiment."
+    });
   }
 });
 

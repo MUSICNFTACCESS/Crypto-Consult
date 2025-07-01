@@ -1,4 +1,4 @@
-// app-main.js – CrimznBot Full Logic + Wallet Connect + Disconnect
+// app-main.js – CrimznBot Full Logic + Wallet Connect + Disconnect + PulseIt
 
 document.addEventListener("DOMContentLoaded", () => {
   let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
@@ -72,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // ✅ PulseIt Analyzer Logic
   async function analyzePulseIt() {
     const input = document.getElementById("pulseit-input").value.trim();
     const resultBox = document.getElementById("pulseit-result");
@@ -90,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // ✅ Payment Status Check
   async function checkPaymentStatus() {
     if (!window.connectedWallet) return;
 
@@ -107,6 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // ✅ Main Button Listeners
   document.getElementById("send-btn").addEventListener("click", async () => {
     if (window.connectedWallet && !hasPaid) {
       await checkPaymentStatus();
@@ -122,6 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("paywall").style.display = "none";
   }
 
+  // ✅ Solana Pay Button
   document.getElementById("solana-pay-btn").addEventListener("click", () => {
     const address = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
     const url = `https://solana.com/pay?recipient=${address}&amount=0.025&reference=crim_consult&label=CryptoConsult&message=Unlock%20CrimznBot`;

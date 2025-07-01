@@ -18,7 +18,7 @@ const walletUsage = {}; // { wallet: { count, hasPaid } }
 
 // 🧠 CrimznBot – Hybrid GPT logic
 app.post("/api/crimznbot", async (req, res) => {
-  const question = (req.body.question || req.body.message || "").toLowerCase();
+  const question = (req.body.prompt || req.body.question || req.body.message || "").toLowerCase();
   const wallet = req.body.wallet || null;
 
   if (!question) return res.status(400).json({ response: "No question provided." });

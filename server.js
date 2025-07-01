@@ -119,9 +119,14 @@ app.post("/api/verify", async (req, res) => {
   const wallet = req.body.wallet;
   if (!wallet) return res.status(400).json({ paid: false, message: "No wallet provided." });
 
+  if (!HELIUS_API_KEY || !process.env.HELIUS_TX_URL) {
+    return res.status(500).json({ paid: false, message: "Helius config missing" });
+  }
+
+  const heliusURL = `${process.env.HELIUS_TX_URL}/v0/addresses/${wallet}/transactions?api-key=${HELIUS_API_KEY}&limit=10`;
+
   try {
-    const url = `https://api.helius.xyz/v0/addresses/${wallet}/transactions?api-key=${HELIUS_API_KEY}&limit=10`;
-    const txRes = await fetch(url);
+    const txRes = await fetch(heliusURL);
     const txData = await txRes.json();
 
     const hasPaid = txData?.some(tx =>

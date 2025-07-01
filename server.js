@@ -4,13 +4,14 @@ const path = require("path");
 const app = express();
 require("dotenv").config();
 
-app.use(express.static("public"));
-app.use(express.json());
-
 const { OpenAI } = require("openai");
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+app.use(express.static("public"));
+app.use(express.json());
+
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
+const HELIUS_TX_URL = process.env.HELIUS_TX_URL;
 const SOLANA_ADDRESS = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
 
 // ✅ CrimznBot — Crypto Price + GPT-4 Hybrid AI
@@ -119,11 +120,13 @@ app.post("/api/verify", async (req, res) => {
   const wallet = req.body.wallet;
   if (!wallet) return res.status(400).json({ paid: false, message: "No wallet provided." });
 
-  if (!HELIUS_API_KEY || !process.env.HELIUS_TX_URL) {
-    return res.status(500).json({ paid: false, message: "Helius config missing" });
+  if (!HELIUS_TX_URL || !HELIUS_API_KEY) {
+    console.error("Missing env vars:", { HELIUS_TX_URL, HELIUS_API_KEY });
+    return res.status(500).json({ paid: false, error: "Helius config missing" });
   }
 
-  const heliusURL = `${process.env.HELIUS_TX_URL}/v0/addresses/${wallet}/transactions?api-key=${HELIUS_API_KEY}&limit=10`;
+  const heliusURL = `${HELIUS_TX_URL}/v0/addresses/${wallet}/transactions?api-key=${HELIUS_API_KEY}&limit=10`;
+  console.log("🔍 Checking payments via:", heliusURL);
 
   try {
     const txRes = await fetch(heliusURL);

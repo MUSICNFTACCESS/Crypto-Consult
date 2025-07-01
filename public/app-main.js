@@ -1,47 +1,51 @@
 document.addEventListener("DOMContentLoaded", () => {
   let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
-  let maxFreeQuestions = 3;
+  const maxFreeQuestions = 3;
   let hasPaid = localStorage.getItem("hasPaid") === "true";
   let connectedWallet = null;
   let paywallShown = false;
 
   const responseBox = document.getElementById("response-box");
 
-// 🤖 CrimznBot
-async function askCrimznBot() {
-  const input = document.getElementById("prompt");
-  const prompt = input.value.trim();
-  if (!prompt) return;
+  // 🤖 CrimznBot
+  async function askCrimznBot() {
+    const input = document.getElementById("prompt");
+    const prompt = input.value.trim();
+    if (!prompt) return;
 
-  if (!hasPaid && questionCount >= maxFreeQuestions) {
-    if (!paywallShown) {
-      document.getElementById("paywall").style.display = "block";
-      paywallShown = true;
+    responseBox.innerHTML = `<span class="response">🟡 Thinking...</span>`;
+    input.value = "";
+
+    try {
+      const res = await fetch("https://crypto-consult.onrender.com/api/crimznbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+
+      const data = await res.json();
+
+      if (data?.response) {
+        responseBox.innerHTML = `<span class="response green">${data.response}</span>`;
+
+        if (!hasPaid) {
+          questionCount++;
+          localStorage.setItem("questionCount", questionCount);
+
+          if (questionCount >= maxFreeQuestions) {
+            document.getElementById("paywall").style.display = "block";
+            paywallShown = true;
+          }
+        }
+      } else {
+        responseBox.innerHTML = `<span class="response">❌ Bot sent empty response.</span>`;
+        console.warn("Empty or bad response:", data);
+      }
+    } catch (err) {
+      responseBox.innerHTML = `<span class="response">❌ Error talking to CrimznBot.</span>`;
+      console.error("Bot error:", err);
     }
-    return;
   }
-
-  responseBox.innerHTML = `<span class="response">🟡 Thinking...</span>`;
-  input.value = "";
-
-  try {
-    const res = await fetch("/api/crimznbot", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
-    });
-
-    const data = await res.json();
-    responseBox.innerHTML = `<span class="response green">${data.response}</span>`;
-
-    // ✅ Only count the question after a successful response
-    questionCount++;
-    localStorage.setItem("questionCount", questionCount);
-  } catch (err) {
-    responseBox.innerHTML = `<span class="response">❌ Error talking to CrimznBot.</span>`;
-    console.error("Bot error:", err);
-  }
-}
 
   // 📈 PulseIt
   async function analyzePulseIt() {
@@ -51,7 +55,7 @@ async function askCrimznBot() {
 
     resultBox.innerText = "🔄 analyzing...";
     try {
-      const res = await fetch("/api/pulseit", {
+      const res = await fetch("https://crypto-consult.onrender.com/api/pulseit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ input: topic }),
@@ -120,12 +124,11 @@ async function askCrimznBot() {
     }
   }
 
-  // 🔘 Event bindings (safe with optional chaining)
+  // 🔘 Event bindings
   document.getElementById("send-btn")?.addEventListener("click", askCrimznBot);
   document.getElementById("analyze-btn")?.addEventListener("click", analyzePulseIt);
   document.getElementById("connectWalletBtn")?.addEventListener("click", connectWallet);
 
-  // ⏯️ Auto-unlock if already paid
   if (hasPaid) {
     document.getElementById("paywall").style.display = "none";
   }

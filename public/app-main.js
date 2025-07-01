@@ -9,14 +9,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const responseBox = document.getElementById("response-box");
 
-// 🤖 CrimznBot
+  // 🤖 CrimznBot
   async function askCrimznBot() {
     const input = document.getElementById("prompt");
     const prompt = input.value.trim();
     if (!prompt) return;
 
-    // 🛑 Block BEFORE sending request if max questions hit and unpaid
-    if (!hasPaid && questionCount >= maxFreeQuestions) {
+    // 🛑 Block AFTER 3rd question (limit is 3)
+    if (!hasPaid && questionCount >= maxFreeQuestions) { // 🆕 moved paywall check to >= 3
       if (!paywallShown) {
         document.getElementById("paywall").style.display = "block";
         responseBox.innerHTML = `<span class="response">🔒 You've hit the 3-question free limit. Unlock to continue.</span>`;
@@ -25,128 +25,123 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    responseBox.innerHTML = `<span class="response">🟡 Thinking...</span>`;
+    questionCount++;
+    localStorage.setItem("questionCount", questionCount);
     input.value = "";
+
+    responseBox.innerHTML = `<span class="response">🟡 Thinking...</span>`;
 
     try {
       const res = await fetch("/api/crimznbot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, wallet: connectedWallet }) // 🆕 sends wallet in body
       });
 
       const data = await res.json();
 
-      if (data?.response) {
+      if (data.response) {
         responseBox.innerHTML = `<span class="response green">${data.response}</span>`;
-
-        if (!hasPaid) {
-          questionCount++;
-          localStorage.setItem("questionCount", questionCount);
-
-          if (questionCount >= maxFreeQuestions) {
-            document.getElementById("paywall").style.display = "block";
-            paywallShown = true;
-          }
-        }
       } else {
-        responseBox.innerHTML = `<span class="response">❌ Bot sent empty response.</span>`;
+        responseBox.innerHTML = `<span class="response red">❌ Bot sent empty response.</span>`;
+      }
+
+      // ✅ Recheck payment status after each response
+      if (!hasPaid && questionCount >= maxFreeQuestions) { // 🆕 check if paywall triggered
+        checkPayment(); // 🆕 re-verify payment status
       }
     } catch (err) {
-      responseBox.innerHTML = `<span class="response">❌ Error talking to CrimznBot.</span>`;
+      responseBox.innerHTML = `<span class="response red">❌ Error talking to CrimznBot.</span>`;
     }
   }
 
-  // 📈 PulseIt
+  // 📊 PulseIt — sentiment analyzer
   async function analyzePulseIt() {
     const topic = document.getElementById("pulseit-input").value.trim();
     const resultBox = document.getElementById("pulseit-result");
     if (!topic) return;
 
-    resultBox.innerText = "🔄 analyzing...";
+    resultBox.innerText = "⏳ analyzing...";
+
     try {
       const res = await fetch("/api/pulseit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: topic }),
+        body: JSON.stringify({ input: topic })
       });
+
       const data = await res.json();
-      resultBox.innerText = data.sentiment || "❓ unknown";
-    } catch (e) {
-      resultBox.innerText = "❌ error";
-    }
-  }
-
-  // 🔌 Phantom Wallet Connect
-  async function connectWallet() {
-    if (!window.solana || !window.solana.isPhantom) {
-      alert("Phantom Wallet not found.");
-      return;
-    }
-
-    try {
-      const resp = await window.solana.connect();
-      connectedWallet = resp.publicKey.toString();
-
-      const btn = document.getElementById("connectWalletBtn");
-      btn.textContent = connectedWallet;
-      btn.style.display = "none";
-
-      const disconnectBtn = document.createElement("button");
-      disconnectBtn.id = "disconnect-wallet";
-      disconnectBtn.className = "solana-button";
-      disconnectBtn.textContent = "Disconnect Wallet";
-      disconnectBtn.onclick = () => {
-        connectedWallet = null;
-        window.solana.disconnect();
-        window.location.reload();
-      };
-      document.getElementById("wallet-status").appendChild(disconnectBtn);
-
-      await checkPayment();
+      resultBox.innerText = `${data.emoji} ${data.sentiment || "? unknown"}`;
     } catch (err) {
-      console.error("Wallet connection error:", err);
+      resultBox.innerText = "❌ PulseIt error.";
     }
   }
 
-  // 💸 Secure backend check using Helius
-  async function checkPayment() {
+  // 👛 Phantom Wallet Connect
+  async function connectWallet() {
+    if (window.solana && window.solana.isPhantom) {
+      try {
+        const resp = await window.solana.connect();
+        connectedWallet = resp.publicKey.toString(); // 🆕 sets global wallet address
+        console.log("✅ Connected Wallet:", connectedWallet);
+
+        const disconnectBtn = document.createElement("button");
+        disconnectBtn.classList.add("solana-button");
+        disconnectBtn.innerText = "Disconnect Wallet";
+        disconnectBtn.onclick = () => {
+          connectedWallet = null;
+          document.getElementById("wallet-status").innerHTML = "";
+        };
+
+        document.getElementById("wallet-status").innerHTML = `🔗 ${connectedWallet}`;
+        document.getElementById("wallet-status").appendChild(disconnectBtn);
+
+        checkPayment(); // 🆕 triggers unlock if wallet already paid
+      } catch (err) {
+        console.error("❌ Wallet connection error:", err);
+      }
+    } else {
+      alert("Phantom Wallet not found.");
+    }
+  }
+
+  // 🔐 Secure backend check using Helius
+  async function checkPayment() { // 🆕 new function for verifying payment
+    if (!connectedWallet) return;
     try {
-      const res = await fetch(`/api/check-payment?wallet=${connectedWallet}`);
+      const res = await fetch(`/api/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: connectedWallet }) // 🆕 sends wallet to backend
+      });
+
       const data = await res.json();
-
-      hasPaid = data?.hasPaid;
-
-      if (hasPaid) {
-        document.getElementById("paywall").style.display = "none";
+      if (data.hasPaid) {
+        document.getElementById("paywall").style.display = "none"; // 🆕 hides paywall
         paywallShown = false;
+        hasPaid = true;
         localStorage.setItem("hasPaid", "true");
       }
     } catch (err) {
-      console.error("💸 Payment check failed:", err);
+      console.error("❌ Payment check failed:", err);
     }
   }
 
-  // 🧷 Event bindings
-  document.getElementById("send-btn")?.addEventListener("click", askCrimznBot);
-  document.getElementById("analyze-btn")?.addEventListener("click", analyzePulseIt);
-  document.getElementById("connectWalletBtn")?.addEventListener("click", connectWallet);
+  // 🧠 Event bindings
+  document.getElementById("send-btn").addEventListener("click", askCrimznBot);
+  document.getElementById("pulseit-btn").addEventListener("click", analyzePulseIt);
+  document.getElementById("connectWalletBtn").addEventListener("click", connectWallet); // 🆕 binds wallet connect
 
   if (hasPaid) {
     document.getElementById("paywall").style.display = "none";
   }
 
-  // 🪙 Solana Pay Button (opens Phantom with 0.025 SOL)
-  const solanaPayBtn = document.getElementById("solana-pay-btn");
-  if (solanaPayBtn) {
-    solanaPayBtn.addEventListener("click", () => {
-      const recipient = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
-      const amount = 0.025;
-      const label = "Unlock CrimznBot";
-      const message = "Thanks for supporting CrimznBot!";
-      const url = `solana:${recipient}?amount=${amount}&label=${encodeURIComponent(label)}&message=${encodeURIComponent(message)}`;
-      window.open(url, "_blank");
-    });
-  }
+  // 💰 Solana Pay Button (opens Phantom with 0.025 SOL)
+  document.getElementById("solana-pay-btn").addEventListener("click", () => {
+    const address = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
+    const label = "Thanks for supporting CrimznBot";
+    const message = "Consultation Access";
+    const url = `https://solana.com/pay/${address}?amount=0.025&label=${encodeURIComponent(label)}&message=${encodeURIComponent(message)}`; // 🆕 updated for solana.com/pay UX
+    window.open(url, "_blank");
+  });
 });
-

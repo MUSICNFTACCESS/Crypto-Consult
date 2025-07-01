@@ -110,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 🎯 Event bindings
   document.getElementById("send-btn").addEventListener("click", askCrimznBot);
-  document.getElementById("pulseit-btn").addEventListener("click", analyzePulseIt);
+  document.getElementById("analyze-btn").addEventListener("click", analyzePulseIt);
   document.getElementById("connectWalletBtn").addEventListener("click", connectWallet);
 
   if (hasPaid) {

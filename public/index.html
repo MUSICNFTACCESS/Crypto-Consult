@@ -15,26 +15,31 @@
 <body>
   <div style="display: flex; justify-content: space-between; align-items: center;">
     <h1 style="color: orange;">CryptoConsult by Crimzn</h1>
-    <button id="connectWalletBtn" class="solana-button">Connect Wallet</button>
+    <div>
+      <button id="connectWalletBtn" class="solana-button">Connect Wallet</button>
+      <button id="disconnectWalletBtn" class="solana-button hidden" style="background-color: #ff4d4d;">Disconnect</button>
+    </div>
     <div id="wallet-status" style="margin-top: 10px;"></div>
   </div>
-<div id="live-prices" style="color: orange; font-family: monospace; margin-bottom: 10px;"></div>
-<script>
-  async function updatePrices() {
-    try {
-      const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
-      const data = await res.json();
-      const btc = data.bitcoin.usd.toLocaleString();
-      const eth = data.ethereum.usd.toLocaleString();
-      const sol = data.solana.usd.toLocaleString();
-      document.getElementById("live-prices").innerText = `🟠 BTC: $${btc} | 🟣 ETH: $${eth} | 💚 SOL: $${sol}`;
-    } catch {
-      document.getElementById("live-prices").innerText = `⚠️ Price feed unavailable`;
+
+  <div id="live-prices" style="color: orange; font-family: monospace; margin-bottom: 10px;"></div>
+  <script>
+    async function updatePrices() {
+      try {
+        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
+        const data = await res.json();
+        const btc = data.bitcoin.usd.toLocaleString();
+        const eth = data.ethereum.usd.toLocaleString();
+        const sol = data.solana.usd.toLocaleString();
+        document.getElementById("live-prices").innerText = `🟠 BTC: $${btc} | 🟣 ETH: $${eth} | 💚 SOL: $${sol}`;
+      } catch {
+        document.getElementById("live-prices").innerText = `⚠️ Price feed unavailable`;
+      }
     }
-  }
-  updatePrices();
-  setInterval(updatePrices, 60000); // refresh every minute
-</script>
+    updatePrices();
+    setInterval(updatePrices, 60000);
+  </script>
+
   <p>Welcome to your one-stop crypto consultation portal. Connect, learn, and earn with Crimzn.</p>
 
   <h2 style="color: orange;">🛠️ Available Services</h2>
@@ -76,7 +81,7 @@
     📡 Open Market Radar
   </button>
 
-<!-- Scripts -->
-<script src="./app-main.js?v=crimznfix1"></script>
+  <!-- Scripts -->
+  <script src="./app-main.js?v=crimznfix1"></script>
 </body>
 </html>

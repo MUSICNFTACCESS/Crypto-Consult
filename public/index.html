@@ -15,12 +15,11 @@
 <body>
   <div style="display: flex; justify-content: space-between; align-items: center;">
     <h1 style="color: orange;">CryptoConsult by Crimzn</h1>
-    <div>
-      <button id="connectWalletBtn" class="solana-button">Connect Wallet</button>
-      <button id="disconnectWalletBtn" class="solana-button hidden" style="background-color: #ff4d4d;">Disconnect</button>
-    </div>
-    <div id="wallet-status" style="margin-top: 10px;"></div>
+    <button id="connectWalletBtn" class="solana-button">Connect Wallet</button>
+    <button id="disconnectWalletBtn" class="solana-button hidden" style="background-color: #ff1444;">Disconnect</button>
   </div>
+
+  <div id="wallet-status" style="margin-top: 10px;"></div>
 
   <div id="live-prices" style="color: orange; font-family: monospace; margin-bottom: 10px;"></div>
   <script>
@@ -28,12 +27,12 @@
       try {
         const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
         const data = await res.json();
-        const btc = data.bitcoin.usd.toLocaleString();
-        const eth = data.ethereum.usd.toLocaleString();
-        const sol = data.solana.usd.toLocaleString();
-        document.getElementById("live-prices").innerText = `🟠 BTC: $${btc} | 🟣 ETH: $${eth} | 💚 SOL: $${sol}`;
-      } catch {
-        document.getElementById("live-prices").innerText = `⚠️ Price feed unavailable`;
+        const btc = data.bitcoin.usd;
+        const eth = data.ethereum.usd;
+        const sol = data.solana.usd;
+        document.getElementById("live-prices").innerText = `₿ BTC: $${btc} | 🟣 ETH: $${eth} | 🟩 SOL: $${sol}`;
+      } catch (err) {
+        document.getElementById("live-prices").innerText = "⚠️ Price feed unavailable.";
       }
     }
     updatePrices();
@@ -42,46 +41,40 @@
 
   <p>Welcome to your one-stop crypto consultation portal. Connect, learn, and earn with Crimzn.</p>
 
-  <h2 style="color: orange;">🛠️ Available Services</h2>
+  <h2>🛠️ Available Services:</h2>
   <ul>
-    <li>💻 Software as a Service</li>
-    <li>📊 Technical Analysis</li>
-    <li>🧠 Fundamental Analysis</li>
-    <li>🔐 Wallet Setup & Security</li>
-    <li>🔄 On/Off-Ramping Help</li>
-    <li>🪙 Token Research & Insights</li>
-    <li>📈 Risk Management</li>
-    <li>📞 One-on-One Consultations</li>
+    <li>Technical Analysis</li>
+    <li>Fundamental Analysis</li>
+    <li>Wallet Setup & Security</li>
+    <li>On/Off-Ramping Help</li>
+    <li>Token Research & Insights</li>
+    <li>Risk Management</li>
+    <li>One-on-One Consultations</li>
   </ul>
 
-  <!-- CrimznBot Chat -->
-  <h2 style="color: orange;">🤖 Ask CrimznBot</h2>
-  <input id="prompt" placeholder="Ask anything..." />
-  <button id="send-btn" class="submit-button">Send</button>
+  <h2>🤖 CrimznBot Chat — 🧠 Ask CrimznBot</h2>
+  <input type="text" id="prompt" placeholder="Ask anything..." /> <!-- ✅ FIXED -->
+  <button id="send-btn" style="margin-top: 10px;">Send</button>
   <div id="response-box" style="margin-top: 20px;"></div>
 
-  <!-- Paywall -->
+  <!-- 💰 Paywall -->
   <div id="paywall" class="hidden">
-    <p>You've hit the free limit. Pay 0.025 SOL to continue asking CrimznBot:</p>
+    <p>🧱 You hit the free limit. Pay 0.025 SOL to continue asking CrimznBot.</p>
     <button id="solana-pay-btn" class="solana-button">🔓 Unlock with Solana Pay</button>
   </div>
 
-  <!-- PulseIt Sentiment Analyzer -->
-  <h2 style="color: orange;">📊 PulseIt Sentiment Analyzer</h2>
-  <input id="pulseit-input" placeholder="Type a topic like 'ETF' or 'war'" />
-  <button id="analyze-btn" class="submit-button">Analyze</button>
+  <!-- 📊 PulseIt Sentiment Analyzer -->
+  <h2>📊 PulseIt sentiment analyzer</h2>
+  <input type="text" id="pulseit-input" placeholder="Type a topic like 'ETF' or 'war'" />
+  <button id="analyze-btn">Analyze</button>
   <div id="pulseit-result" style="margin-top: 10px;"></div>
 
-  <!-- Whitepaper & Radar -->
-  <h2 style="color: orange;">📄 Whitepaper & 📡 Cycle Top Radar</h2>
-  <a href="/whitepaper.html" target="_blank">
-    <button class="solana-button">📄 View Whitepaper</button>
-  </a>
-  <button class="solana-button" onclick="window.open('/radar.html', '_blank')">
-    📡 Open Market Radar
-  </button>
+  <!-- 📜 Whitepaper & Radar -->
+  <h2>📄 Whitepaper & 🛰️ Cycle Top Radar</h2>
+  <button class="solana-button" onclick="window.open('/whitepaper.pdf', '_blank')">📄 View Whitepaper</button>
+  <button class="solana-button" onclick="window.open('/radar.html', '_blank')">📡 Open Market Radar</button>
 
   <!-- Scripts -->
-<script type="module" src="./app-main.js?v=crimznfix3"></script>
+  <script type="module" src="./app-main.js?v=crimznfix3"></script>
 </body>
 </html>

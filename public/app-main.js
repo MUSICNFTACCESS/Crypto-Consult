@@ -125,10 +125,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("paywall").style.display = "none";
   }
 
-  // 🪙 Solana Pay Button (opens Phantom with 0.025 SOL)
-  const solanaPayBtn = document.getElementById("solana-pay-btn");
-  if (solanaPayBtn) {
-    solanaPayBtn.addEventListener("click", () => {
+// 🪙 Solana Pay Button (opens Phantom with 0.025 SOL)
+const solanaPayBtn = document.getElementById("solana-pay-btn");
+if (solanaPayBtn) {
+  solanaPayBtn.addEventListener("click", () => {
     const recipient = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
     const amount = 0.025;
     const label = "Unlock CrimznBot";
@@ -138,4 +138,5 @@ document.addEventListener("DOMContentLoaded", () => {
     window.open(url, "_blank");
   });
 }
+
 

@@ -15,6 +15,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const prompt = input.value.trim();
     if (!prompt) return;
 
+    // 🛑 Block questions if limit reached and unpaid
+    if (!hasPaid && questionCount >= maxFreeQuestions) {
+      if (!paywallShown) {
+        document.getElementById("paywall").style.display = "block";
+        paywallShown = true;
+      }
+      responseBox.innerHTML = `<span class="response">🔒 You've hit the 3-question free limit. Unlock to continue.</span>`;
+      return;
+    }
+
     responseBox.innerHTML = `<span class="response">🟡 Thinking...</span>`;
     input.value = "";
 
@@ -116,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-// 🧷 Event bindings
+  // 🧷 Event bindings
   document.getElementById("send-btn")?.addEventListener("click", askCrimznBot);
   document.getElementById("analyze-btn")?.addEventListener("click", analyzePulseIt);
   document.getElementById("connectWalletBtn")?.addEventListener("click", connectWallet);

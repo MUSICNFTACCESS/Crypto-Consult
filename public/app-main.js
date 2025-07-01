@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 🧷 Event bindings
+// 🧷 Event bindings
   document.getElementById("send-btn")?.addEventListener("click", askCrimznBot);
   document.getElementById("analyze-btn")?.addEventListener("click", analyzePulseIt);
   document.getElementById("connectWalletBtn")?.addEventListener("click", connectWallet);
@@ -125,16 +125,17 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("paywall").style.display = "none";
   }
 
-// 🪙 Solana Pay Button (opens Phantom with 0.025 SOL)
-const solanaPayBtn = document.getElementById("solana-pay-btn");
-if (solanaPayBtn) {
-  solanaPayBtn.addEventListener("click", () => {
-    const recipient = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
-    const amount = 0.025;
-    const label = "Unlock CrimznBot";
-    const message = "Thanks for supporting CrimznBot!";
-    const url = `solana:${recipient}?amount=${amount}&label=${encodeURIComponent(label)}&message=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
-  });
-}
+  // 🪙 Solana Pay Button (opens Phantom with 0.025 SOL)
+  const solanaPayBtn = document.getElementById("solana-pay-btn");
+  if (solanaPayBtn) {
+    solanaPayBtn.addEventListener("click", () => {
+      const recipient = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
+      const amount = 0.025;
+      const label = "Unlock CrimznBot";
+      const message = "Thanks for supporting CrimznBot!";
+      const url = `solana:${recipient}?amount=${amount}&label=${encodeURIComponent(label)}&message=${encodeURIComponent(message)}`;
+      window.open(url, "_blank");
+    });
+  }
+});
 

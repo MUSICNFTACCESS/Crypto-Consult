@@ -23,7 +23,8 @@ document.addEventListener("DOMContentLoaded", () => {
       window.connectedWallet = wallet;
       document.getElementById("wallet-status").innerHTML =
         `🔗 ${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
-      disconnectBtn.classList.remove("hidden");
+      connectBtn.classList.add("hidden"); // ✅ hide connect
+      disconnectBtn.classList.remove("hidden"); // ✅ show disconnect
     } catch (err) {
       console.error("❌ Wallet connection failed:", err);
     }
@@ -32,7 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function disconnectWallet() {
     window.connectedWallet = null;
     document.getElementById("wallet-status").innerHTML = "";
-    disconnectBtn.classList.add("hidden");
+    connectBtn.classList.remove("hidden"); // ✅ show connect
+    disconnectBtn.classList.add("hidden"); // ✅ hide disconnect
   }
 
   async function askCrimznBot() {
@@ -40,7 +42,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const prompt = input.value.trim();
     if (!prompt) return;
 
-    // ✅ FIX: Delay paywall trigger until after payment check runs
     if (!hasPaid) {
       questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
       if (questionCount >= maxFreeQuestions) {
@@ -53,10 +54,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    questionCount++;
-    localStorage.setItem("questionCount", questionCount);
-    input.value = "";
-
     responseBox.innerHTML = `<span class="response">🟡 Thinking...</span>`;
 
     try {
@@ -66,6 +63,21 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ prompt, wallet: window.connectedWallet })
       });
       const data = await res.json();
+
+      if (
+        data.response.includes("🔒") &&
+        !hasPaid &&
+        questionCount >= maxFreeQuestions
+      ) {
+        const paywall = document.getElementById("paywall");
+        if (paywall) paywall.style.display = "block";
+        paywallShown = true;
+        return;
+      }
+
+      questionCount++;
+      localStorage.setItem("questionCount", questionCount);
+      input.value = "";
       responseBox.innerHTML = `<span class="response" style="color: limegreen;">${data.response}</span>`;
     } catch (err) {
       responseBox.innerHTML = `<span class="response" style="color: red;">❌ Error getting response.</span>`;

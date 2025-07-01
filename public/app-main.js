@@ -133,10 +133,8 @@ if (solanaPayBtn) {
     const amount = 0.025;
     const label = "Unlock CrimznBot";
     const message = "Thanks for supporting CrimznBot!";
-
     const url = `solana:${recipient}?amount=${amount}&label=${encodeURIComponent(label)}&message=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   });
 }
-
 

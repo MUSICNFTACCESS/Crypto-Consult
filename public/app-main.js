@@ -15,6 +15,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const prompt = input.value.trim();
     if (!prompt) return;
 
+    // 🛑 Block BEFORE sending request if max questions hit and unpaid
+    if (!hasPaid && questionCount >= maxFreeQuestions) {
+      if (!paywallShown) {
+        document.getElementById("paywall").style.display = "block";
+        responseBox.innerHTML = `<span class="response">🔒 You've hit the 3-question free limit. Unlock to continue.</span>`;
+        paywallShown = true;
+      }
+      return;
+    }
+
     responseBox.innerHTML = `<span class="response">🟡 Thinking...</span>`;
     input.value = "";
 
@@ -44,11 +54,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (err) {
       responseBox.innerHTML = `<span class="response">❌ Error talking to CrimznBot.</span>`;
-    }
-
-    // 🛑 Final check AFTER attempting to answer
-    if (!hasPaid && questionCount >= maxFreeQuestions) {
-      responseBox.innerHTML = `<span class="response">🔒 You've hit the 3-question free limit. Unlock to continue.</span>`;
     }
   }
 

@@ -129,15 +129,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const solanaPayBtn = document.getElementById("solana-pay-btn");
   if (solanaPayBtn) {
     solanaPayBtn.addEventListener("click", () => {
-      const recipient = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
-      const amount = 0.025;
-      const reference = new PublicKey("11111111111111111111111111111111"); // Optional
-      const label = "Unlock CrimznBot";
-      const message = "Thanks for supporting CrimznBot!";
+    const recipient = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
+    const amount = 0.025;
+    const label = "Unlock CrimznBot";
+    const message = "Thanks for supporting CrimznBot!";
 
-      const url = `https://solana.com/pay?recipient=${recipient}&amount=${amount}&label=${encodeURIComponent(label)}&message=${encodeURIComponent(message)}&reference=${reference}`;
-      window.open(url, "_blank");
-    });
-  }
-});
+    const url = `solana:${recipient}?amount=${amount}&label=${encodeURIComponent(label)}&message=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
+  });
+}
+
 

@@ -22,7 +22,7 @@ setTimeout(() => {
   console.log("🔁 Wallet usage reset on startup.");
 }, 1000);
 
-// 🧠 CrimznBot handler
+// 🤖 CrimznBot handler
 app.post("/api/crimznbot", async (req, res) => {
   const { prompt, wallet } = req.body;
   if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
@@ -34,6 +34,10 @@ app.post("/api/crimznbot", async (req, res) => {
   walletUsage[wallet].count++;
 
   try {
+    const coingeckoRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd`);
+    const priceData = await coingeckoRes.json();
+    const priceSummary = `Live Prices: Bitcoin $${priceData.bitcoin.usd}, Ethereum $${priceData.ethereum.usd}, Solana $${priceData.solana.usd}`;
+
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -42,7 +46,20 @@ app.post("/api/crimznbot", async (req, res) => {
       },
       body: JSON.stringify({
         model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }]
+        messages: [
+          {
+            role: "system",
+            content: "You are CrimznBot – a crypto strategist with the mind of Raoul Pal, Michael Saylor, and Cathie Wood. Always reply with real-time macro & fearless tone. Never say you're just an AI. Live token prices are injected below."
+          },
+          {
+            role: "assistant",
+            content: priceSummary
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
       })
     });
 
@@ -61,6 +78,42 @@ app.post("/api/crimznbot", async (req, res) => {
   }
 });
 
+// 📣 PulseIt — Sentiment Analyzer
+app.post("/api/pulseit", async (req, res) => {
+  const { topic } = req.body;
+  if (!topic) return res.status(400).json({ sentiment: "⚠️ No topic provided." });
+
+  try {
+    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are PulseIt — a fast, opinionated crypto sentiment engine. Output sentiment as one of: Bullish 🟢, Bearish 🔴 or Neutral 🟡. Be blunt and clear.`
+          },
+          {
+            role: "user",
+            content: `Give sentiment for: ${topic}`
+          }
+        ]
+      })
+    });
+
+    const data = await aiRes.json();
+    const sentiment = data.choices?.[0]?.message?.content || "⚠️ No sentiment generated.";
+    res.json({ sentiment });
+  } catch (err) {
+    console.error("❌ PulseIt error:", err.message);
+    res.status(500).json({ sentiment: "⚠️ Sentiment analysis failed." });
+  }
+});
+
 // ✅ Check payment status (in-memory logic)
 app.get("/api/check-payment", async (req, res) => {
   const wallet = req.query.wallet;
@@ -68,7 +121,7 @@ app.get("/api/check-payment", async (req, res) => {
   res.json({ hasPaid: paid });
 });
 
-// ✅ Solana Pay Link Generator with dynamic reference
+// 💸 Solana Pay link generator
 app.get("/api/solana-pay-link", async (req, res) => {
   try {
     const wallet = req.query.wallet;
@@ -91,7 +144,7 @@ app.get("/api/solana-pay-link", async (req, res) => {
   }
 });
 
-// 🔁 Webhook — Helius transaction monitor
+// 🪝 Webhook from Helius
 app.post("/api/webhook", async (req, res) => {
   try {
     const { events } = req.body;
@@ -101,7 +154,6 @@ app.post("/api/webhook", async (req, res) => {
       const txAmount = event.amount || 0;
       const payer = event?.payer || event?.sender;
       const recipient = event?.account || "";
-      const ref = event.referenceAccount || "";
 
       if (
         txAmount === 25000000 &&
@@ -120,7 +172,7 @@ app.post("/api/webhook", async (req, res) => {
   }
 });
 
-// 🚀 Start the server
+// 🔥 Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server listening on port ${PORT}`);

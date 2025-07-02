@@ -23,12 +23,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function disconnectWallet() {
-  window.connectedWallet = null;
-  localStorage.setItem("hasPaid", "false"); // 🧠 Reset payment status
-  document.getElementById("wallet-status").innerHTML = "";
-  connectBtn.style.display = "inline-block";
-  disconnectBtn.style.display = "none";
-}
+    window.connectedWallet = null;
+    localStorage.setItem("hasPaid", "false");
+    document.getElementById("wallet-status").innerHTML = "";
+    connectBtn.style.display = "inline-block";
+    disconnectBtn.style.display = "none";
+  }
 
   async function askCrimznBot() {
     const input = document.getElementById("prompt");
@@ -90,7 +90,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // 🪙 Solana Pay Button + QR fallback
   document.getElementById("solana-pay-btn").addEventListener("click", async () => {
     try {
-      const res = await fetch("/api/solana-pay-link");
+      if (!window.connectedWallet) {
+        alert("Please connect your wallet first.");
+        return;
+      }
+
+      const res = await fetch(`/api/solana-pay-link?wallet=${window.connectedWallet}`);
       const data = await res.json();
       const solanaURL = data.url;
 

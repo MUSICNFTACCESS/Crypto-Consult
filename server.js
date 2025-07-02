@@ -6,18 +6,23 @@ const fetch = require("node-fetch");
 const { encodeURL } = require("@solana/pay");
 const { PublicKey } = require("@solana/web3.js");
 const BigNumber = require("bignumber.js");
+const bs58 = require("bs58");
+const crypto = require("crypto");
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-const walletUsage = {};setTimeout(() => {
+// 🧠 Wallet usage tracker
+const walletUsage = {};
+setTimeout(() => {
   for (let wallet in walletUsage) {
     walletUsage[wallet] = { count: 0, hasPaid: false };
   }
   console.log("🔁 Wallet usage reset on startup.");
 }, 1000);
 
+// 🧠 CrimznBot handler
 app.post("/api/crimznbot", async (req, res) => {
   const { prompt, wallet } = req.body;
   if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
@@ -50,19 +55,26 @@ app.post("/api/crimznbot", async (req, res) => {
   }
 });
 
-// ✅ Payment check (placeholder logic)
+// ✅ Check payment status (placeholder memory logic)
 app.get("/api/check-payment", async (req, res) => {
   const wallet = req.query.wallet;
   const paid = walletUsage[wallet]?.hasPaid || false;
   res.json({ hasPaid: paid });
 });
 
-// ✅ Solana Pay Link generator
+// ✅ Solana Pay Link Generator with dynamic reference
 app.get("/api/solana-pay-link", async (req, res) => {
   try {
+    const wallet = req.query.wallet;
+    if (!wallet) return res.status(400).json({ error: "Wallet is required." });
+
     const recipient = new PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
     const amount = new BigNumber(0.025);
-    const reference = new PublicKey("8KLrB98zFz5Jc2g6CmLMTGPkVVWxF7rGbwTMBuQFcJQf");
+
+    // 🔁 Generate unique reference from wallet
+    const hash = crypto.createHash("sha256").update(wallet + Date.now()).digest();
+    const reference = new PublicKey(bs58.encode(hash.slice(0, 32)));
+
     const label = "CryptoConsult";
     const message = "Unlock CrimznBot";
 
@@ -74,7 +86,7 @@ app.get("/api/solana-pay-link", async (req, res) => {
   }
 });
 
-// ✅ Launch server
+// 🚀 Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server listening on port ${PORT}`);

@@ -59,7 +59,7 @@ app.post("/api/crimznbot", async (req, res) => {
     role: "user",
     content: prompt
   }
-]
+
 const aiData = await aiRes.json();
 let output = aiData.choices?.[0]?.message?.content || "⚠️ No response.";
 output = output

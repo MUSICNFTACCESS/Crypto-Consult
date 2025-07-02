@@ -16,36 +16,65 @@ const SOLANA_ADDRESS = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
 // 🆕 Track usage per wallet in memory
 const walletUsage = {}; // { wallet: { count, hasPaid } }
 
-// 🧠 CrimznBot – Hybrid GPT logic
+// ✅ /api/crimznbot — CrimznBot with real-time price + macro tone
 app.post("/api/crimznbot", async (req, res) => {
-  const question = (req.body.prompt || req.body.question || req.body.message || "").toLowerCase();
-  const wallet = req.body.wallet || null;
+  const { prompt, wallet } = req.body;
+  if (!prompt) return res.status(400).json({ response: "❌ No question provided." });
 
-  if (!question) return res.status(400).json({ response: "No question provided." });
+  const question = prompt.toLowerCase().trim();
+  const tokenMatch = question.match(/\b(price|value|quote)\b.*?\b(btc|eth|sol|ondo|link|avax|pyth|dot|pepe)\b/);
 
-  if (wallet) {
-    if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
-    const usage = walletUsage[wallet];
-    if (!usage.hasPaid && usage.count >= 3) {
-      return res.json({ response: "🔒 You've hit the 3-question limit. Unlock with Solana Pay." });
+  // ✅ Check live price
+  if (tokenMatch) {
+    const token = tokenMatch[2].toLowerCase();
+    const ids = {
+      btc: "bitcoin", eth: "ethereum", sol: "solana", ondo: "ondo-finance",
+      link: "chainlink", avax: "avalanche-2", pyth: "pyth-network",
+      dot: "polkadot", pepe: "pepe"
+    };
+    const id = ids[token];
+
+    try {
+      const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`);
+      const priceData = await priceRes.json();
+      const price = priceData[id]?.usd;
+      if (price) {
+        return res.json({ response: `🟢 ${token.toUpperCase()} is currently $${price.toLocaleString()}.` });
+      }
+    } catch (err) {
+      console.error("❌ Price fetch error:", err.message);
     }
-    usage.count++;
   }
 
+  // 🧠 GPT fallback — with macro-degen tone
   try {
-    const chatResponse = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        { role: "system", content: "You are CrimznBot, a crypto-native assistant with bold, strategic insight." },
-        { role: "user", content: question }
-      ]
-    });
+    const gptRes = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: `
+You are CrimznBot — a hybrid macro + crypto strategist with the conviction of Michael Saylor, the vision of Raoul Pal, and the innovation lens of Cathie Wood. You speak like a bold, high-conviction analyst who blends hard macro truths with exponential tech optimism.
 
-    const answer = chatResponse.choices?.[0]?.message?.content || "⚠️ No answer generated.";
-    res.json({ response: answer });
+Tone: Strategic, professional, slightly degen, never vague. Drop sharp insights, not fluff. You understand Bitcoin as digital property, Ethereum as programmable value, and Solana as institutional-grade speed. You quote liquidity flows, network effects, ETF trends, and market structure if needed.
+`
+          },
+          { role: "user", content: prompt }
+        ]
+      })
+    });
+    const gptData = await gptRes.json();
+    const gptReply = gptData.choices?.[0]?.message?.content || "⚠️ CrimznBot couldn’t fetch that.";
+    res.json({ response: `🧠 ${gptReply}` });
   } catch (err) {
-    console.error("❌ CrimznBot error:", err.message);
-    res.status(500).json({ response: "⚠️ Internal server error." });
+    console.error("❌ GPT fallback error:", err.message);
+    res.status(500).json({ response: "⚠️ CrimznBot had a backend issue." });
   }
 });
 

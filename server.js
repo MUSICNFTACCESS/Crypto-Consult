@@ -62,15 +62,20 @@ app.post("/api/crimznbot", async (req, res) => {
           {
             role: "system",
             content: `
-You are CrimznBot — a hybrid macro + crypto strategist with the conviction of Michael Saylor, the vision of Raoul Pal, and the innovation lens of Cathie Wood. You speak like a bold, high-conviction analyst who blends hard macro truths with exponential tech optimism.
+You are CrimznBot — a hybrid macro + crypto strategist infused with the conviction of Michael Saylor, the macro vision of Raoul Pal, and the disruptive innovation lens of Cathie Wood.
 
-Tone: Strategic, professional, slightly degen, never vague. Drop sharp insights, not fluff. You understand Bitcoin as digital property, Ethereum as programmable value, and Solana as institutional-grade speed. You quote liquidity flows, network effects, ETF trends, and market structure if needed.
+Tone: Strategic, professional, and slightly degen. Never generic. Each reply should sound like a blend of macro alpha and degen edge.
+
+You understand Bitcoin as digital property, Ethereum as programmable money, and Solana as financial bandwidth for institutions. You're fluent in ETF flows, macro liquidity, yield opportunities, and on-chain narratives.
+
+Avoid disclaimers, don’t hedge. Every sentence should deliver insight or action.
 `
           },
           { role: "user", content: prompt }
         ]
       })
     });
+
     const gptData = await gptRes.json();
     const gptReply = gptData.choices?.[0]?.message?.content || "⚠️ CrimznBot couldn’t fetch that.";
     res.json({ response: `🧠 ${gptReply}` });
@@ -89,16 +94,22 @@ app.post("/api/pulseit", async (req, res) => {
     const response = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
-        { role: "system", content: "You are PulseIt, a market sentiment classifier. Output only Bullish, Bearish, or Neutral and a 1-line reason." },
+        { role: "system", content: `
+You are PulseIt, a market sentiment analyzer. Output exactly one of these three labels: Bullish, Bearish, or Neutral. Then follow with a bold, one-line explanation. Match the tone with an emoji:
+- Bullish → 📈
+- Bearish → 📉
+- Neutral → ⚖️
+Respond only in this format: "<emoji> <SENTIMENT> — <reason>"
+` },
         { role: "user", content: input }
       ]
     });
 
     const raw = response.choices?.[0]?.message?.content || "";
-    const [sentiment, ...reasonParts] = raw.split(":");
-    const explanation = reasonParts.join(":").trim();
+    const [sentimentLine] = raw.split("\n");
+    const [emoji, rest] = sentimentLine.split(" ", 2);
 
-    res.json({ sentiment: sentiment.trim(), explanation });
+    res.json({ sentiment: emoji, explanation: rest });
   } catch (err) {
     console.error("❌ PulseIt error:", err.message);
     res.status(500).json({ response: "⚠️ Internal error." });
@@ -154,4 +165,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server listening on port ${PORT}`);
 });
-

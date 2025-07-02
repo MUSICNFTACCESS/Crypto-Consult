@@ -42,20 +42,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const prompt = input.value.trim();
     if (!prompt) return;
 
-    if (!hasPaid) {
-      questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
-      if (questionCount >= maxFreeQuestions) {
-        if (!paywallShown) {
-          const paywall = document.getElementById("paywall");
-          if (paywall) {
-            paywall.style.display = "block";
-            responseBox.innerHTML = ""; // ✅ ADDED: Hide 3rd response
-            paywall.scrollIntoView({ behavior: "smooth" }); // ✅ ADDED: Auto scroll
-          }
-          paywallShown = true;
+    questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
+
+    if (!hasPaid && questionCount >= maxFreeQuestions) {
+      if (!paywallShown) {
+        const paywall = document.getElementById("paywall");
+        if (paywall) {
+          paywall.style.display = "block";
+          responseBox.innerHTML = ""; // ✅ Clear response
+          paywall.scrollIntoView({ behavior: "smooth" }); // ✅ Scroll to paywall
         }
-        return;
+        paywallShown = true;
       }
+      return;
     }
 
     responseBox.innerHTML = `<span class="response">🟡 Thinking...</span>`;
@@ -76,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const paywall = document.getElementById("paywall");
         if (paywall) {
           paywall.style.display = "block";
-          responseBox.innerHTML = ""; // ✅ ADDED again just in case
+          responseBox.innerHTML = "";
           paywall.scrollIntoView({ behavior: "smooth" });
         }
         paywallShown = true;
@@ -150,7 +149,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const address = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
     const solanaURL = `https://solana.com/pay?recipient=${address}&amount=0.025&reference=crim_consult&label=CryptoConsult&message=Unlock%20CrimznBot`;
 
-    // ✅ Define fallback if QRCode.CorrectLevel is missing
     if (typeof QRCode.CorrectLevel === "undefined") {
       QRCode.CorrectLevel = { H: 2 };
     }
@@ -174,5 +172,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
       qrBox.style.display = "block";
     }
-  }); // closes solana-pay-btn click listener
-}); // closes DOMContentLoaded wrapper
+  });
+});

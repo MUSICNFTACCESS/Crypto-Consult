@@ -1,11 +1,13 @@
 const path = require("path");
 const express = require("express");
+const cors = require("cors"); // ✅ ADD THIS
 require("dotenv").config(); // ✅ env vars
 
 const { OpenAI } = require("openai");
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const app = express();
+app.use(cors()); // ✅ ADD THIS
 app.use(express.static("public"));
 app.use(require("express").json());
 

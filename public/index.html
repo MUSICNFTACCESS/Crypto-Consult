@@ -6,38 +6,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/app-style.css" />
   <style>
-    .hidden {
-      display: none;
-    }
+    .hidden { display: none; }
   </style>
-
- <!-- ✅ Solana Wallet Script -->
- <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
-
-  <!-- ✅ QR Code Generator -->
+  <!-- 🛠️ Solana Wallet Script -->
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
+  <!-- 📸 QR Code Generator -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
-
 <body>
   <div style="display: flex; justify-content: space-between; align-items: center;">
     <h1 style="color: orange;">CryptoConsult by Crimzn</h1>
-    <button id="connectWalletBtn" class="solana-button">Connect Wallet</button>
-    <button id="disconnectWalletBtn" class="solana-button hidden" style="background-color: #f11414;">Disconnect</button>
+    <button id="connectWalletBtn" class="solana-button">🔌 Connect Wallet</button>
+    <button id="disconnectWalletBtn" class="solana-button hidden" style="background-color: #11141a;">❌ Disconnect</button>
   </div>
+  <div id="wallet-status" style="margin-bottom: 10px;"></div>
 
-  <div id="wallet-status" style="margin-top: 10px;"></div>
-
-  <div id="live-prices" style="color: orange; font-family: monospace; margin-bottom: 10px;"></div>
+  <!-- 📈 Live Prices -->
+  <div id="live-prices" style="font-family: monospace; margin-bottom: 10px;"></div>
   <script>
     async function updatePrices() {
       try {
         const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
         const data = await res.json();
-        const btc = data.bitcoin.usd;
-        const eth = data.ethereum.usd;
-        const sol = data.solana.usd;
-        document.getElementById("live-prices").innerText = `₿ BTC: $${btc} | 🟣 ETH: $${eth} | 🟩 SOL: $${sol}`;
-      } catch (err) {
+        document.getElementById("live-prices").innerText = `₿ BTC: $${data.bitcoin.usd}  🟣 ETH: $${data.ethereum.usd}  🟩 SOL: $${data.solana.usd}`;
+      } catch {
         document.getElementById("live-prices").innerText = "⚠️ Price feed unavailable.";
       }
     }
@@ -45,46 +37,44 @@
     setInterval(updatePrices, 60000);
   </script>
 
-  <p>Welcome to your one-stop crypto consultation portal. Connect, learn, and earn with Crimzn.</p>
-
-  <h2>🛠️ Available Services:</h2>
+  <!-- 💼 Services -->
+  <p>Welcome to your one-stop crypto consultation portal. Connect, learn, and earn with Crimzn. 🚀</p>
   <ul>
-    <li>Software as a Service (SaaS)</li>
-    <li>Technical Analysis</li>
-    <li>Fundamental Analysis</li>
-    <li>Wallet Setup & Security</li>
-    <li>On/Off-Ramping Help</li>
-    <li>Token Research & Insights</li>
-    <li>Risk Management</li>
-    <li>One-on-One Consultations</li>
+    <li>🧩 Software as a Service (SaaS)</li>
+    <li>📊 Technical Analysis</li>
+    <li>📈 Fundamental Analysis</li>
+    <li>🔐 Wallet Setup & Security</li>
+    <li>💱 On/Off-Ramping Help</li>
+    <li>📘 Token Research & Insights</li>
+    <li>⚠️ Risk Management Strategy</li>
+    <li>📞 One-on-One Consultations</li>
   </ul>
 
-  <h2>🤖 CrimznBot Chat — 🧠 Ask CrimznBot</h2>
+  <!-- 🤖 CrimznBot -->
+  <h2>CrimznBot Chat — 💬 Ask CrimznBot</h2>
   <input type="text" id="prompt" placeholder="Ask anything..." />
-  <button id="send-btn" style="margin-top: 10px;">Send</button>
-  <div id="response-box" style="margin-top: 20px;"></div>
+  <button id="send-btn">Send</button>
+  <p id="response-box" style="margin-top: 20px;"></p>
 
-  <!-- 💰 Paywall -->
+  <!-- 🔐 Paywall -->
   <div id="paywall" class="hidden">
-    <p>🧱 You hit the free limit. Pay 0.025 SOL to continue asking CrimznBot.</p>
-    <button id="solana-pay-btn" class="solana-button">🔓 Unlock with Solana Pay</button>
-    <!-- ✅ QR fallback for desktop -->
+    <p>🧠 You hit the 3-free limit. Pay 0.02$ SOL to continue asking CrimznBot.</p>
+    <button id="solana-pay-btn" class="solana-button">💳 Unlock with Solana Pay</button>
     <div id="qr-fallback" style="margin-top: 20px; display: none;"></div>
   </div>
 
-  <!-- 📊 PulseIt Sentiment Analyzer -->
-  <h2>📊 PulseIt sentiment analyzer</h2>
+  <!-- 📣 PulseIt -->
+  <h2>PulseIt Sentiment Analyzer</h2>
   <input type="text" id="pulseit-input" placeholder="Type a topic like 'ETF' or 'war'" />
-  <button id="analyze-btn">Analyze</button>
-  <div id="pulseit-result" style="margin-top: 10px;"></div>
+  <div id="pulseit-response" style="margin-top: 10px;"></div>
 
-  <!-- 📜 Whitepaper & Radar -->
-  <h2>📄 Whitepaper & 🛰️ Cycle Top Radar</h2>
-  <button class="solana-button" onclick="window.open('/whitepaper.html', '_blank')">📄 View Whitepaper</button>
-  <button class="solana-button" onclick="window.open('/radar.html', '_blank')">🛰️ Open Market Radar</button>
+  <!-- 🧠 Whitepaper & Radar -->
+  <h2>Whitepaper & Cycle Top Radar</h2>
+  <button onclick="window.open('/whitepaper.html', '_blank')">📄 View Whitepaper</button>
+  <button onclick="window.open('/radar.html', '_blank')">🧭 Open Market Radar</button>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script type="module" src="/app-main.js?v=crimznfix3"></script>
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script type="module" src="/app-main.js"></script>
 </body>
 </html>

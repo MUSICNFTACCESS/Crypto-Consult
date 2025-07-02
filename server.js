@@ -41,13 +41,19 @@ app.post("/api/crimznbot", async (req, res) => {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: "gpt-4o",
         messages: [{ role: "user", content: prompt }]
       })
     });
 
     const data = await aiRes.json();
-    const output = data.choices?.[0]?.message?.content || "⚠️ No response.";
+    let output = data.choices?.[0]?.message?.content || "⚠️ No response.";
+    output = output
+      .replace(/As an AI language model,? ?/gi, "")
+      .replace(/I (cannot|can't|do not|don’t) (predict|provide|guarantee)[^.]*\./gi, "")
+      .replace(/I'm just a language model[^.]*\./gi, "")
+      .replace(/As an artificial intelligence[^.]*\./gi, "");
+
     res.json({ response: output });
   } catch (err) {
     console.error("❌ CrimznBot error:", err.message);
@@ -71,7 +77,6 @@ app.get("/api/solana-pay-link", async (req, res) => {
     const recipient = new PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
     const amount = new BigNumber(0.025);
 
-    // 🔁 Generate unique reference
     const hash = crypto.createHash("sha256").update(wallet + Date.now()).digest();
     const reference = new PublicKey(bs58.encode(hash.slice(0, 32)));
 
@@ -98,7 +103,6 @@ app.post("/api/webhook", async (req, res) => {
       const recipient = event?.account || "";
       const ref = event.referenceAccount || "";
 
-      // ✅ Check exact payment: 0.025 SOL = 25_000_000 lamports
       if (
         txAmount === 25000000 &&
         recipient === "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF" &&

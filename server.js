@@ -60,15 +60,15 @@ app.post("/api/crimznbot", async (req, res) => {
     content: prompt
   }
 ]
+const aiData = await aiRes.json();
+let output = aiData.choices?.[0]?.message?.content || "⚠️ No response.";
+output = output
+  .replace(/As an AI language model,? ?/gi, "")
+  .replace(/I (cannot|can't|do not|don’t) (predict|provide|guarantee)[^.]*\./gi, "")
+  .replace(/I'm just a language model[^.]*\./gi, "")
+  .replace(/As an artificial intelligence[^.]*\./gi, "");
 
-    const data = await aiRes.json();
-    let output = data.choices?.[0]?.message?.content || "⚠️ No response.";
-    output = output
-      .replace(/As an AI language model,? ?/gi, "")
-      .replace(/I (cannot|can't|do not|don’t) (predict|provide|guarantee)[^.]*\./gi, "")
-      .replace(/I'm just a language model[^.]*\./gi, "")
-      .replace(/As an artificial intelligence[^.]*\./gi, "");
-
+res.json({ response: output });
     res.json({ response: output });
   } catch (err) {
     console.error("❌ CrimznBot error:", err.message);

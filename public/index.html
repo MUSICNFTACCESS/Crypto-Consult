@@ -10,13 +10,18 @@
       display: none;
     }
   </style>
+
+  <!-- ✅ Solana Wallet Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@1.10.10/lib/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.9.15/lib/index.umd.js"></script>
 </head>
+
 <body>
   <div style="display: flex; justify-content: space-between; align-items: center;">
     <h1 style="color: orange;">CryptoConsult by Crimzn</h1>
     <button id="connectWalletBtn" class="solana-button">Connect Wallet</button>
-    <button id="disconnectWalletBtn" class="solana-button hidden" style="background-color: #ff1444;">Disconnect</button>
+    <button id="disconnectWalletBtn" class="solana-button hidden" style="background-color: #f11414;">Disconnect</button>
   </div>
 
   <div id="wallet-status" style="margin-top: 10px;"></div>
@@ -43,6 +48,7 @@
 
   <h2>🛠️ Available Services:</h2>
   <ul>
+    <li>Software as a Service (SaaS)</li>
     <li>Technical Analysis</li>
     <li>Fundamental Analysis</li>
     <li>Wallet Setup & Security</li>
@@ -53,7 +59,7 @@
   </ul>
 
   <h2>🤖 CrimznBot Chat — 🧠 Ask CrimznBot</h2>
-  <input type="text" id="prompt" placeholder="Ask anything..." /> <!-- ✅ FIXED -->
+  <input type="text" id="prompt" placeholder="Ask anything..." />
   <button id="send-btn" style="margin-top: 10px;">Send</button>
   <div id="response-box" style="margin-top: 20px;"></div>
 
@@ -61,6 +67,8 @@
   <div id="paywall" class="hidden">
     <p>🧱 You hit the free limit. Pay 0.025 SOL to continue asking CrimznBot.</p>
     <button id="solana-pay-btn" class="solana-button">🔓 Unlock with Solana Pay</button>
+    <!-- ✅ QR fallback for desktop -->
+    <div id="qr-fallback" style="margin-top: 20px; display: none;"></div>
   </div>
 
   <!-- 📊 PulseIt Sentiment Analyzer -->
@@ -71,10 +79,10 @@
 
   <!-- 📜 Whitepaper & Radar -->
   <h2>📄 Whitepaper & 🛰️ Cycle Top Radar</h2>
-  <button class="solana-button" onclick="window.open('/whitepaper.pdf', '_blank')">📄 View Whitepaper</button>
-  <button class="solana-button" onclick="window.open('/radar.html', '_blank')">📡 Open Market Radar</button>
+  <button class="solana-button" onclick="window.open('/whitepaper.html', '_blank')">📄 View Whitepaper</button>
+  <button class="solana-button" onclick="window.open('/radar.html', '_blank')">🛰️ Open Market Radar</button>
 
   <!-- Scripts -->
-  <script type="module" src="./app-main.js?v=crimznfix3"></script>
+  <script type="module" src="/app-main.js?v=crimznfix3"></script>
 </body>
 </html>

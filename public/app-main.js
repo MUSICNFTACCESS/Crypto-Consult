@@ -126,3 +126,35 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("paywall").style.display = "none";
   }
 });
+// 📣 PulseIt Sentiment Analyzer
+document.getElementById("pulseit-btn").addEventListener("click", async () => {
+  const topic = document.getElementById("pulseit-input").value.trim();
+  const outputBox = document.getElementById("pulseit-response");
+
+  if (!topic) return (outputBox.innerText = "❗Enter a topic first.");
+
+  outputBox.innerHTML = "📡 Analyzing sentiment...";
+
+  try {
+    const res = await fetch("/api/crimznbot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt: `In one sentence: what is the crypto market sentiment around "${topic}" right now? Label it as Bullish, Bearish, or Neutral.`,
+        wallet: window.connectedWallet || "pulse"
+      })
+    });
+
+    const data = await res.json();
+    let emoji = "🟡";
+
+    if (/bullish/i.test(data.response)) emoji = "🟢";
+    else if (/bearish/i.test(data.response)) emoji = "🔴";
+    else if (/neutral/i.test(data.response)) emoji = "🟡";
+
+    outputBox.innerHTML = `${emoji} <b>Sentiment:</b> ${data.response}`;
+  } catch (err) {
+    console.error("❌ PulseIt error:", err.message);
+    outputBox.innerText = "⚠️ Error getting sentiment.";
+  }
+});

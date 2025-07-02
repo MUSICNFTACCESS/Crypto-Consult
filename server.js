@@ -3,8 +3,6 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const fetch = require("node-fetch");
-const { encodeURL } = require("@solana/pay");
-const { PublicKey } = require("@solana/web3.js");
 
 app.use(cors());
 app.use(express.json());

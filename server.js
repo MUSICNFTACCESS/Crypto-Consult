@@ -11,7 +11,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-const walletUsage = {};
+const walletUsage = {};setTimeout(() => {
+  for (let wallet in walletUsage) {
+    walletUsage[wallet] = { count: 0, hasPaid: false };
+  }
+  console.log("🔁 Wallet usage reset on startup.");
+}, 1000);
 
 app.post("/api/crimznbot", async (req, res) => {
   const { prompt, wallet } = req.body;

@@ -147,7 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ✅ Solana Pay Button
   document.getElementById("solana-pay-btn").addEventListener("click", () => {
     const address = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
-    const solanaURL = `https://solana.com/pay?recipient=${address}&amount=0.025&reference=crim_consult&label=CryptoConsult&message=Unlock%20CrimznBot`;
+    const solanaURL = `solana:${address}?amount=0.025&reference=crim_consult&label=CryptoConsult&message=Unlock%20CrimznBot`;
 
     if (typeof QRCode.CorrectLevel === "undefined") {
       QRCode.CorrectLevel = { H: 2 };

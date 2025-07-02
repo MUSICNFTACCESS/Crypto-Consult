@@ -139,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 document.getElementById("solana-pay-btn").addEventListener("click", () => {
   const address = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
-  const solanaURL = `https://solana.com/pay?recipient=${address}&amount=0.025&reference=crim_consult&label=CryptoConsult&message=Unlock%20CrimznBot`;
+const solanaURL = `https://solana.com/pay?recipient=${address}&amount=0.025&reference=crim_consult&label=CryptoConsult&message=Unlock%20CrimznBot`;
 
   // Detect if on mobile
   const isMobile = /Mobi|Android/i.test(navigator.userAgent);

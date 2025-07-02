@@ -46,22 +46,20 @@ app.post("/api/crimznbot", async (req, res) => {
       },
       body: JSON.stringify({
         model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "You are CrimznBot – a crypto strategist with the mind of Raoul Pal, Michael Saylor, and Cathie Wood. Always reply with real-time macro & fearless tone. Never say you're just an AI. Live token prices are injected below."
-          },
-          {
-            role: "assistant",
-            content: priceSummary
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ]
-      })
-    });
+  messages: [
+  {
+    role: "system",
+    content: `You are CrimznBot — a fearless crypto strategist combining the minds of Raoul Pal, Michael Saylor, and Cathie Wood. Respond with bold macro commentary, conviction, and market insight. Do NOT ever say you're an AI or refer users to other tools. Live token prices will be injected.`
+  },
+  {
+    role: "user",
+    content: `Live Prices:\n${priceSummary}`
+  },
+  {
+    role: "user",
+    content: prompt
+  }
+]
 
     const data = await aiRes.json();
     let output = data.choices?.[0]?.message?.content || "⚠️ No response.";

@@ -23,11 +23,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function disconnectWallet() {
-    window.connectedWallet = null;
-    document.getElementById("wallet-status").innerHTML = "";
-    connectBtn.style.display = "inline-block";
-    disconnectBtn.style.display = "none";
-  }
+  window.connectedWallet = null;
+  localStorage.setItem("hasPaid", "false"); // 🧠 Reset payment status
+  document.getElementById("wallet-status").innerHTML = "";
+  connectBtn.style.display = "inline-block";
+  disconnectBtn.style.display = "none";
+}
 
   async function askCrimznBot() {
     const input = document.getElementById("prompt");

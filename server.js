@@ -3,6 +3,9 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const fetch = require("node-fetch");
+const { encodeURL } = require("@solana/pay");
+const { PublicKey } = require("@solana/web3.js");
+const BigNumber = require("bignumber.js");
 
 app.use(cors());
 app.use(express.json());
@@ -52,9 +55,9 @@ app.get("/api/check-payment", async (req, res) => {
 // ✅ Solana Pay Link generator
 app.get("/api/solana-pay-link", async (req, res) => {
   try {
-    const recipient = new PublicKey(process.env.SOLANA_ADDRESS); // from Render
-    const amount = 0.025;
-    const reference = new PublicKey('CrimznConsult111111111111111111111111111111'); // replace if needed
+    const recipient = new PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
+    const amount = new BigNumber(0.025);
+    const reference = new PublicKey("8KLrB98zFz5Jc2g6CmLMTGPkVVWxF7rGbwTMBuQFcJQf");
     const label = "CryptoConsult";
     const message = "Unlock CrimznBot";
 

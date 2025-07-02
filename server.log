@@ -1,2 +1,3 @@
 nohup: ignoring input
-🚀 CrimznBot backend running on http://localhost:3000
+bigint: Failed to load bindings, pure JS will be used (try npm run rebuild?)
+🚀 Server listening on port 3000

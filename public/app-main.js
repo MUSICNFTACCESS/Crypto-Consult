@@ -1,5 +1,4 @@
-// app-main.js – CrimznBot Full Logic + Wallet Connect + Disconnect + PulseIt
-
+// 🧠 app-main.js — CrimznBot + Wallet Connect + Payment Status + Solana Pay
 document.addEventListener("DOMContentLoaded", () => {
   let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
   let maxFreeQuestions = 3;
@@ -11,20 +10,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const disconnectBtn = document.getElementById("disconnectWalletBtn");
 
   async function connectWallet() {
-    const provider = window?.phantom?.solana;
-    if (!provider?.isPhantom) {
-      alert("🛑 Phantom Wallet not found. Please install it.");
-      return;
-    }
-
     try {
+      const provider = window?.phantom?.solana;
+      if (!provider?.isPhantom) {
+        alert("🧩 Phantom not detected. Please install it.");
+        return;
+      }
+
       const resp = await provider.connect();
       const wallet = resp.publicKey.toString();
-      window.connectedWallet = wallet;
-      document.getElementById("wallet-status").innerHTML =
-        `🔗 ${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
-      connectBtn.classList.add("hidden"); // ✅ hide connect
-      disconnectBtn.classList.remove("hidden"); // ✅ show disconnect
+
+      document.getElementById("wallet-status").innerHTML = `🔓 Connected: ${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
+      connectBtn.classList.add("hidden"); // 🔒 Hide connect
+      disconnectBtn.classList.remove("hidden"); // ✅ Show disconnect
     } catch (err) {
       console.error("❌ Wallet connection failed:", err);
     }
@@ -33,8 +31,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function disconnectWallet() {
     window.connectedWallet = null;
     document.getElementById("wallet-status").innerHTML = "";
-    connectBtn.classList.remove("hidden"); // ✅ show connect
-    disconnectBtn.classList.add("hidden"); // ✅ hide disconnect
+    connectBtn.classList.remove("hidden"); // 🔓 Show connect
+    disconnectBtn.classList.add("hidden"); // ❌ Hide disconnect
   }
 
   async function askCrimznBot() {
@@ -43,22 +41,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!prompt) return;
 
     questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
-
     if (!hasPaid && questionCount >= maxFreeQuestions) {
-      if (!paywallShown) {
-        const paywall = document.getElementById("paywall");
-        if (paywall) {
-          paywall.style.display = "block";
-          responseBox.innerHTML = ""; // ✅ Clear response
-          paywall.scrollIntoView({ behavior: "smooth" }); // ✅ Scroll to paywall
-        }
-        paywallShown = true;
-      }
+      const paywall = document.getElementById("paywall");
+      responseBox.innerHTML = "";
+      paywall.style.display = "block"; // 🧱 Show paywall
+      paywall.scrollIntoView({ behavior: "smooth" }); // 📜 Scroll to paywall
+      paywallShown = true;
       return;
     }
 
     responseBox.innerHTML = `<span class="response">🟡 Thinking...</span>`;
-
     try {
       const res = await fetch("/api/crimznbot", {
         method: "POST",
@@ -67,35 +59,28 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const data = await res.json();
 
-      if (
-        data.response.includes("🔒") &&
-        !hasPaid &&
-        questionCount >= maxFreeQuestions
-      ) {
+      if (data.response.includes("🟢") && !hasPaid) {
+        questionCount = maxFreeQuestions;
         const paywall = document.getElementById("paywall");
         if (paywall) {
           paywall.style.display = "block";
-          responseBox.innerHTML = "";
           paywall.scrollIntoView({ behavior: "smooth" });
         }
         paywallShown = true;
-        return;
       }
 
-      questionCount++;
       localStorage.setItem("questionCount", questionCount);
-      input.value = "";
       responseBox.innerHTML = `<span class="response" style="color: limegreen;">${data.response}</span>`;
     } catch (err) {
-      responseBox.innerHTML = `<span class="response" style="color: red;">❌ Error getting response.</span>`;
+      responseBox.innerHTML = `<span class="response" style="color: red;">❌ Error getting response...</span>`;
+      console.error("❌ CrimznBot error:", err);
     }
   }
 
-  // ✅ PulseIt Analyzer Logic
+  // 📊 PulseIt Analyzer
   async function analyzePulseIt() {
     const input = document.getElementById("pulseit-input").value.trim();
     const resultBox = document.getElementById("pulseit-result");
-    resultBox.innerHTML = `🟡 Analyzing...`;
 
     try {
       const res = await fetch("/api/pulseit", {
@@ -104,22 +89,22 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ input })
       });
       const data = await res.json();
-      resultBox.innerHTML = `📊 ${data.sentiment.toUpperCase()} — ${data.explanation}`;
+      resultBox.innerHTML = `${data.sentiment.toUpperCase()} → ${data.explanation}`;
     } catch (err) {
-      resultBox.innerHTML = `❌ Error analyzing.`;
+      resultBox.innerHTML = "❌ Error analyzing.";
+      console.error("❌ PulseIt error:", err);
     }
   }
 
-  // ✅ Payment Status Check
+  // 🔄 Payment Status via Helius
   async function checkPaymentStatus() {
     if (!window.connectedWallet) return;
-
     try {
       const res = await fetch(`/api/check-payment?wallet=${window.connectedWallet}`);
       const data = await res.json();
       if (data.hasPaid) {
-        document.getElementById("paywall").style.display = "none";
-        paywallShown = false;
+        const paywall = document.getElementById("paywall");
+        if (paywall) paywall.style.display = "none";
         hasPaid = true;
         localStorage.setItem("hasPaid", "true");
       }
@@ -128,12 +113,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ✅ Main Button Listeners
+  // 🔘 Main Button Listeners
   document.getElementById("send-btn").addEventListener("click", async () => {
     if (window.connectedWallet && !hasPaid) {
       await checkPaymentStatus();
     }
-    askCrimznBot();
+    await askCrimznBot();
   });
 
   document.getElementById("analyze-btn").addEventListener("click", analyzePulseIt);
@@ -144,33 +129,27 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("paywall").style.display = "none";
   }
 
-  // ✅ Solana Pay Button
+  // 🔁 Solana Pay Button + QR Fallback
   document.getElementById("solana-pay-btn").addEventListener("click", () => {
     const address = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
-    const solanaURL = `solana:${address}?amount=0.025&reference=crim_consult&label=CryptoConsult&message=Unlock%20CrimznBot`;
+    const solanaURL = `https://solana.com/pay/${address}?amount=0.025&reference=crimzn_consult&label=CryptoConsult&message=Unlock%20CrimznBot`;
 
-    if (typeof QRCode.CorrectLevel === "undefined") {
-      QRCode.CorrectLevel = { H: 2 };
-    }
+    if (typeof QRCode === "undefined") return;
 
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-
-    if (isMobile) {
-      window.open(solanaURL, "_blank");
-    } else {
+    if (!isMobile) {
       const qrBox = document.getElementById("qr-fallback");
-      qrBox.innerHTML = "";
-
       new QRCode(qrBox, {
         text: solanaURL,
         width: 200,
         height: 200,
         colorDark: "#000000",
         colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H,
+        correctLevel: QRCode.CorrectLevel.H
       });
-
       qrBox.style.display = "block";
+    } else {
+      window.location.href = solanaURL;
     }
   });
 });

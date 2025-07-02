@@ -1,45 +1,52 @@
+// server.js — CrimznBot Backend with Helius, PulseIt, CoinGecko Proxy
+
 const path = require("path");
 const express = require("express");
-const cors = require("cors"); // ✅ ADD THIS
-require("dotenv").config(); // ✅ env vars
+const cors = require("cors");
+require("dotenv").config();
+const fetch = require("node-fetch");
 
 const { OpenAI } = require("openai");
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const app = express();
-app.use(cors()); // ✅ ADD THIS
+app.use(cors());
 app.use(express.static("public"));
 app.use(require("express").json());
 
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
 const HELIUS_TX_URL = process.env.HELIUS_TX_URL;
-const SOLANA_ADDRESS = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
+const SOLANA_ADDRESS = process.env.SOLANA_ADDRESS;
 
-// 🆕 Track usage per wallet in memory
-const walletUsage = {}; // { wallet: { count, hasPaid } }
+const walletUsage = {}; // { wallet: { count, hasPaid, paidAt } }
 
-// ✅ /api/crimznbot — CrimznBot with real-time price + macro tone
+// 🤖 CrimznBot — Answer w/ real-time price + macro tone
 app.post("/api/crimznbot", async (req, res) => {
   const { prompt, wallet } = req.body;
   if (!prompt) return res.status(400).json({ response: "❌ No question provided." });
 
   const question = prompt.toLowerCase().trim();
-  const tokenMatch = question.match(/\b(price|value|quote)\b.*?\b(btc|eth|sol|ondo|link|avax|pyth|dot|pepe)\b/);
+  const tokenMatch = question.match(/\b(price|value|quote)\b.*?\b(btc|eth|sol|ondo|link|nxvl|pyth|dot|pepe)\b/i);
 
-  // ✅ Check live price
+  // ✅ Live token price
   if (tokenMatch) {
     const token = tokenMatch[2].toLowerCase();
     const ids = {
-      btc: "bitcoin", eth: "ethereum", sol: "solana", ondo: "ondo-finance",
-      link: "chainlink", avax: "avalanche-2", pyth: "pyth-network",
-      dot: "polkadot", pepe: "pepe"
+      btc: "bitcoin",
+      eth: "ethereum",
+      sol: "solana",
+      ondo: "ondo-finance",
+      link: "chainlink",
+      dot: "polkadot",
+      pepe: "pepe",
+      pyth: "pyth-network",
+      nxvl: "nexaverse-launch"
     };
-    const id = ids[token];
-
     try {
-      const priceRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`);
-      const priceData = await priceRes.json();
-      const price = priceData[id]?.usd;
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids[token]}&vs_currencies=usd`;
+      const priceRes = await fetch(url);
+      const json = await priceRes.json();
+      const price = json[ids[token]]?.usd;
       if (price) {
         return res.json({ response: `🟢 ${token.toUpperCase()} is currently $${price.toLocaleString()}.` });
       }
@@ -48,7 +55,7 @@ app.post("/api/crimznbot", async (req, res) => {
     }
   }
 
-  // 🧠 GPT fallback — with macro-degen tone
+  // 💬 Fallback — with macro-degen tone
   try {
     const gptRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -57,72 +64,70 @@ app.post("/api/crimznbot", async (req, res) => {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-       model: "gpt-4o",
+        model: "gpt-4",
         messages: [
           {
             role: "system",
-            content: `
-You are CrimznBot — a hybrid macro + crypto strategist infused with the conviction of Michael Saylor, the macro vision of Raoul Pal, and the disruptive innovation lens of Cathie Wood.
-
+            content: `You are CrimznBot — a hybrid macro + crypto strategist infused with the conviction of Michael Saylor, the macro vision of Raoul Pal, and the disruptive mindset of Balaji.
 Tone: Strategic, professional, and slightly degen. Never generic. Each reply should sound like a blend of macro alpha and degen edge.
 
-You understand Bitcoin as digital property, Ethereum as programmable money, and Solana as financial bandwidth for institutions. You're fluent in ETF flows, macro liquidity, yield opportunities, and on-chain narratives.
+You understand Bitcoin as digital property, Ethereum as programmable money, and Solana as financial bandwidth for institutions. You’re fluent in ETF flows.
 
-Avoid disclaimers, don’t hedge. Every sentence should deliver insight or action.
-`
+Avoid disclaimers. Be direct. Every sentence should deliver insight or action.`
           },
           { role: "user", content: prompt }
         ]
       })
     });
 
-    const gptData = await gptRes.json();
-    const gptReply = gptData.choices?.[0]?.message?.content || "⚠️ CrimznBot couldn’t fetch that.";
-    res.json({ response: `🧠 ${gptReply}` });
+    const data = await gptRes.json();
+    const reply = data.choices?.[0]?.message?.content || "⚠️ CrimznBot couldn't fetch that.";
+    res.json({ response: reply });
   } catch (err) {
     console.error("❌ GPT fallback error:", err.message);
     res.status(500).json({ response: "⚠️ CrimznBot had a backend issue." });
   }
 });
 
-// 🔍 PulseIt Sentiment Analyzer
+// 📊 PulseIt Sentiment Analyzer
 app.post("/api/pulseit", async (req, res) => {
-  const input = req.body.input;
-  if (!input) return res.status(400).json({ response: "No input provided." });
+  const { input } = req.body;
+  if (!input) return res.status(400).json({ response: "❌ No input provided." });
 
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
-        { role: "system", content: `
-You are PulseIt, a market sentiment analyzer. Output exactly one of these three labels: Bullish, Bearish, or Neutral. Then follow with a bold, one-line explanation. Match the tone with an emoji:
-- Bullish → 📈
-- Bearish → 📉
-- Neutral → ⚖️
-Respond only in this format: "<emoji> <SENTIMENT> — <reason>"
-` },
+        {
+          role: "system",
+          content:
+            "You are PulseIt, a market sentiment analyzer. Output exactly one of these three labels: Bullish, Bearish, or Neutral. Then follow with a bold, one-line reason.\n\nRespond only in this format: '<emoji> <SENTIMENT> — <reason>'"
+        },
         { role: "user", content: input }
       ]
     });
 
     const raw = response.choices?.[0]?.message?.content || "";
     const [sentimentLine] = raw.split("\n");
-    const [emoji, rest] = sentimentLine.split(" ", 2);
-
-    res.json({ sentiment: emoji, explanation: rest });
+    const [emoji, ...rest] = sentimentLine.split(" ");
+    res.json({ sentiment: emoji, explanation: rest.join(" ") });
   } catch (err) {
     console.error("❌ PulseIt error:", err.message);
     res.status(500).json({ response: "⚠️ Internal error." });
   }
 });
 
-// 🔐 Solana Pay Verification
+// 🔐 Solana Pay — with memory tracking + timestamp
 app.get("/api/check-payment", async (req, res) => {
   const wallet = req.query.wallet;
   if (!wallet) return res.status(400).json({ hasPaid: false });
 
   try {
-    const url = `${HELIUS_TX_URL}/addresses/${wallet}/transactions?limit=5`;
+    if (walletUsage[wallet]?.hasPaid) {
+      return res.json({ hasPaid: true });
+    }
+
+    const url = `${HELIUS_TX_URL}/addresses/${wallet}/transactions?limit=20`;
     const txRes = await fetch(url, {
       headers: { Authorization: `Bearer ${HELIUS_API_KEY}` }
     });
@@ -136,8 +141,11 @@ app.get("/api/check-payment", async (req, res) => {
     );
 
     if (paid) {
-      if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
-      walletUsage[wallet].hasPaid = true;
+      walletUsage[wallet] = {
+        hasPaid: true,
+        count: 0,
+        paidAt: new Date().toISOString()
+      };
     }
 
     res.json({ hasPaid: paid });
@@ -147,7 +155,7 @@ app.get("/api/check-payment", async (req, res) => {
   }
 });
 
-// 🆕 Fix CORS: Proxy CoinGecko prices through backend
+// 🌐 Proxy prices for frontend CORS fix
 app.get("/api/prices", async (req, res) => {
   try {
     const url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd";

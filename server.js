@@ -55,7 +55,7 @@ app.post("/api/crimznbot", async (req, res) => {
   }
 });
 
-// ✅ Check payment status (placeholder memory logic)
+// ✅ Check payment status (in-memory logic)
 app.get("/api/check-payment", async (req, res) => {
   const wallet = req.query.wallet;
   const paid = walletUsage[wallet]?.hasPaid || false;
@@ -71,7 +71,7 @@ app.get("/api/solana-pay-link", async (req, res) => {
     const recipient = new PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
     const amount = new BigNumber(0.025);
 
-    // 🔁 Generate unique reference from wallet
+    // 🔁 Generate unique reference
     const hash = crypto.createHash("sha256").update(wallet + Date.now()).digest();
     const reference = new PublicKey(bs58.encode(hash.slice(0, 32)));
 
@@ -83,6 +83,36 @@ app.get("/api/solana-pay-link", async (req, res) => {
   } catch (err) {
     console.error("Solana Pay link error:", err.message);
     res.status(500).json({ error: "Solana Pay generation failed." });
+  }
+});
+
+// 🔁 Webhook — Helius transaction monitor
+app.post("/api/webhook", async (req, res) => {
+  try {
+    const { events } = req.body;
+    if (!Array.isArray(events)) return res.sendStatus(400);
+
+    for (const event of events) {
+      const txAmount = event.amount || 0;
+      const payer = event?.payer || event?.sender;
+      const recipient = event?.account || "";
+      const ref = event.referenceAccount || "";
+
+      // ✅ Check exact payment: 0.025 SOL = 25_000_000 lamports
+      if (
+        txAmount === 25000000 &&
+        recipient === "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF" &&
+        payer
+      ) {
+        console.log(`✅ Verified payment from ${payer}`);
+        walletUsage[payer] = { hasPaid: true, count: 0 };
+      }
+    }
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("❌ Webhook error:", err.message);
+    res.sendStatus(500);
   }
 });
 

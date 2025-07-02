@@ -13,9 +13,11 @@
 
   <!-- ✅ Solana Wallet Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.9.15/lib/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@1.10.10/lib/index.iife.min.js"></script>
 
-  <!-- ✅ Add QRCode Library -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <!-- ✅ QR Code Generator -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 
 <body>
@@ -83,7 +85,8 @@
   <button class="solana-button" onclick="window.open('/whitepaper.html', '_blank')">📄 View Whitepaper</button>
   <button class="solana-button" onclick="window.open('/radar.html', '_blank')">🛰️ Open Market Radar</button>
 
-  <!-- Scripts -->
-  <script type="module" src="/app-main.js?v=crimznfix3"></script>
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script type="module" src="/app-main.js?v=crimznfix3"></script>
 </body>
 </html>

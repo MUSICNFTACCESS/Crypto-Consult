@@ -139,29 +139,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
 document.getElementById("solana-pay-btn").addEventListener("click", () => {
   const address = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
-const solanaURL = `https://solana.com/pay?recipient=${address}&amount=0.025&reference=crim_consult&label=CryptoConsult&message=Unlock%20CrimznBot`;
+  const solanaURL = `https://solana.com/pay?recipient=${address}&amount=0.025&reference=crim_consult&label=CryptoConsult&message=Unlock%20CrimznBot`;
 
-// Detect if on mobile
-const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+  // ✅ Define fallback if QRCode.CorrectLevel is missing
+  if (typeof QRCode.CorrectLevel === "undefined") {
+    QRCode.CorrectLevel = { H: 2 }; // high error correction
+  }
 
-if (isMobile) {
-  // Open Solana Pay directly
-  window.open(solanaURL, "_blank");
-} else {
-  // Show QR fallback for desktop
-  const qrBox = document.getElementById("qr-fallback");
-  qrBox.innerHTML = ""; // clear old QR
+  // 📱 Detect if on mobile
+  const isMobile = /Mobi|Android/i.test(navigator.userAgent);
 
-  const qr = new QRCode(qrBox, {
-    text: solanaURL,
-    width: 200,
-    height: 200,
-    colorDark: "#000",
-    colorLight: "#fff",
-    correctLevel: QRCode.CorrectLevel.H
-  });
+  if (isMobile) {
+    // Open Solana Pay directly
+    window.open(solanaURL, "_blank");
+  } else {
+    // Show QR fallback for desktop
+    const qrBox = document.getElementById("qr-fallback");
+    qrBox.innerHTML = ""; // clear previous QR
 
-  qrBox.style.display = "block";
-}
-}); // 👈 closes solana-pay-btn click listener
-}); // 👈 closes DOMContentLoaded wrapper
+    new QRCode(qrBox, {
+      text: solanaURL,
+      width: 200,
+      height: 200,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H,
+    });
+
+    qrBox.style.display = "block";
+  }
+}); // closes solana-pay-btn click listener
+}); // closes DOMContentLoaded wrapper

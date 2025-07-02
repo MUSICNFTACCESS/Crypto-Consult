@@ -132,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 🔁 Solana Pay Button + QR Fallback
   document.getElementById("solana-pay-btn").addEventListener("click", () => {
     const address = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
-    const solanaURL = `https://solana.com/pay/${address}?amount=0.025&reference=crimzn_consult&label=CryptoConsult&message=Unlock%20CrimznBot`;
+    const solanaURL = `https://pay.helius.xyz/?recipient=${address}&amount=0.025&reference=crimz_consult&label=CryptoConsult&message=Unlock%20CrimznBot`;
 
     if (typeof QRCode === "undefined") return;
 

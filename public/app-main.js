@@ -7,22 +7,22 @@ document.addEventListener("DOMContentLoaded", () => {
   let connectedWallet = null;
 
   // 🔗 DOM elements
-  const responseBox = document.getElementById("response-box");
-  const connectBtn = document.getElementById("connectWalletBtn");
-  const disconnectBtn = document.getElementById("disconnectWalletBtn");
-  const solanaPayBtn = document.getElementById("solanaPayBtn");
-  const codeTag = document.getElementById("qrCodeTag");
-  const paywall = document.getElementById("paywall");
-  const askCrimznBotBtn = document.getElementById("askCrimznBotBtn");
-  const pulseitBtn = document.getElementById("pulseitBtn");
-  const pulseitInput = document.getElementById("pulseitInput");
-  const pulseitBox = document.getElementById("pulseitBox");
+const responseBox = document.getElementById("response-box");
+const connectBtn = document.getElementById("connectWalletBtn");
+const disconnectBtn = document.getElementById("disconnectWalletBtn");
+const solanaPayBtn = document.getElementById("solanaPayBtn");
+const codeTag = document.getElementById("qrCodeTag");
+const paywall = document.getElementById("paywall");
+const askCrimznBotBtn = document.getElementById("askCrimznBotBtn");
+const pulseitBtn = document.getElementById("pulseitBtn");
+const pulseitInput = document.getElementById("pulseitInput");
+const pulseitBox = document.getElementById("pulseitBox");
 
-  // 🚨 Abort if critical elements are missing
-  if (!responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn || !codeTag || !paywall || !askCrimznBotBtn || !pulseitBtn || !pulseitInput || !pulseitBox) {
-    console.error("❌ Missing DOM elements — aborting script execution.");
-    return;
-  }
+// 🚨 Abort if critical elements are missing
+if (!responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn || !codeTag || !paywall || !askCrimznBotBtn || !pulseitBtn || !pulseitInput || !pulseitBox) {
+  console.error("❌ Missing DOM elements — aborting script execution.");
+  return;
+}
 
   // 👛 Connect Phantom Wallet
   async function connectWallet() {

@@ -15,7 +15,16 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!provider?.isPhantom) return alert("Phantom not detected. Please install Phantom Wallet.");
       const res = await provider.connect();
       const wallet = res.publicKey.toString();
-      window.connectedWallet = wallet;
+window.connectedWallet = wallet;
+localStorage.setItem("connectedWallet", wallet);
+
+// ✅ Crimzn unlimited bypass
+const CRIMZN_WALLET = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
+if (wallet === CRIMZN_WALLET) {
+  hasPaid = true;
+  localStorage.setItem("hasPaid", "true");
+  localStorage.setItem("questionCount", "0");
+}
       document.getElementById("wallet-status").innerHTML = `🔒 Connected: ${wallet.slice(0, 4)}...${wallet.slice(-4)}`;
       connectBtn.style.display = "none";
       disconnectBtn.style.display = "inline-block";

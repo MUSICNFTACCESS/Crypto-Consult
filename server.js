@@ -21,7 +21,7 @@ setInterval(() => {
   console.log("♻️ Wallet usage reset on start-up.");
 }, 1000 * 60 * 60);
 
-// 🤖 CrimznBot Handler
+// 🤖 CrimznBot Handler — 🔥 UPDATED FOR DYNAMIC TOKEN PRICE LOOKUP
 app.post("/api/crimznbot", async (req, res) => {
   const { prompt, wallet } = req.body;
 
@@ -32,11 +32,62 @@ app.post("/api/crimznbot", async (req, res) => {
 
   walletUsage[wallet].count++;
 
+  let priceSummary = "🔸 Live Prices unavailable.";
+  let dynamicPriceLine = "";
+
   try {
     const coingeckoRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd');
     const priceData = await coingeckoRes.json();
-    const priceSummary = `🔸 Live Prices: Bitcoin $${priceData.bitcoin.usd}, Ethereum $${priceData.ethereum.usd}, Solana $${priceData.solana.usd}`;
 
+    const btc = priceData?.bitcoin?.usd;
+    const eth = priceData?.ethereum?.usd;
+    const sol = priceData?.solana?.usd;
+
+    if (btc && eth && sol) {
+      priceSummary = `🔸 Live Prices: Bitcoin $${btc}, Ethereum $${eth}, Solana $${sol}`;
+    }
+
+    // 🆕 EXPANDED TOKEN ALIASES (100+)
+    const tokenAliases = {
+      btc: "bitcoin", eth: "ethereum", sol: "solana", ondo: "ondo-finance",
+      pepe: "pepe", avax: "avalanche-2", link: "chainlink", pyth: "pyth-network",
+      jup: "jupiter-exchange", dot: "polkadot", arb: "arbitrum", matic: "matic-network",
+      op: "optimism", sui: "sui", apt: "aptos", bnb: "binancecoin", doge: "dogecoin",
+      shib: "shiba-inu", near: "near", xrp: "ripple", xlm: "stellar", ada: "cardano",
+      trx: "tron", ton: "toncoin", stx: "stacks", inj: "injective-protocol",
+      fet: "fetch-ai", render: "render-token", rndr: "render-token", kas: "kaspa",
+      mina: "mina-protocol", agix: "singularitynet", ldo: "lido-dao", dydx: "dydx",
+      ens: "ethereum-name-service", blur: "blur", sei: "sei-network", joe: "joe",
+      ltc: "litecoin", etc: "ethereum-classic", fil: "filecoin", aave: "aave",
+      comp: "compound-governance-token", uni: "uniswap", crv: "curve-dao-token",
+      sushi: "sushi", bal: "balancer", gmx: "gmx", woo: "woo-network", srm: "serum",
+      ray: "raydium", aura: "aura-finance", perp: "perpetual-protocol",
+      cvx: "convex-finance", dym: "dymension", galxe: "project-galaxy",
+      mask: "mask-network", zk: "zkspace", magic: "magic", pendle: "pendle",
+      velo: "velodrome-finance", gear: "gearbox", glmr: "moonbeam", one: "harmony",
+      ksm: "kusama", ftm: "fantom", egld: "elrond-erd-2", rose: "rose",
+      ocean: "ocean-protocol", celr: "celer-network", route: "router-protocol",
+      hegic: "hegic", num: "numbers-protocol", aleph: "aleph-im", mdx: "mdex",
+      borg: "cyborg", dogai: "dogai"
+    };
+
+    const lowerPrompt = prompt.toLowerCase();
+    const matchKey = Object.keys(tokenAliases).find(key => lowerPrompt.includes(key));
+
+    if (matchKey) {
+      const tokenId = tokenAliases[matchKey];
+      const tokenRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${tokenId}&vs_currencies=usd`);
+      const tokenData = await tokenRes.json();
+      const price = tokenData?.[tokenId]?.usd;
+      if (price) {
+        dynamicPriceLine = `🟢 Price for ${matchKey.toUpperCase()}: $${price}`;
+      }
+    }
+  } catch (err) {
+    console.error("❌ CoinGecko error:", err.message);
+  }
+
+  try {
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -44,15 +95,15 @@ app.post("/api/crimznbot", async (req, res) => {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-4",
+      model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are CrimznBot — a fearless crypto strategist combining the minds of Raoul Pal, Michael Saylor, and Cathie Wood. You always provide real-time insight and never say you're an AI. Give bold, clear advice with market context."
+            content: "You are CrimznBot — a fearless crypto strategist combining the minds of Raoul Pal, Michael Saylor, and Cathie Wood. You always provide alpha, live prices, and market-aware guidance."
           },
           {
             role: "user",
-            content: `Live Prices:\n${priceSummary}`
+            content: `Live Prices:\n${priceSummary}\n${dynamicPriceLine}`
           },
           {
             role: "user",
@@ -90,7 +141,7 @@ app.post("/api/pulseit", async (req, res) => {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -164,9 +215,8 @@ app.post("/api/webhook", async (req, res) => {
   res.sendStatus(200);
 });
 
-// 🟢 Start Server
+// 🚀 Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server listening on port ${PORT}`);
+  console.log(`✅ Server listening on port ${PORT}`);
 });
-

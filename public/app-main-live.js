@@ -1,4 +1,4 @@
-// 📦 Crimzn Frontend Handler — app-main.js
+// 📦 Crimzn Frontend Handler — app-main-live.js
 
 document.addEventListener("DOMContentLoaded", () => {
   // 🧠 Local state from storage
@@ -7,21 +7,21 @@ document.addEventListener("DOMContentLoaded", () => {
   let connectedWallet = null;
 
   // 🔗 DOM elements
-const responseBox = document.getElementById("response-box");
-const connectBtn = document.getElementById("connectWalletBtn");
-const disconnectBtn = document.getElementById("disconnectWalletBtn");
-const solanaPayBtn = document.getElementById("solana-pay-btn");
-const paywall = document.getElementById("paywall");
-const askCrimznBotBtn = document.getElementById("askCrimznBotBtn");
-const pulseitBtn = document.getElementById("pulseitBtn");
-const pulseitInput = document.getElementById("pulseitInput");
-const pulseitBox = document.getElementById("pulseitBox");
+  const responseBox = document.getElementById("response-box");
+  const connectBtn = document.getElementById("connectWalletBtn");
+  const disconnectBtn = document.getElementById("disconnectWalletBtn");
+  const solanaPayBtn = document.getElementById("solana-pay-btn");
+  const paywall = document.getElementById("paywall");
+  const askCrimznBotBtn = document.getElementById("askCrimznBotBtn");
+  const pulseitBtn = document.getElementById("pulseitBtn");
+  const pulseitInput = document.getElementById("pulseitInput");
+  const pulseitBox = document.getElementById("pulseitBox");
 
-// 🚨 Abort if critical elements are missing
-if (!responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn || !codeTag || !paywall || !askCrimznBotBtn || !pulseitBtn || !pulseitInput || !pulseitBox) {
-  console.error("❌ Missing DOM elements — aborting script execution.");
-  return;
-}
+  // 🚨 Abort if any DOM element is missing
+  if (!responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn || !paywall || !askCrimznBotBtn || !pulseitBtn || !pulseitInput || !pulseitBox) {
+    console.error("❌ Missing DOM elements — aborting script execution.");
+    return;
+  }
 
   // 👛 Connect Phantom Wallet
   async function connectWallet() {
@@ -83,7 +83,7 @@ if (!responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn || !codeTag |
     }
   });
 
-  // 🔐 Check Payment from Backend (via Helius)
+  // 🔐 Check Payment from Backend (Helius integration)
   async function checkPaymentStatus() {
     try {
       const res = await fetch(`/api/check-payment?wallet=${window.connectedWallet}`);
@@ -118,7 +118,7 @@ if (!responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn || !codeTag |
     }
   });
 
-  // 🖱️ Wallet Events
+  // 🖱️ Wallet connect/disconnect
   connectBtn.addEventListener("click", async () => {
     await connectWallet();
     await checkPaymentStatus();
@@ -126,7 +126,7 @@ if (!responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn || !codeTag |
 
   disconnectBtn.addEventListener("click", disconnectWallet);
 
-  // 💸 Solana Pay with QR fallback
+  // 💸 Solana Pay — No QR fallback
   solanaPayBtn.addEventListener("click", async (e) => {
     try {
       e.preventDefault();
@@ -136,14 +136,6 @@ if (!responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn || !codeTag |
       const recipient = new solanaWeb3.PublicKey(recipientAddress);
       const amount = 0.025;
       const url = encodeURL({ recipient, amount, label: "Thanks for supporting Crimzn" });
-
-      const ua = navigator.userAgent.toLowerCase();
-      if (!ua.includes("solana") && !ua.includes("iphone") && !ua.includes("android")) {
-        const qr = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(url.toString())}`;
-        codeTag.innerHTML = `<p>Scan this with your Solana wallet:</p><img src="${qr}" alt="QR Code" />`;
-        codeTag.scrollIntoView({ behavior: "smooth" });
-        return;
-      }
 
       window.location.href = url.toString();
     } catch (err) {

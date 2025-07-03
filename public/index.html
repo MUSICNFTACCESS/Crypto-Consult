@@ -18,6 +18,7 @@
 
   <!-- 🛠️ Solana Wallet -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
+
   <!-- 📸 QR Code Generator -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
@@ -71,23 +72,18 @@
   <!-- 🔐 Paywall -->
   <div id="paywall" class="hidden">
     <p>🧠 You hit the 3-free limit. Pay 0.025 SOL to continue asking CrimznBot.</p>
-    <!-- ✅ FIXED: id changed from solana-pay-btn → solanaPayBtn -->
-    <button id="solanaPayBtn" class="solana-button">💳 Unlock with Solana Pay</button>
+    <button id="solana-pay-btn" class="solana-button">💳 Unlock with Solana Pay</button>
     <div id="qr-fallback" style="margin-top: 20px; display: none;">
       <p>📷 Scan to Pay with Solana:</p>
       <img id="qrCodeImg" style="display: none; width: 256px; height: 256px;" />
     </div>
-    <!-- ✅ FIXED: Added required missing <div id="qrCodeTag"> -->
-    <div id="qrCodeTag" style="margin-top: 20px;"></div>
   </div>
 
   <!-- 📣 PulseIt -->
   <h2>PulseIt Sentiment Analyzer</h2>
-  <input type="text" id="pulseItInput" placeholder="Type a topic like 'ETF' or 'war'" />
-  <!-- ✅ FIXED: id changed from pulseit-btn → pulseItBtn -->
-  <button id="pulseItBtn">📊 Analyze</button>
-  <!-- ✅ FIXED: id changed from pulseit-response → pulseItBox -->
-  <div id="pulseItBox" style="margin-top: 10px;"></div>
+  <input type="text" id="pulseitInput" placeholder="Type a topic like 'ETF' or 'war'" />
+  <button id="pulseitBtn">📊 Analyze</button>
+  <div id="pulseitBox" style="margin-top: 10px;"></div>
 
   <!-- 🧠 Whitepaper & Radar -->
   <h2>Whitepaper & Cycle Top Radar</h2>
@@ -99,4 +95,3 @@
   <script type="module" src="/app-main.js?v=crimznv3"></script>
 </body>
 </html>
-// 🔃 Render force cache refresh — Thu Jul  3 15:05:25 EDT 2025

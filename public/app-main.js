@@ -18,6 +18,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const pulseitInput = document.getElementById("pulseitInput");
   const pulseitBox = document.getElementById("pulseitBox");
 
+  // 🚨 Abort if critical elements are missing
+  if (!responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn || !codeTag || !paywall || !askCrimznBotBtn || !pulseitBtn || !pulseitInput || !pulseitBox) {
+    console.error("❌ Missing DOM elements — aborting script execution.");
+    return;
+  }
+
   // 👛 Connect Phantom Wallet
   async function connectWallet() {
     try {
@@ -113,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 🖱️ Event Listeners
+  // 🖱️ Wallet Events
   connectBtn.addEventListener("click", async () => {
     await connectWallet();
     await checkPaymentStatus();
@@ -122,31 +128,28 @@ document.addEventListener("DOMContentLoaded", () => {
   disconnectBtn.addEventListener("click", disconnectWallet);
 
   // 💸 Solana Pay with QR fallback
-  if (solanaPayBtn) {
-    solanaPayBtn.addEventListener("click", async (e) => {
-      try {
-        e.preventDefault();
-        const recipientAddress = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
-        if (!recipientAddress) throw new Error("Recipient wallet is missing");
+  solanaPayBtn.addEventListener("click", async (e) => {
+    try {
+      e.preventDefault();
+      const recipientAddress = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
+      if (!recipientAddress) throw new Error("Recipient wallet is missing");
 
-        const recipient = new solanaWeb3.PublicKey(recipientAddress);
-        const amount = 0.025;
-        const url = encodeURL({ recipient, amount, label: "Thanks for supporting Crimzn" });
+      const recipient = new solanaWeb3.PublicKey(recipientAddress);
+      const amount = 0.025;
+      const url = encodeURL({ recipient, amount, label: "Thanks for supporting Crimzn" });
 
-        // Desktop fallback with QR code
-        const ua = navigator.userAgent.toLowerCase();
-        if (!ua.includes("solana") && !ua.includes("iphone") && !ua.includes("android")) {
-          const qr = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(url.toString())}`;
-          codeTag.innerHTML = `<p>Scan this with your Solana wallet:</p><img src="${qr}" alt="QR Code" />`;
-          codeTag.scrollIntoView({ behavior: "smooth" });
-          return;
-        }
-
-        window.location.href = url.toString();
-      } catch (err) {
-        console.error("❌ Solana Pay error:", err);
-        alert("Solana Pay error. Please try again.");
+      const ua = navigator.userAgent.toLowerCase();
+      if (!ua.includes("solana") && !ua.includes("iphone") && !ua.includes("android")) {
+        const qr = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(url.toString())}`;
+        codeTag.innerHTML = `<p>Scan this with your Solana wallet:</p><img src="${qr}" alt="QR Code" />`;
+        codeTag.scrollIntoView({ behavior: "smooth" });
+        return;
       }
-    });
-  }
+
+      window.location.href = url.toString();
+    } catch (err) {
+      console.error("❌ Solana Pay error:", err);
+      alert("Solana Pay error. Please try again.");
+    }
+  });
 });

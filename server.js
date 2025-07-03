@@ -25,10 +25,19 @@ setInterval(() => {
 app.post("/api/crimznbot", async (req, res) => {
   const { prompt, wallet } = req.body;
 
-  if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
-  if (!walletUsage[wallet].hasPaid && walletUsage[wallet].count >= 3) {
-    return res.json({ response: "🧱 You've hit your 3-question limit. Please pay to continue." });
-  }
+// ✅ Crimzn bypass logic
+const CRIMZN_WALLET = process.env.SOLANA_ADDRESS;
+
+if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
+
+if (wallet === CRIMZN_WALLET) {
+  walletUsage[wallet].hasPaid = true;
+  walletUsage[wallet].count = 0;
+}
+
+if (!walletUsage[wallet].hasPaid && walletUsage[wallet].count >= 3) {
+  return res.json({ response: "🧱 You've hit your 3-question limit. Please pay to continue." });
+}
 
   walletUsage[wallet].count++;
 

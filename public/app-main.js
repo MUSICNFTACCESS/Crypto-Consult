@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
 const responseBox = document.getElementById("response-box");
 const connectBtn = document.getElementById("connectWalletBtn");
 const disconnectBtn = document.getElementById("disconnectWalletBtn");
-const solanaPayBtn = document.getElementById("solanaPayBtn");
+const solanaPayBtn = document.getElementById("solana-pay-btn");
 const codeTag = document.getElementById("qrCodeTag");
 const paywall = document.getElementById("paywall");
 const askCrimznBotBtn = document.getElementById("askCrimznBotBtn");
@@ -154,3 +154,4 @@ if (!responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn || !codeTag |
   });
 });
 // 🛠️ Cache bust: Thu Jul  3 14:46:59 EDT 2025
+// 🔁 ID fix deployed — Thu Jul  3 15:01:24 EDT 2025

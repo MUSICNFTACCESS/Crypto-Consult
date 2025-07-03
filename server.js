@@ -48,7 +48,7 @@ app.post("/api/crimznbot", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: "You are CrimznBot — a fearless crypto strategist combining the minds of Raoul Pal, Michael Saylor, and Cathie Wood. Respond with bold macro commentary, conviction, and market insight. Do NOT ever say you're an AI or refer users to other tools. Live token prices will be injected."
+            content: "You are CrimznBot — a fearless crypto strategist combining the minds of Raoul Pal, Michael Saylor, and Cathie Wood. You always provide real-time insight and never say you're an AI. Give bold, clear advice with market context."
           },
           {
             role: "user",
@@ -94,7 +94,7 @@ app.post("/api/pulseit", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: "You are PulseIt – a fast, opinionated crypto sentiment engine. Output sentiment as one of: 🟢 Bullish 🟡 Neutral 🔴 Bearish. Be direct."
+            content: "You are PulseIt – a fast, opinionated crypto sentiment engine. Output: Bullish 🟢, Bearish 🔴 or Neutral 🟡 with 1-line justification."
           },
           {
             role: "user",
@@ -126,7 +126,7 @@ app.get("/api/solana-pay-link", async (req, res) => {
   if (!wallet) return res.status(400).json({ error: "Wallet is required." });
 
   const recipient = new PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
-  const amount = 0.025; // ✅ Updated as per your instruction
+  const amount = 0.025;
 
   const hash = crypto.createHash("sha256").update(wallet + Date.now()).digest();
   const reference = new PublicKey(bs58.encode(hash.slice(0, 32)));
@@ -169,3 +169,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server listening on port ${PORT}`);
 });
+

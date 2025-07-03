@@ -19,7 +19,7 @@ window.connectedWallet = wallet;
 localStorage.setItem("connectedWallet", wallet);
 
 // ✅ Crimzn unlimited bypass
-const CRIMZN_WALLET = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
+const CRIMZN_WALLET = process.env.SOLANA_ADDRESS;
 if (wallet === CRIMZN_WALLET) {
   hasPaid = true;
   localStorage.setItem("hasPaid", "true");

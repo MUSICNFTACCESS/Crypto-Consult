@@ -93,8 +93,8 @@ app.post("/api/crimznbot", async (req, res) => {
       const tokenId = tokenAliases[matchKey];
       const tokenRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${tokenId}&vs_currencies=usd`);
       const tokenJson = await tokenRes.json();
-      const price = tokenJson[tokenId]?.usd;
-      if (price) {
+      const price = tokenJson?.[tokenId]?.usd;
+      if (price !== undefined) {
         dynamicPriceLine = `📈 Price for ${matchKey.toUpperCase()}: $${price}`;
       }
     }
@@ -114,7 +114,7 @@ app.post("/api/crimznbot", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: "You are CrimznBot — a fearless crypto strategist blending Raoul Pal, Michael Saylor, and a crypto degen. Be sharp, degen-leaning, and include live token prices. Never say you can't."
+            content: "You are CrimznBot — a fearless crypto strategist blending Raoul Pal, Michael Saylor, and a crypto degen. You know live token prices and NEVER say you're an AI. Respond with strategic, sharp, and high-conviction insight across macro, crypto, charts, and on-chain alpha."
           },
           { role: "user", content: `Live Prices:\n${priceSummary}\n${dynamicPriceLine}` },
           { role: "user", content: prompt }
@@ -122,7 +122,14 @@ app.post("/api/crimznbot", async (req, res) => {
       })
     });
 
-    const aiData = await aiRes.json();
+    let aiData;
+    try {
+      aiData = await aiRes.json();
+    } catch (jsonErr) {
+      console.error("❌ OpenAI JSON parse error:", jsonErr.message);
+      return res.json({ response: "⚠️ GPT response malformed. Try again shortly." });
+    }
+
     const reply = aiData?.choices?.[0]?.message?.content || "🤖 Sorry, no response. Try again.";
     return res.json({ response: reply });
   } catch (err) {

@@ -2,7 +2,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   // 🧠 Local state from storage
-  let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
+[B  let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
   let hasPaid = localStorage.getItem("hasPaid") === "true";
   let connectedWallet = null;
 

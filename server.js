@@ -1,6 +1,6 @@
 // 🚀 Required Modules
-const express = require("express"); // ✅ Added: Required to initialize express app
-const app = express();              // ✅ Added: Initialize express app
+const express = require("express");
+const app = express();
 const cors = require("cors");
 const fetch = require("node-fetch");
 const { encodeURL } = require("@solana/pay");
@@ -8,11 +8,15 @@ const { PublicKey } = require("@solana/web3.js");
 const bs58 = require("bs58");
 const crypto = require("crypto");
 
+// ✅ Use environment variable for Solana address
+const SOLANA_ADDRESS = process.env.SOLANA_ADDRESS;
+const HELIUS_TX_URL = process.env.HELIUS_TX_URL;
+
 app.use(cors());
-app.use(express.json());           // ✅ Needed to parse JSON body
+app.use(express.json());
 app.use(express.static("public"));
 
-// 🔁 Wallet Usage Tracker
+// 🔁 Wallet Usage Tracker — Reset every hour
 const walletUsage = {};
 setInterval(() => {
   for (let wallet in walletUsage) {
@@ -21,12 +25,10 @@ setInterval(() => {
   console.log("♻️ Wallet usage reset on start-up.");
 }, 1000 * 60 * 60);
 
-// ✅ Helius Transaction Verifier — checks for ≥ 0.025 SOL to CRIMZN_WALLET
+// 🔍 Helius Payment Verifier
 async function verifyHeliusPayment(wallet) {
-  const CRIMZN_WALLET = process.env.SOLANA_ADDRESS;
-  const url = `${process.env.HELIUS_TX_URL}/addresses/${wallet}/transactions?limit=10`;
-
   try {
+    const url = `${HELIUS_TX_URL}/v0/addresses/${wallet}/transactions?limit=20`;
     const res = await fetch(url, {
       headers: { "Authorization": `Bearer ${process.env.HELIUS_API_KEY}` }
     });
@@ -37,7 +39,7 @@ async function verifyHeliusPayment(wallet) {
     return data.some(tx =>
       tx.type === "TRANSFER" &&
       tx.source === wallet &&
-      tx.destination === CRIMZN_WALLET &&
+      tx.destination === SOLANA_ADDRESS &&
       parseFloat(tx.amount) >= 0.025
     );
   } catch (err) {
@@ -46,13 +48,12 @@ async function verifyHeliusPayment(wallet) {
   }
 }
 
-// 🤖 CrimznBot Handler — 🔥 DYNAMIC TOKEN PRICE + TONE
+// 🤖 CrimznBot Handler — GPT-4o + Live Prices
 app.post("/api/crimznbot", async (req, res) => {
   const { prompt, wallet } = req.body;
-  const CRIMZN_WALLET = process.env.SOLANA_ADDRESS;
 
   if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
-  if (wallet === CRIMZN_WALLET) walletUsage[wallet].hasPaid = true;
+  if (wallet === SOLANA_ADDRESS) walletUsage[wallet] = { count: 0, hasPaid: true };
 
   if (!walletUsage[wallet].hasPaid && walletUsage[wallet].count >= 3) {
     return res.json({ response: "⚠️ You've hit your 3-question limit. Please pay to continue." });
@@ -69,6 +70,7 @@ app.post("/api/crimznbot", async (req, res) => {
     const btc = priceData.bitcoin.usd;
     const eth = priceData.ethereum.usd;
     const sol = priceData.solana.usd;
+
     priceSummary = `Live Prices: Bitcoin $${btc}, Ethereum $${eth}, Solana $${sol}`;
 
     const tokenAliases = {
@@ -91,8 +93,10 @@ app.post("/api/crimznbot", async (req, res) => {
       const tokenId = tokenAliases[matchKey];
       const tokenRes = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${tokenId}&vs_currencies=usd`);
       const tokenJson = await tokenRes.json();
-      const price = tokenJson[tokenId].usd;
-      if (price) dynamicPriceLine = `📈 Price for ${matchKey.toUpperCase()}: $${price}`;
+      const price = tokenJson[tokenId]?.usd;
+      if (price) {
+        dynamicPriceLine = `📈 Price for ${matchKey.toUpperCase()}: $${price}`;
+      }
     }
   } catch (err) {
     console.error("❌ CoinGecko error:", err.message);
@@ -110,7 +114,7 @@ app.post("/api/crimznbot", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: "You are CrimznBot — a fearless crypto strategist combining the minds of Raoul Pal, Michael Saylor, and a crypto degen. Be sharp, accurate, degen-leaning, and insightful. Include live price data in answers where relevant, never say i cant."
+            content: "You are CrimznBot — a fearless crypto strategist blending Raoul Pal, Michael Saylor, and a crypto degen. Be sharp, degen-leaning, and include live token prices. Never say you can't."
           },
           { role: "user", content: `Live Prices:\n${priceSummary}\n${dynamicPriceLine}` },
           { role: "user", content: prompt }
@@ -120,7 +124,6 @@ app.post("/api/crimznbot", async (req, res) => {
 
     const aiData = await aiRes.json();
     const reply = aiData?.choices?.[0]?.message?.content || "🤖 Sorry, no response. Try again.";
-
     return res.json({ response: reply });
   } catch (err) {
     console.error("❌ OpenAI error:", err.message);
@@ -128,10 +131,9 @@ app.post("/api/crimznbot", async (req, res) => {
   }
 });
 
-// 📣 PulseIt Analyzer — restored tone + emoji indicator logic
+// 🧠 PulseIt — Sentiment Analyzer
 app.post("/api/pulseit", async (req, res) => {
   const { topic } = req.body;
-
   try {
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -144,7 +146,7 @@ app.post("/api/pulseit", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: "You are PulseIt, a crypto market sentiment AI. Given a topic, reply with either 'Bullish', 'Bearish', or 'Neutral'. Keep it short and sharp, and give a 1 sentence blurb on why."
+            content: "You are PulseIt, a crypto sentiment analyzer. Reply 'Bullish', 'Bearish', or 'Neutral' with a 1-line reason."
           },
           { role: "user", content: topic }
         ]
@@ -165,7 +167,7 @@ app.post("/api/pulseit", async (req, res) => {
   }
 });
 
-// ✅ Check Payment Status (Helius-based)
+// 🔐 Check Payment Status (Helius-based)
 app.get("/api/check-payment", async (req, res) => {
   const wallet = req.query.wallet;
   const usage = walletUsage[wallet] || { hasPaid: false };
@@ -174,13 +176,14 @@ app.get("/api/check-payment", async (req, res) => {
     const paid = await verifyHeliusPayment(wallet);
     if (paid) {
       walletUsage[wallet] = { count: 0, hasPaid: true };
+      console.log(`✅ ${wallet} has paid and was unlocked via Helius.`);
     }
   }
 
   res.json({ hasPaid: walletUsage[wallet]?.hasPaid || false });
 });
 
-// ✅ Start Server
+// 🚀 Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ CrimznBot Server is live on port ${PORT}`);

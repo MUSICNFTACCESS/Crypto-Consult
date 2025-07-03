@@ -39,7 +39,7 @@
       try {
         const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
         const data = await res.json();
-        document.getElementById("live-prices").innerText = 
+        document.getElementById("live-prices").innerText =
           `₿ BTC: $${data.bitcoin.usd}  🟣 ETH: $${data.ethereum.usd}  🟩 SOL: $${data.solana.usd}`;
       } catch {
         document.getElementById("live-prices").innerText = "⚠️ Price feed unavailable.";
@@ -71,18 +71,23 @@
   <!-- 🔐 Paywall -->
   <div id="paywall" class="hidden">
     <p>🧠 You hit the 3-free limit. Pay 0.025 SOL to continue asking CrimznBot.</p>
-    <button id="solana-pay-btn" class="solana-button">💳 Unlock with Solana Pay</button>
+    <!-- ✅ FIXED: id changed from solana-pay-btn → solanaPayBtn -->
+    <button id="solanaPayBtn" class="solana-button">💳 Unlock with Solana Pay</button>
     <div id="qr-fallback" style="margin-top: 20px; display: none;">
       <p>📷 Scan to Pay with Solana:</p>
       <img id="qrCodeImg" style="display: none; width: 256px; height: 256px;" />
     </div>
+    <!-- ✅ FIXED: Added required missing <div id="qrCodeTag"> -->
+    <div id="qrCodeTag" style="margin-top: 20px;"></div>
   </div>
 
   <!-- 📣 PulseIt -->
   <h2>PulseIt Sentiment Analyzer</h2>
-  <input type="text" id="pulseit-input" placeholder="Type a topic like 'ETF' or 'war'" />
-  <button id="pulseit-btn">📊 Analyze</button>
-  <div id="pulseit-response" style="margin-top: 10px;"></div>
+  <input type="text" id="pulseItInput" placeholder="Type a topic like 'ETF' or 'war'" />
+  <!-- ✅ FIXED: id changed from pulseit-btn → pulseItBtn -->
+  <button id="pulseItBtn">📊 Analyze</button>
+  <!-- ✅ FIXED: id changed from pulseit-response → pulseItBox -->
+  <div id="pulseItBox" style="margin-top: 10px;"></div>
 
   <!-- 🧠 Whitepaper & Radar -->
   <h2>Whitepaper & Cycle Top Radar</h2>

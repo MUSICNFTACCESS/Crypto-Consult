@@ -6,19 +6,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/app-style.css" />
   <style>
+    body {
+      background-color: black;
+      color: #f7931a;
+      font-family: "Courier New", monospace;
+      text-align: center;
+      padding: 20px;
+    }
     .hidden { display: none; }
   </style>
-  <!-- 🛠️ Solana Wallet Script -->
+
+  <!-- 🛠️ Solana Wallet -->
   <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
   <!-- 📸 QR Code Generator -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
+
+  <!-- 🔗 Top Banner -->
   <div style="display: flex; justify-content: space-between; align-items: center;">
     <h1 style="color: orange;">CryptoConsult by Crimzn</h1>
     <button id="connectWalletBtn" class="solana-button">🔌 Connect Wallet</button>
     <button id="disconnectWalletBtn" class="solana-button hidden" style="background-color: #11141a;">❌ Disconnect</button>
   </div>
+
   <div id="wallet-status" style="margin-bottom: 10px;"></div>
 
   <!-- 📈 Live Prices -->
@@ -28,7 +39,8 @@
       try {
         const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
         const data = await res.json();
-        document.getElementById("live-prices").innerText = `₿ BTC: $${data.bitcoin.usd}  🟣 ETH: $${data.ethereum.usd}  🟩 SOL: $${data.solana.usd}`;
+        document.getElementById("live-prices").innerText = 
+          `₿ BTC: $${data.bitcoin.usd}  🟣 ETH: $${data.ethereum.usd}  🟩 SOL: $${data.solana.usd}`;
       } catch {
         document.getElementById("live-prices").innerText = "⚠️ Price feed unavailable.";
       }
@@ -39,7 +51,7 @@
 
   <!-- 💼 Services -->
   <p>Welcome to your one-stop crypto consultation portal. Connect, learn, and earn with Crimzn. 🚀</p>
-  <ul>
+  <ul style="text-align: left; max-width: 600px; margin: 0 auto;">
     <li>🧩 Software as a Service (SaaS)</li>
     <li>📊 Technical Analysis</li>
     <li>📈 Fundamental Analysis</li>
@@ -60,10 +72,11 @@
   <div id="paywall" class="hidden">
     <p>🧠 You hit the 3-free limit. Pay 0.025 SOL to continue asking CrimznBot.</p>
     <button id="solana-pay-btn" class="solana-button">💳 Unlock with Solana Pay</button>
-<div id="qr-fallback" style="margin-top: 20px; display: none;">
-  <p>📷 Scan to Pay with Solana:</p>
-  <img id="qrCodeImg" style="display: none; width: 256px; height: 256px;" />
-</div>
+    <div id="qr-fallback" style="margin-top: 20px; display: none;">
+      <p>📷 Scan to Pay with Solana:</p>
+      <img id="qrCodeImg" style="display: none; width: 256px; height: 256px;" />
+    </div>
+  </div>
 
   <!-- 📣 PulseIt -->
   <h2>PulseIt Sentiment Analyzer</h2>

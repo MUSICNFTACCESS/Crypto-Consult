@@ -1,2 +1,3 @@
 // 🔄 Force redeploy: Wed Jul  2 16:37:59 EDT 2025
 // Snapshot — Wed Jul  2 16:49:33 EDT 2025
+🧼 Final polish - July 3 version w/ proper layout & Pay button

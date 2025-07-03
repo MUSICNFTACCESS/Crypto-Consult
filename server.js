@@ -1,16 +1,15 @@
 // 🚀 Required Modules
-const express = require("express");
-const app = express();
+const express = require("express"); // ✅ Added: Required to initialize express app
+const app = express();              // ✅ Added: Initialize express app
 const cors = require("cors");
 const fetch = require("node-fetch");
 const { encodeURL } = require("@solana/pay");
 const { PublicKey } = require("@solana/web3.js");
 const bs58 = require("bs58");
 const crypto = require("crypto");
-const QRCode = require("qrcode");
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json());           // ✅ Needed to parse JSON body
 app.use(express.static("public"));
 
 // 🔁 Wallet Usage Tracker
@@ -22,17 +21,38 @@ setInterval(() => {
   console.log("♻️ Wallet usage reset on start-up.");
 }, 1000 * 60 * 60);
 
+// ✅ Helius Transaction Verifier — checks for ≥ 0.025 SOL to CRIMZN_WALLET
+async function verifyHeliusPayment(wallet) {
+  const CRIMZN_WALLET = process.env.SOLANA_ADDRESS;
+  const url = `${process.env.HELIUS_TX_URL}/addresses/${wallet}/transactions?limit=10`;
+
+  try {
+    const res = await fetch(url, {
+      headers: { "Authorization": `Bearer ${process.env.HELIUS_API_KEY}` }
+    });
+    const data = await res.json();
+
+    if (!Array.isArray(data)) return false;
+
+    return data.some(tx =>
+      tx.type === "TRANSFER" &&
+      tx.source === wallet &&
+      tx.destination === CRIMZN_WALLET &&
+      parseFloat(tx.amount) >= 0.025
+    );
+  } catch (err) {
+    console.error("❌ Helius error:", err.message);
+    return false;
+  }
+}
+
 // 🤖 CrimznBot Handler — 🔥 DYNAMIC TOKEN PRICE + TONE
 app.post("/api/crimznbot", async (req, res) => {
   const { prompt, wallet } = req.body;
-
   const CRIMZN_WALLET = process.env.SOLANA_ADDRESS;
-  if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
 
-  if (wallet === CRIMZN_WALLET) {
-    walletUsage[wallet].hasPaid = true;
-    walletUsage[wallet].count = 0;
-  }
+  if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
+  if (wallet === CRIMZN_WALLET) walletUsage[wallet].hasPaid = true;
 
   if (!walletUsage[wallet].hasPaid && walletUsage[wallet].count >= 3) {
     return res.json({ response: "⚠️ You've hit your 3-question limit. Please pay to continue." });
@@ -90,33 +110,27 @@ app.post("/api/crimznbot", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: "You are CrimznBot — a fearless crypto strategist combining the minds of Raoul Pal, Michael Saylor, and Cathie Wood. You always provide clear insights with price context and strong conviction."
+            content: "You are CrimznBot — a fearless crypto strategist combining the minds of Raoul Pal, Michael Saylor, and a crypto degen. Be sharp, accurate, degen-leaning, and insightful. Include live price data in answers where relevant, never say i cant."
           },
-          {
-            role: "user",
-            content: `Live Prices:\n${priceSummary}\n${dynamicPriceLine}`
-          },
-          {
-            role: "user",
-            content: prompt
-          }
+          { role: "user", content: `Live Prices:\n${priceSummary}\n${dynamicPriceLine}` },
+          { role: "user", content: prompt }
         ]
       })
     });
 
     const aiData = await aiRes.json();
-    const output = aiData.choices?.[0]?.message?.content || "⚠️ No response.";
-    res.json({ response: output });
+    const reply = aiData?.choices?.[0]?.message?.content || "🤖 Sorry, no response. Try again.";
+
+    return res.json({ response: reply });
   } catch (err) {
-    console.error("❌ CrimznBot error:", err.message);
-    res.status(500).json({ response: "⚠️ AI error." });
+    console.error("❌ OpenAI error:", err.message);
+    return res.json({ response: "🤖 CrimznBot error. Please try again later." });
   }
 });
 
-// 📣 PulseIt — Sentiment Analyzer
+// 📣 PulseIt Analyzer — restored tone + emoji indicator logic
 app.post("/api/pulseit", async (req, res) => {
   const { topic } = req.body;
-  if (!topic) return res.status(400).json({ sentiment: "⚠️ No topic provided." });
 
   try {
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -130,84 +144,44 @@ app.post("/api/pulseit", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: "You are PulseIt — a fast, opinionated crypto sentiment engine. Output: Bullish 🟢 Bearish 🔴 or Neutral 🟡 with 1-line justification."
+            content: "You are PulseIt, a crypto market sentiment AI. Given a topic, reply with either 'Bullish', 'Bearish', or 'Neutral'. Keep it short and sharp, and give a 1 sentence blurb on why."
           },
-          {
-            role: "user",
-            content: `Give sentiment for: ${topic}`
-          }
+          { role: "user", content: topic }
         ]
       })
     });
 
     const aiData = await aiRes.json();
-    const output = aiData.choices?.[0]?.message?.content || "⚠️ No sentiment generated.";
-    res.json({ sentiment: output });
+    const raw = aiData?.choices?.[0]?.message?.content?.toLowerCase() || "";
+
+    let sentiment = "Neutral", emoji = "🟡";
+    if (raw.includes("bullish")) { sentiment = "Bullish"; emoji = "🟢"; }
+    else if (raw.includes("bearish")) { sentiment = "Bearish"; emoji = "🔴"; }
+
+    return res.json({ response: `${emoji} Sentiment: ${sentiment}` });
   } catch (err) {
     console.error("❌ PulseIt error:", err.message);
-    res.status(500).json({ sentiment: "⚠️ Sentiment analysis failed." });
+    return res.json({ response: "⚠️ Sentiment analysis failed. Try again." });
   }
 });
 
-// ✅ Check Payment Status
-app.get("/api/check-payment", (req, res) => {
+// ✅ Check Payment Status (Helius-based)
+app.get("/api/check-payment", async (req, res) => {
   const wallet = req.query.wallet;
-  const isPaid = walletUsage[wallet]?.hasPaid || false;
-  res.json({ hasPaid: isPaid });
-});
+  const usage = walletUsage[wallet] || { hasPaid: false };
 
-// 💸 Solana Pay Link Generator with optional QR
-app.get("/api/solana-pay-link", async (req, res) => {
-  const { wallet, qr } = req.query;
-  if (!wallet) return res.status(400).json({ error: "Wallet is required." });
-
-  const recipient = new PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
-  const amount = 0.025;
-
-  const hash = crypto.createHash("sha256").update(wallet + Date.now()).digest();
-  const reference = new PublicKey(bs58.encode(hash.slice(0, 32)));
-
-  const label = "CryptoConsult";
-  const message = "Unlock CrimznBot";
-
-  try {
-    const url = encodeURL({ recipient, amount, reference, label, message }).toString();
-
-    if (qr === "true") {
-      const qrImage = await QRCode.toDataURL(url);
-      return res.json({ qr: qrImage, url });
-    }
-
-    res.json({ url });
-  } catch (err) {
-    console.error("❌ Solana Pay link/QR error:", err.message);
-    res.status(500).json({ error: "Solana Pay link or QR generation failed." });
-  }
-});
-
-// 📡 Helius Webhook — Payment Confirmation
-app.post("/api/webhook", async (req, res) => {
-  const events = req.body;
-  if (!Array.isArray(events)) return res.sendStatus(400);
-
-  for (const event of events) {
-    const payer = event.account || "";
-    const recipient = event?.account || "";
-
-    if (
-      event.amount >= 25000000 && // 0.025 SOL
-      recipient === "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF"
-    ) {
-      console.log(`✅ Verified payment from ${payer}`);
-      walletUsage[payer] = { hasPaid: true, count: 0 };
+  if (!usage.hasPaid) {
+    const paid = await verifyHeliusPayment(wallet);
+    if (paid) {
+      walletUsage[wallet] = { count: 0, hasPaid: true };
     }
   }
 
-  res.sendStatus(200);
+  res.json({ hasPaid: walletUsage[wallet]?.hasPaid || false });
 });
 
-// 🚀 Start Server
+// ✅ Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Server listening on port ${PORT}`);
+  console.log(`✅ CrimznBot Server is live on port ${PORT}`);
 });

@@ -170,8 +170,10 @@ app.post("/api/pulseit", async (req, res) => {
 // 🔐 Check Payment Status (Helius-based)
 app.get("/api/check-payment", async (req, res) => {
   const wallet = req.query.wallet;
-  const usage = walletUsage[wallet] || { hasPaid: false };
+  console.log("✅ Solana Pay verification endpoint wired.");
+  console.log(`🔍 Checking payment for wallet: ${wallet}`);
 
+  const usage = walletUsage[wallet] || { hasPaid: false };
   if (!usage.hasPaid) {
     const paid = await verifyHeliusPayment(wallet);
     if (paid) {

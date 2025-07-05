@@ -8,39 +8,38 @@ const { PublicKey } = require("@solana/web3.js");
 const bs58 = require("bs58");
 const crypto = require("crypto");
 
-// ✅ Use environment variable for Solana address
+// 🔐 Use environment variables for Solana config
 const SOLANA_ADDRESS = process.env.SOLANA_ADDRESS;
 const HELIUS_TX_URL = process.env.HELIUS_TX_URL;
 
+// 🚦 Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-// 🔁 Wallet Usage Tracker — Reset every hour
+// 🧠 Wallet Usage Tracker
 const walletUsage = {};
 setInterval(() => {
   for (let wallet in walletUsage) {
     walletUsage[wallet] = { count: 0, hasPaid: false };
   }
-  console.log("♻️ Wallet usage reset on start-up.");
-}, 1000 * 60 * 60);
+}, 1000 * 60 * 60); // Reset every hour
 
-// 🔍 Helius Payment Verifier
+// ✅ Helius Payment Verifier
 async function verifyHeliusPayment(wallet) {
   try {
-    const url = `${HELIUS_TX_URL}/v0/addresses/${wallet}/transactions?limit=20`;
-    const res = await fetch(url, {
-      headers: { "Authorization": `Bearer ${process.env.HELIUS_API_KEY}` }
-    });
-    const data = await res.json();
-
+    const heliusRes = await fetch(
+      `${HELIUS_TX_URL}/address/${wallet}/transactions?limit=20&api-key=${process.env.HELIUS_API_KEY}`
+    );
+    const data = await heliusRes.json();
     if (!Array.isArray(data)) return false;
 
     return data.some(tx =>
-      tx.type === "TRANSFER" &&
-      tx.source === wallet &&
-      tx.destination === SOLANA_ADDRESS &&
-      parseFloat(tx.amount) >= 0.025
+      tx.description?.toLowerCase().includes("payment") &&
+      tx.nativeTransfers?.some(t =>
+        t.to === SOLANA_ADDRESS &&
+        parseFloat(t.amount) >= 0.025
+      )
     );
   } catch (err) {
     console.error("❌ Helius error:", err.message);
@@ -114,7 +113,7 @@ app.post("/api/crimznbot", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: "You are CrimznBot — a fearless crypto strategist blending Raoul Pal, Michael Saylor, and a crypto degen. You know live token prices and NEVER say you're an AI. Respond with strategic, sharp, and high-conviction insight across macro, crypto, charts, and on-chain alpha."
+            content: "You are CrimznBot — a fearless crypto strategist blending Raoul Pal, Michael Saylor, and a crypto degen. You know live token prices and macro analysis."
           },
           { role: "user", content: `Live Prices:\n${priceSummary}\n${dynamicPriceLine}` },
           { role: "user", content: prompt }
@@ -122,14 +121,7 @@ app.post("/api/crimznbot", async (req, res) => {
       })
     });
 
-    let aiData;
-    try {
-      aiData = await aiRes.json();
-    } catch (jsonErr) {
-      console.error("❌ OpenAI JSON parse error:", jsonErr.message);
-      return res.json({ response: "⚠️ GPT response malformed. Try again shortly." });
-    }
-
+    const aiData = await aiRes.json();
     const reply = aiData?.choices?.[0]?.message?.content || "🤖 Sorry, no response. Try again.";
     return res.json({ response: reply });
   } catch (err) {
@@ -174,7 +166,7 @@ app.post("/api/pulseit", async (req, res) => {
   }
 });
 
-// 🔐 Check Payment Status (Helius-based)
+// 🔓 Check Payment Status (Helius-based)
 app.get("/api/check-payment", async (req, res) => {
   const wallet = req.query.wallet;
   console.log("✅ Solana Pay verification endpoint wired.");

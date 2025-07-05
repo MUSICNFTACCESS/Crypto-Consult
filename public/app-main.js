@@ -131,3 +131,8 @@ document.addEventListener("DOMContentLoaded", () => {
     alert("✅ Paywall manually unlocked.");
   });
 });
+
+// ✅ Wallet button logic
+  connectBtn.addEventListener("click", connectWallet);
+  disconnectBtn.addEventListener("click", disconnectWallet);
+});

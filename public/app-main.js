@@ -1,4 +1,4 @@
-// 📦 Crimzn Frontend Handler — app-main.js
+// 🧠 Crimzn Frontend Handler — app-main.js
 
 document.addEventListener("DOMContentLoaded", () => {
   let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
@@ -16,14 +16,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const pulseitBox = document.getElementById("pulseitBox");
   const walletStatus = document.getElementById("wallet-status");
 
-if (
-  !responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn ||
-  !paywall || !askCrimznBotBtn || !pulseitInput ||
-  !pulseitBox || !walletStatus
-) {
-  console.error("❌ Missing DOM elements — aborting script execution.");
-  return;
-}
+  if (
+    !responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn ||
+    !paywall || !askCrimznBotBtn || !pulseitInput ||
+    !pulseitBox || !walletStatus
+  ) {
+    console.error("❌ Missing DOM elements — aborting script execution.");
+    return;
+  }
 
   async function connectWallet() {
     try {
@@ -130,4 +130,6 @@ if (
     window.location.href = url.toString();
   });
 
-
+  connectBtn.addEventListener("click", connectWallet);
+  disconnectBtn.addEventListener("click", disconnectWallet);
+});

@@ -51,12 +51,27 @@ async function verifyHeliusPayment(wallet) {
 app.post("/api/crimznbot", async (req, res) => {
   const { prompt, wallet } = req.body;
 
-  if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
-  if (wallet === SOLANA_ADDRESS) walletUsage[wallet] = { count: 0, hasPaid: true };
+  if (!walletUsage[wallet]) {
+    walletUsage[wallet] = { count: 0, hasPaid: false };
+
+    // Auto-unlock if wallet is Crimzn or has paid
+    if (wallet === SOLANA_ADDRESS) {
+      walletUsage[wallet].hasPaid = true;
+    } else {
+      const paid = await verifyHeliusPayment(wallet);
+      if (paid) walletUsage[wallet].hasPaid = true;
+    }
+  }
 
   if (!walletUsage[wallet].hasPaid && walletUsage[wallet].count >= 3) {
-    return res.json({ response: "⚠️ You've hit your 3-question limit. Please pay to continue." });
+    return res.json({
+      response: "⚠️ You've hit your 3-question limit. Please pay to continue."
+    });
   }
+
+  walletUsage[wallet].count++;
+
+  // ... continue with the rest of your handler
 
   walletUsage[wallet].count++;
 

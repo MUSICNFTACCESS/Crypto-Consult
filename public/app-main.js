@@ -80,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  async function checkPaymentStatus() {
+async function checkPaymentStatus() {
     try {
       const res = await fetch(`/api/check-payment?wallet=${window.connectedWallet}`);
       const data = await res.json();
@@ -111,9 +111,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  connectBtn.addEventListener("click", connectWallet);
-  disconnectBtn.addEventListener("click", disconnectWallet);
-
   solanaPayBtn.addEventListener("click", () => {
     const recipient = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
     const amount = 0.025;
@@ -130,9 +127,9 @@ document.addEventListener("DOMContentLoaded", () => {
     paywall.style.display = "none";
     alert("✅ Paywall manually unlocked.");
   });
-});
 
-// ✅ Wallet button logic
   connectBtn.addEventListener("click", connectWallet);
   disconnectBtn.addEventListener("click", disconnectWallet);
 });
+
+

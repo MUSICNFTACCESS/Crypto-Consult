@@ -130,14 +130,4 @@ if (
     window.location.href = url.toString();
   });
 
-  solanaUnlockBtn.addEventListener("click", () => {
-    localStorage.setItem("hasPaid", "true");
-    hasPaid = true;
-    paywall.style.display = "none";
-    alert("✅ Paywall manually unlocked.");
-  });
-
-  connectBtn.addEventListener("click", connectWallet);
-  disconnectBtn.addEventListener("click", disconnectWallet);
-});
 

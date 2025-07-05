@@ -130,6 +130,16 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = url.toString();
   });
 
-  connectBtn.addEventListener("click", connectWallet);
-  disconnectBtn.addEventListener("click", disconnectWallet);
+// ✅ Event Listeners to handle wallet connection UI
+connectBtn.addEventListener("click", async () => {
+  await connectWallet();
+  connectBtn.classList.add("hidden");        // 🔁 Hide "Connect" after connecting
+  disconnectBtn.classList.remove("hidden");  // ✅ Show "Disconnect"
+});
+
+disconnectBtn.addEventListener("click", async () => {
+  await disconnectWallet();
+  disconnectBtn.classList.add("hidden");     // 🔁 Hide "Disconnect" after disconnecting
+  connectBtn.classList.remove("hidden");     // ✅ Show "Connect"
+});
 });

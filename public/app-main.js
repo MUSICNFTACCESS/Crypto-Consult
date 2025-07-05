@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const connectBtn = document.getElementById("connectWalletBtn");
   const disconnectBtn = document.getElementById("disconnectWalletBtn");
   const solanaPayBtn = document.getElementById("solana-pay-btn");
+  const solanaUnlockBtn = document.getElementById("solanaUnlockBtn");
   const paywall = document.getElementById("paywall");
   const askCrimznBotBtn = document.getElementById("askCrimznBotBtn");
   const pulseitBtn = document.getElementById("pulseitBtn");
@@ -18,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const pulseitBox = document.getElementById("pulseitBox");
 
   // 🚨 Abort if any DOM element is missing
-  if (!responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn || !paywall || !askCrimznBotBtn || !pulseitBtn || !pulseitInput || !pulseitBox) {
+  if (!responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn || !solanaUnlockBtn || !paywall || !askCrimznBotBtn || !pulseitInput || !pulseitBox) {
     console.error("❌ Missing DOM elements — aborting script execution.");
     return;
   }
@@ -47,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("wallet-status").innerHTML = "🔴 Wallet disconnected.";
   }
 
-  // 🧠 Ask CrimznBot
+  // 🤖 Ask CrimznBot
   askCrimznBotBtn.addEventListener("click", async () => {
     const prompt = document.getElementById("prompt").value.trim();
     if (!prompt) return;
@@ -58,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    responseBox.innerHTML = '<span class="response">🟡 Thinking...</span>';
+    responseBox.innerHTML = "<span class='response'>🟡 Thinking...</span>";
 
     try {
       const res = await fetch("/api/crimznbot", {
@@ -68,30 +69,28 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const data = await res.json();
-      if (data.response.includes("3-question limit")) {
+      if (data.response.includes("question limit")) {
         paywall.style.display = "block";
         paywall.scrollIntoView({ behavior: "smooth" });
-        return;
       }
 
       questionCount++;
       localStorage.setItem("questionCount", questionCount);
       responseBox.innerHTML = `<span class="response" style="color: limegreen;">${data.response}</span>`;
     } catch (err) {
-      responseBox.innerHTML = '<span class="response" style="color: red;">❌ Bot error. Try again.</span>';
+      responseBox.innerHTML = `<span class="response" style="color: red;">❌ Bot error. Try again.</span>`;
       console.error("❌ CrimznBot error:", err);
     }
   });
 
-  // 🔐 Check Payment from Backend (Helius integration)
+  // ✅ Check Payment from Backend (Helius integration)
   async function checkPaymentStatus() {
     try {
       const res = await fetch(`/api/check-payment?wallet=${window.connectedWallet}`);
       const data = await res.json();
-      if (data.hasPaid) {
-        hasPaid = true;
+      if (data.paid) {
         localStorage.setItem("hasPaid", "true");
-        paywall.style.display = "none";
+        hasPaid = true;
       }
     } catch (err) {
       console.error("❌ Payment status check failed:", err);
@@ -102,8 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
   pulseitBtn.addEventListener("click", async () => {
     const topic = pulseitInput.value.trim();
     if (!topic) return;
-    pulseitBox.innerHTML = "⏳ Analyzing...";
-
+    pulseitBox.innerHTML = "🔎 Analyzing...";
     try {
       const res = await fetch("/api/pulseit", {
         method: "POST",
@@ -111,14 +109,14 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ topic })
       });
       const data = await res.json();
-      pulseitBox.innerHTML = data.response;
+      pulseitBox.innerHTML = `🧠 ${data.response}`;
     } catch (err) {
       pulseitBox.innerHTML = "❌ Error analyzing sentiment.";
       console.error("❌ PulseIt error:", err);
     }
   });
 
-  // 🖱️ Wallet connect/disconnect
+  // 🟢 Wallet connect/disconnect
   connectBtn.addEventListener("click", async () => {
     await connectWallet();
     await checkPaymentStatus();
@@ -126,23 +124,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   disconnectBtn.addEventListener("click", disconnectWallet);
 
-  // 💸 Solana Pay — No QR fallback
+  // 💸 Solana Pay — Non-QR fallback
   solanaPayBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
     try {
-      e.preventDefault();
       const recipientAddress = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
-      if (!recipientAddress) throw new Error("Recipient wallet is missing");
+      if (!recipientAddress) throw new Error("Recipient wallet is missing!");
 
-      const recipient = new solanaWeb3.PublicKey(recipientAddress);
-      const amount = 0.025;
-      const url = encodeURL({ recipient, amount, label: "Thanks for supporting Crimzn" });
-
+      const url = new URL("https://solana.com/pay");
+      url.searchParams.set("recipient", recipientAddress);
+      url.searchParams.set("amount", "0.025");
+      url.searchParams.set("label", "Thanks for supporting Crimzn");
       window.location.href = url.toString();
     } catch (err) {
       console.error("❌ Solana Pay error:", err);
       alert("Solana Pay error. Please try again.");
     }
   });
+
+  // 🔓 Manual Paywall Unlock Button (Solana unlock)
+  solanaUnlockBtn.addEventListener("click", () => {
+    localStorage.setItem("hasPaid", "true");
+    hasPaid = true;
+    paywall.style.display = "none";
+    alert("✅ Paywall manually unlocked.");
+  });
 });
-// 🔁 Force refresh Thu Jul  3 18:00:23 EDT 2025
-// 🚨 Live redeploy trigger — Thu Jul  3 18:01:11 EDT 2025

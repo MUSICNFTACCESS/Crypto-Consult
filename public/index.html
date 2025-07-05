@@ -15,10 +15,16 @@
     }
     .hidden { display: none; }
   </style>
-  <!-- 🛠️ Solana Wallet Script -->
-  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
-  <!-- 📸 QR Code Generator -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<!-- 🌐 Solana Wallet Adapter (for multi-wallet support) -->
+<script src="https://unpkg.com/@solana/wallet-adapter-wallets@1.2.6/lib/index.iife.min.js"></script>
+<script src="https://unpkg.com/@solana/wallet-adapter-base@0.9.15/lib/index.iife.min.js"></script>
+<script src="https://unpkg.com/@solana/wallet-adapter@0.9.16/lib/index.iife.min.js"></script>
+
+<!-- 🛠️ Solana Wallet Script -->
+<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
+
+<!-- 📸 QR Code Generator -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
   <!-- 🔗 Header -->
@@ -69,7 +75,6 @@
 <div id="paywall" style="display: none; margin-top: 20px;">
   <p>❌ You hit the 3-free limit. Pay 0.025 SOL to continue asking CrimznBot.</p>
   <button id="solana-pay-btn" class="solana-button">🔗 Unlock w/ Solana Pay</button>
-  <button id="solanaUnlockBtn" class="solana-button">🔓 I Already Paid</button>
 
   <div id="qr-fallback" style="margin-top: 20px; display: none;">
     <p>📷 Scan this QR code with Solana:</p>
@@ -88,15 +93,6 @@
 <button onclick="window.open('/whitepaper.html', '_blank')">📄 View Whitepaper</button>
 <button onclick="window.open('/radar.html', '_blank')">📡 Open Market Radar</button>
 
-<!-- 🔗 Wallet Header (must be above scripts!) -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px;">
-  <h1 style="color: orange;">CryptoConsult by Crimzn</h1>
-  <div>
-    <button id="connectWalletBtn" class="solana-button">👛 Connect Wallet</button>
-    <button id="disconnectWalletBtn" class="solana-button hidden" style="background-color: #1114; color: white;">❌ Disconnect</button>
-    <p id="wallet-status" style="margin-top: 10px;"></p>
-  </div>
-</div>
 
 <!-- Scripts -->
 <script type="module" src="/app-main.js?v=crimznv5"></script>

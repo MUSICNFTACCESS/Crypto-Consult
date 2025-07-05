@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -15,25 +15,24 @@
     }
     .hidden { display: none; }
   </style>
-<!-- 🌐 Solana Wallet Adapter (for multi-wallet support) -->
-<script src="https://unpkg.com/@solana/wallet-adapter-wallets@1.2.6/lib/index.iife.min.js"></script>
-<script src="https://unpkg.com/@solana/wallet-adapter-base@0.9.15/lib/index.iife.min.js"></script>
-<script src="https://unpkg.com/@solana/wallet-adapter@0.9.16/lib/index.iife.min.js"></script>
 
-<!-- 🛠️ Solana Wallet Script -->
-<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
+  <!-- 🛠️ Solana Wallet Script -->
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.73.2/lib/index.iife.min.js"></script>
 
-<!-- 📸 QR Code Generator -->
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <!-- 📸 QR Code Generator -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-  <!-- 🔗 Header -->
-  <div style="display: flex; justify-content: space-between; align-items: center;">
+
+  <!-- 🔗 Wallet Header -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
     <h1 style="color: orange;">CryptoConsult by Crimzn</h1>
-    <button id="connectWalletBtn" class="solana-button">👛 Connect Wallet</button>
-    <button id="disconnectWalletBtn" class="solana-button hidden" style="background-color: #1114; color: white;">❌ Disconnect
-    </button><p id="wallet-status" style="margin-top: 10px;"></p>
+    <div>
+      <button id="connectWalletBtn" class="solana-button">👛 Connect Wallet</button>
+      <button id="disconnectWalletBtn" class="solana-button hidden" style="background-color: #1114; color: white;">❌ Disconnect</button>
+    </div>
   </div>
+  <p id="wallet-status" style="margin-top: 10px;"></p>
 
   <!-- 📈 Live Prices -->
   <div id="live-prices" style="font-family: monospace; margin-bottom: 10px;"></div>

@@ -9,7 +9,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const connectBtn = document.getElementById("connectWalletBtn");
   const disconnectBtn = document.getElementById("disconnectWalletBtn");
   const solanaPayBtn = document.getElementById("solana-pay-btn");
-  const solanaUnlockBtn = document.getElementById("solanaUnlockBtn");
   const paywall = document.getElementById("paywall");
   const askCrimznBotBtn = document.getElementById("askCrimznBotBtn");
   const pulseitBtn = document.getElementById("pulseitBtn");
@@ -17,14 +16,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const pulseitBox = document.getElementById("pulseitBox");
   const walletStatus = document.getElementById("wallet-status");
 
-  if (
-    !responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn ||
-    !solanaUnlockBtn || !paywall || !askCrimznBotBtn ||
-    !pulseitInput || !pulseitBox || !walletStatus
-  ) {
-    console.error("❌ Missing DOM elements — aborting script execution.");
-    return;
-  }
+if (
+  !responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn ||
+  !paywall || !askCrimznBotBtn || !pulseitInput ||
+  !pulseitBox || !walletStatus
+) {
+  console.error("❌ Missing DOM elements — aborting script execution.");
+  return;
+}
 
   async function connectWallet() {
     try {

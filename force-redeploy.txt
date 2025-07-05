@@ -1,3 +1,4 @@
 Thu Jul  3 17:27:29 EDT 2025
 // 🔁 Force build: Thu Jul  3 17:47:30 EDT 2025
 // 🔁 Rollback: CrimznBot Final GPT-4o + Paywall + Unlock
+// 🔄 Full rebuild trigger — Sat Jul  5 17:39:25 EDT 2025

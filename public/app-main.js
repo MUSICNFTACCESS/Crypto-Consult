@@ -15,8 +15,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const pulseitBtn = document.getElementById("pulseitBtn");
   const pulseitInput = document.getElementById("pulseitInput");
   const pulseitBox = document.getElementById("pulseitBox");
+  const walletStatus = document.getElementById("wallet-status");
 
-  if (!responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn || !solanaUnlockBtn || !paywall || !askCrimznBotBtn || !pulseitInput || !pulseitBox) {
+  if (
+    !responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn ||
+    !solanaUnlockBtn || !paywall || !askCrimznBotBtn ||
+    !pulseitInput || !pulseitBox || !walletStatus
+  ) {
     console.error("❌ Missing DOM elements — aborting script execution.");
     return;
   }
@@ -24,13 +29,15 @@ document.addEventListener("DOMContentLoaded", () => {
   async function connectWallet() {
     try {
       const provider = window?.phantom?.solana;
-      if (!provider?.isPhantom) throw new Error("Phantom not detected.");
+      if (!provider?.isPhantom) {
+        alert("❌ Phantom Wallet not detected. Please install Phantom to continue.");
+        return;
+      }
       const res = await provider.connect();
       connectedWallet = res.publicKey.toString();
       window.connectedWallet = connectedWallet;
 
-      document.getElementById("wallet-status").innerHTML =
-        `🟢 Connected: ${connectedWallet.slice(0, 4)}...${connectedWallet.slice(-4)}`;
+      walletStatus.innerHTML = `🟢 Connected: ${connectedWallet.slice(0, 4)}...${connectedWallet.slice(-4)}`;
       disconnectBtn.classList.remove("hidden");
       await checkPaymentStatus();
     } catch (err) {
@@ -44,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.removeItem("questionCount");
     localStorage.removeItem("hasPaid");
     hasPaid = false;
-    document.getElementById("wallet-status").innerHTML = "🔴 Wallet disconnected.";
+    walletStatus.innerHTML = "🔴 Wallet disconnected.";
     disconnectBtn.classList.add("hidden");
   }
 
@@ -53,8 +60,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!prompt) return;
 
     if (!hasPaid && questionCount >= 3) {
-      paywall.style.display = "block";
-      paywall.scrollIntoView({ behavior: "smooth" });
+      if (paywall.style.display !== "block") {
+        paywall.style.display = "block";
+        paywall.scrollIntoView({ behavior: "smooth" });
+      }
       return;
     }
 
@@ -80,13 +89,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-async function checkPaymentStatus() {
+  async function checkPaymentStatus() {
     try {
       const res = await fetch(`/api/check-payment?wallet=${window.connectedWallet}`);
       const data = await res.json();
       if (data.paid) {
         localStorage.setItem("hasPaid", "true");
         hasPaid = true;
+        console.log("✅ User has paid. Unlocking...");
       }
     } catch (err) {
       console.error("❌ Payment status check failed:", err);
@@ -131,5 +141,4 @@ async function checkPaymentStatus() {
   connectBtn.addEventListener("click", connectWallet);
   disconnectBtn.addEventListener("click", disconnectWallet);
 });
-
 

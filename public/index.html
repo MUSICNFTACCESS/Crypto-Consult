@@ -21,26 +21,26 @@
   <h1 style="color: orange;">CryptoConsult by Crimzn</h1>
   <div>
     <button id="connectWalletBtn" class="solana-button">👛 Connect Wallet</button>
-    <button id="disconnectWalletBtn" class="solana-button" style="display: none; background-color: #111; color: white;">❌ Disconnect</button>
+    <button id="disconnectWalletBtn" class="solana-button hidden">❌ Disconnect</button>
   </div>
 </div>
 <p id="wallet-status" style="margin-top: 10px; color: lime; font-family: monospace;"></p>
 
-  <!-- 📈 Live Prices -->
-  <div id="live-prices" style="font-family: monospace; margin-bottom: 10px;"></div>
-  <script>
-    async function fetchPrices() {
-      try {
-        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
-        const data = await res.json();
-        document.getElementById("live-prices").innerText =
-          `₿ BTC: $${data.bitcoin.usd} | Ξ ETH: $${data.ethereum.usd} | ◎ SOL: $${data.solana.usd}`;
-      } catch {
-        document.getElementById("live-prices").innerText = "⚠️ Price feed unavailable.";
-      }
+<!-- 📈 Live Prices -->
+<div id="live-prices" style="font-family: monospace; margin-bottom: 10px;"></div>
+<script>
+  async function fetchPrices() {
+    try {
+      const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
+      const data = await res.json();
+      document.getElementById("live-prices").innerText =
+        `₿ BTC: $${data.bitcoin.usd} | Ξ ETH: $${data.ethereum.usd} | ◎ SOL: $${data.solana.usd}`;
+    } catch {
+      document.getElementById("live-prices").innerText = "⚠️ Price feed unavailable.";
     }
-    fetchPrices();
-  </script>
+  }
+  fetchPrices();
+</script>
 
 <!-- 💼 Services -->
 <h2>Services</h2>

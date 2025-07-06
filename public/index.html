@@ -42,6 +42,17 @@
   fetchPrices();
 </script>
 
+<!-- 🔄 TEST MODE RESET (for Crimzn only) -->
+<script>
+  const testMode = true;
+  const yourWallet = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
+  if (testMode) {
+    localStorage.removeItem("questionCount");
+    localStorage.removeItem("hasPaid");
+    console.log("🧹 Test mode active: Reset question count + payment flag");
+  }
+</script>
+
 <!-- 💼 Services -->
 <h2>Services</h2>
 <p>Welcome to your one-stop crypto consultation portal. Connect, learn, and earn with Crimzn. 🚀</p>

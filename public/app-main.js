@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const walletBtn = document.getElementById("walletToggleBtn");
   const solanaPayBtn = document.getElementById("solana-pay-btn");
   const askBtn = document.getElementById("askCrimznBtn");
-  const paywall = document.getElementById("paywall");
+  const paywall = document.getElementById("paywall"); // 🔓 Paywall DOM reference ✅ SINGLE
   const saveProfileBtn = document.getElementById("saveProfileBtn");
   const walletStatus = document.getElementById("walletStatus");
   const priceBTC = document.getElementById("btc-price");
@@ -19,8 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const pulseInput = document.getElementById("pulseInput");
   const pulseBox = document.getElementById("pulseBox");
   const promptInput = document.getElementById("promptInput"); // ✅ FIX
-  const paywall = document.getElementById("paywall"); // 🔓 Paywall DOM reference
-
 
   // 🧠 Toggle wallet button visibility on page load
   if (window.solana?.isConnected) {
@@ -42,8 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
     paywall.style.display = "block";
   }
 
-
-// 🔗 Connect Wallet
+  // 🔗 Connect Wallet
   async function connectWallet() {
     if (!window.solana || !window.solana.isPhantom) {
       alert("Phantom Wallet not detected. Please install Phantom to continue.");
@@ -69,6 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
     walletStatus.innerHTML = "🔒 Wallet disconnected.";
     walletBtn.innerText = "🔑 Connect Wallet";
   }
+});
 
   // 🔁 Toggle logic
   walletBtn.addEventListener("click", async () => {

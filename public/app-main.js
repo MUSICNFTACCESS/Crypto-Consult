@@ -184,40 +184,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 🤖 Ask CrimznBot
-  askBtn.addEventListener("click", async () => {
-    responseBox.innerText = "🤖 CrimznBot is thinking...";
-    try {
-      const res = await fetch("/api/crimznbot", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: promptInput.value, wallet: connectedWallet }),
-      });
-      const data = await res.json();
-      responseBox.innerHTML = `<span style="color: lime;">🧠 ${data.response}</span>`;
-      questionCount++;
-      localStorage.setItem("questionCount", questionCount);
-    } catch (err) {
-      responseBox.innerHTML = `<span style="color: red;">❌ CrimznBot Error: ${err.message}</span>`;
-    }
-  });
-
-  // 💥 PulseIt: Sentiment Analyzer
-  pulseBtn.addEventListener("click", async () => {
-    const topic = pulseInput.value.trim();
-    if (!topic) return;
-
-    pulseBox.innerHTML = "📊 Analyzing sentiment...";
-    try {
-      const res = await fetch(`/api/sentiment?topic=${encodeURIComponent(topic)}`);
-      const data = await res.json();
-      pulseBox.innerHTML = `📉 Sentiment Score: ${data.score}<br>📝 Summary: ${data.summary}`;
-    } catch (err) {
-      console.error("❌ PulseIt Error:", err);
-      pulseBox.innerHTML = "❌ Failed to fetch sentiment.";
-    }
-  });
-
   // 🧾 Force version banner
   document.getElementById("script-cache-bust").innerText = "Script cache-bust: crimznJuly26vFinal";
 });

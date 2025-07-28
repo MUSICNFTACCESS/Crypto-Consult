@@ -20,6 +20,7 @@ const db = getFirestore();
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const fs = require("fs");
 const fetch = require("node-fetch");
 const { encodeURL } = require("@solana/pay");
 const { PublicKey } = require("@solana/web3.js");
@@ -35,6 +36,12 @@ const HELIUS_API_KEY = process.env.HELIUS_API_KEY;
 
 // 🛡️ Middleware
 app.use(cors());
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
 app.use(express.json());
 app.use(express.static("public"));
 

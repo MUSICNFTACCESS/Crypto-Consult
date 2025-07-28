@@ -1,78 +1,58 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // 🔢 Load question count and unlock state
+  // 📊 Load question count and unlock state
   let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
   let hasPaid = localStorage.getItem("hasPaid") === "true";
   let connectedWallet = null;
 
   // 🎯 DOM Elements
   const responseBox = document.getElementById("response-box");
-  const connectBtn = document.getElementById("connectWalletBtn");
-  const disconnectBtn = document.getElementById("disconnectWalletBtn");
+  const walletBtn = document.getElementById("walletToggleBtn");
   const solanaPayBtn = document.getElementById("solana-pay-btn");
+  const askBtn = document.getElementById("askCrimznBtn");
+  const paywall = document.getElementById("paywall");
   const saveProfileBtn = document.getElementById("saveProfileBtn");
-  const askCrimznBtn = document.getElementById("askCrimznBtn");
-  const pulseitBtn = document.getElementById("pulseitBtn");
-  const pulseitInput = document.getElementById("pulseitInput");
-  const pulseitBox = document.getElementById("pulseitBox");
-  const walletStatus = document.getElementById("wallet-status");
-  const promptInput = document.getElementById("prompt"); // ✅ FIX: Missing promptInput definition
+  const walletStatus = document.getElementById("walletStatus");
+  const priceBTC = document.getElementById("btc-price");
+  const priceETH = document.getElementById("eth-price");
+  const priceSOL = document.getElementById("sol-price");
+  const pulseBtn = document.getElementById("pulseBtn");
+  const pulseInput = document.getElementById("pulseInput");
+  const pulseBox = document.getElementById("pulseBox");
+  const promptInput = document.getElementById("promptInput"); // ✅ FIX
 
-  // ✅ FIX: Toggle wallet button visibility on page load
-  if (window.connectedWallet || window.solana?.isConnected) {
-    connectBtn.style.display = "none";
-    disconnectBtn.style.display = "inline-block";
+  // 🧠 Toggle wallet button visibility on page load
+  if (window.solana?.isConnected) {
+    walletBtn.innerText = "🔌 Disconnect Wallet";
   } else {
-    connectBtn.style.display = "inline-block";
-    disconnectBtn.style.display = "none";
+    walletBtn.innerText = "🔑 Connect Wallet";
   }
 
-  // ❌ Exit if DOM not found
-  if (
-    !responseBox || !connectBtn || !disconnectBtn || !solanaPayBtn ||
-    !saveProfileBtn || !askCrimznBtn || !pulseitBtn || !pulseitInput || !pulseitBox || !walletStatus || !promptInput
-  ) {
+  // 🧱 Exit if DOM missing
+  if (!responseBox || !walletBtn || !solanaPayBtn || !askBtn || !pulseInput || !pulseBox || !walletStatus || !promptInput) {
     console.error("❌ Missing DOM elements — aborting script execution.");
     return;
   }
 
-  // 🔒 Set initial button visibility
-  if (hasPaid) {
-    solanaPayBtn.style.display = "none";
-  } else {
-    solanaPayBtn.style.display = "inline-block";
-    disconnectBtn.style.display = "none";
-  }
-
-  // 👂 Connect Button Listener
-  connectBtn.addEventListener("click", connectWallet);
-
-  // 👂 Disconnect Button Listener
-  disconnectBtn.addEventListener("click", disconnectWallet);
-
-  // 🧠 Question Paywall Check
-  if (questionCount >= 3) {
+  // 💳 Question Paywall
+  if (questionCount >= 3 && !hasPaid) {
     promptInput.disabled = true;
-    askCrimznBtn.disabled = true;
-    document.getElementById("paywall").style.display = "block";
+    askBtn.disabled = true;
+    paywall.style.display = "block";
   }
 
-  // 🔌 Connect Wallet
+  // 🔗 Connect Wallet
   async function connectWallet() {
     if (!window.solana || !window.solana.isPhantom) {
-      alert("Phantom wallet not detected. Please install Phantom to continue.");
+      alert("Phantom Wallet not detected. Please install Phantom to continue.");
       return;
     }
 
-    const { publicKey } = await window.solana.connect();
-    connectedWallet = publicKey.toString();
-    window.connectedWallet = connectedWallet;
-    walletStatus.innerHTML = `Connected: ${connectedWallet.slice(0, 4)}...${connectedWallet.slice(-4)}`;
+    const resp = await window.solana.connect();
+    connectedWallet = resp.publicKey.toString();
+    walletStatus.innerHTML = `🔓 Connected: ${connectedWallet.slice(0, 4)}...${connectedWallet.slice(-4)}`;
+    walletBtn.innerText = "🔌 Disconnect Wallet";
 
-    // ✅ FIX #1: Toggle button visibility on connect
-    connectBtn.style.display = "none";
-    disconnectBtn.style.display = "inline-block";
-
-    // ✅ FIX #2: Run unlock/payment/profile checks
+    // ✅ Unlock check
     await checkUnlockStatus(connectedWallet);
     await loadUserProfile(connectedWallet);
   }
@@ -80,149 +60,129 @@ document.addEventListener("DOMContentLoaded", () => {
   // 🔌 Disconnect Wallet
   async function disconnectWallet() {
     connectedWallet = null;
+    questionCount = 0;
     localStorage.removeItem("questionCount");
     localStorage.removeItem("hasPaid");
-    hasPaid = false;
-    walletStatus.innerHTML = "🔌 Wallet disconnected.";
-
-    // ✅ FIX #3: Toggle button visibility on disconnect
-    disconnectBtn.style.display = "none";
-    connectBtn.style.display = "inline-block";
+    walletStatus.innerHTML = "🔒 Wallet disconnected.";
+    walletBtn.innerText = "🔑 Connect Wallet";
   }
 
-  // 💾 Load saved greeting from Firebase
-  async function loadUserProfile(wallet) {
-    try {
-      const res = await fetch(`/api/profiles/${wallet}`);
-      const profile = await res.json();
-      const greeting = `👋 Welcome back to <strong>CryptoConsult</strong> — the only AI that understands your inner degen. Let’s get it 🔥`;
-      document.getElementById("wallet-status").innerHTML += ` - ${greeting}`;
-    } catch (e) {
-      console.error("❌ Failed to load saved profile.");
+  // 🔁 Toggle logic
+  walletBtn.addEventListener("click", async () => {
+    if (!connectedWallet) {
+      await connectWallet();
+    } else {
+      await disconnectWallet();
     }
-  }
+  });
 
-  // 🖊️ Save Profile with Signature
-  async function signMessageAndSaveProfile(walletAddress) {
-    if (!walletAddress || !window.solana) {
-      alert("⚠️ Missing wallet.");
-      return;
-    }
-
+  // 💾 Save Firebase Profile
+  async function saveProfileWithSignature(walletAddress) {
     const name = prompt("Enter a display name for your profile (optional):") || "";
-    const email = prompt("Enter your email for updates or future rewards (optional):") || "";
-
+    const email = prompt("Enter your email for updates or rewards (optional):") || "";
     const message = `Save my profile on CryptoConsult: ${walletAddress}`;
-    const encodedMessage = new TextEncoder().encode(message);
-    const signed = await window.solana.signMessage(encodedMessage, "utf8");
+    const encoded = new TextEncoder().encode(message);
+    const signed = await window.solana.signMessage(encoded, "utf8");
 
     try {
       const res = await fetch("/api/save-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          wallet: walletAddress,
-          name,
-          email,
-          signature: signed.signature,
-        }),
+        body: JSON.stringify({ wallet: walletAddress, email, name, signature: signed.signature }),
       });
-
       const data = await res.json();
       if (data.success) {
         alert("✅ Profile saved successfully.");
-        // ❌ REMOVED: Hide saveProfileBtn after saving (so it's always visible for rewards) ✅ FIX #4
-        // document.getElementById("saveProfileBtn").style.display = "none";
+        saveProfileBtn.style.display = "none";
       } else {
         alert("❌ Failed to save profile.");
       }
     } catch (err) {
-      console.error("⚠️ Signature error:", err);
       alert("❌ Signature required to save your profile.");
+      console.error(err);
     }
   }
 
-  // 🔓 Firebase Unlock Status
-  async function checkUnlockStatus(pubKey) {
+  // 📥 Load Greeting from Firestore
+  async function loadUserProfile(pubkey) {
     try {
-      const res = await fetch(`/api/check-unlock?wallet=${pubKey}`);
+      const res = await fetch(`/api/profile/${pubkey}`);
+      const json = await res.json();
+      document.getElementById("greeting").innerHTML =
+        `<strong>CryptoConsult</strong> → the only AI that understands your inner degen. Let's get it 🔥<br>Welcome back, <b>${json.greeting}</b>`;
+    } catch (err) {
+      console.error("❌ Failed to load saved profile.");
+    }
+  }
+
+  // 🔓 Firebase Unlock Check
+  async function checkUnlockStatus(pubkey) {
+    try {
+      const res = await fetch(`/api/check-unlock?wallet=${pubkey}`);
       const data = await res.json();
-      if (data.unlocked) {
+      if (data.success && data.hasPaid === "true") {
         localStorage.setItem("hasPaid", "true");
-        hasPaid = true;
+        promptInput.disabled = false;
+        askBtn.disabled = false;
+        paywall.style.display = "none";
         console.log("✅ Firebase confirms unlock. CrimznBot is free to use.");
       } else {
-        console.log("⛔ Wallet has NOT unlocked CrimznBot yet.");
+        console.log("⛔️ Wallet has NOT unlocked CrimznBot yet.");
       }
     } catch (e) {
       console.error("❌ Unlock check failed:", e);
     }
   }
 
-  // 💰 Fetch Live Prices
-  async function updatePricesForCrimznBot() {
+  // 💸 Fetch Live Prices
+  async function fetchPricesForCrimznBot() {
     try {
-      const res = await fetch("/api/prices"); // ✅ FIX #3: Uses backend proxy
+      const res = await fetch("/api/prices");
       const data = await res.json();
-      document.getElementById("btc-price").innerText = `₿ ${data.bitcoin.usd}`;
-      document.getElementById("eth-price").innerText = `Ξ ${data.ethereum.usd}`;
-      document.getElementById("sol-price").innerText = `◎ ${data.solana.usd}`;
-    } catch (err) {
-      console.error("⚠️ Failed to update prices:", err);
+      priceBTC.innerText = `$${data.bitcoin.usd}`;
+      priceETH.innerText = `$${data.ethereum.usd}`;
+      priceSOL.innerText = `$${data.solana.usd}`;
+    } catch (e) {
+      console.error("❌ Failed to update prices:", e);
     }
   }
 
-  // 🤖 CrimznBot Ask Logic
-  askCrimznBtn.addEventListener("click", async () => {
-    const prompt = promptInput.value.trim();
-    if (!prompt) return;
+  fetchPricesForCrimznBot();
 
-    responseBox.innerText = "💬 CrimznBot is thinking...";
-
+  // 🤖 Ask CrimznBot
+  askBtn.addEventListener("click", async () => {
+    responseBox.innerText = "🤖 CrimznBot is thinking...";
     try {
       const res = await fetch("/api/crimznbot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, wallet: connectedWallet }),
+        body: JSON.stringify({ prompt: promptInput.value, wallet: connectedWallet }),
       });
-
-      const contentType = res.headers.get("content-type") || "";
-      if (!res.ok || !contentType.includes("application/json")) {
-        throw new Error("Invalid response from CrimznBot server.");
-      }
-
       const data = await res.json();
-      const botReply = data.response || "⚠️ CrimznBot didn’t reply.";
-      responseBox.innerHTML = `<span style="color: lime;">${botReply}</span>`;
+      responseBox.innerHTML = `<span style="color: lime;">🧠 ${data.response}</span>`;
+      questionCount++;
+      localStorage.setItem("questionCount", questionCount);
     } catch (err) {
       responseBox.innerHTML = `<span style="color: red;">❌ CrimznBot Error: ${err.message}</span>`;
-      console.error("❌ /api/crimznbot Error:", err);
     }
   });
 
-  // 📊 PulseIt Sentiment Analyzer
-  pulseitBtn.addEventListener("click", async () => {
-    const topic = pulseitInput.value.trim();
+  // 💥 PulseIt: Sentiment Analyzer
+  pulseBtn.addEventListener("click", async () => {
+    const topic = pulseInput.value.trim();
     if (!topic) return;
 
-    pulseitBox.innerText = "🔄 Analyzing sentiment...";
-
+    pulseBox.innerHTML = "📊 Analyzing sentiment...";
     try {
       const res = await fetch(`/api/sentiment?topic=${encodeURIComponent(topic)}`);
       const data = await res.json();
-      pulseitBox.innerText = `📊 Sentiment Score: ${data.score}\n\n📝 Summary: ${data.summary}`;
+      pulseBox.innerHTML = `📉 Sentiment Score: ${data.score}<br>📝 Summary: ${data.summary}`;
     } catch (err) {
-      pulseitBox.innerText = "❌ Failed to fetch sentiment.";
-      console.error("⚠️ PulseIt Error:", err);
+      console.error("❌ PulseIt Error:", err);
+      pulseBox.innerHTML = "❌ Failed to fetch sentiment.";
     }
   });
 
-// 🧠 Legacy Wrapper for Unlock (for compatibility)
-async function checkIfUnlocked(pubKey) {
-  return await checkUnlockStatus(pubKey);
-}
-
-}); // 🧠 End DOMContentLoaded
-
-// 🔁 Script cache-bust: crimznJuly25v2
-// 🔁 Force bust Fri Jul 25 23:03:39 EDT 2025
+  // 🧾 Force version banner
+  document.getElementById("script-cache-bust").innerText = "Script cache-bust: crimznJuly26vFinal";
+});

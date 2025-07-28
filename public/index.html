@@ -1,113 +1,97 @@
+cd ~/Crypto-Consult/public && cat > index.html << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>CryptoConsult by Crimzn</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CryptoConsult by Crimzn</title>
   <link rel="stylesheet" href="app-style.css?v=crimznJuly28v2" />
-  <style>
-    body {
-      background-color: black;
-      color: #f7931a;
-      font-family: 'Courier New', monospace;
-      text-align: center;
-      padding: 20px;
-    }
-  </style>
 </head>
 <body>
+  <h1>🟠 CryptoConsult by Crimzn</h1>
 
   <!-- 🔐 Wallet -->
-  <h1 style="margin-bottom: 10px;">🟠 CryptoConsult by Crimzn</h1>
-  <button id="connectWalletBtn" class="solana-button">🔌 Connect Wallet</button>
-  <button id="disconnectWalletBtn" class="solana-button hidden">❌ Disconnect</button>
-  <p id="wallet-status" style="margin-top: 10px; color: lime;">🪪</p>
+  <button id="connectWalletBtn" class="solana-button">🟣 Connect Wallet</button>
+  <button id="disconnectWalletBtn" class="solana-button">❌ Disconnect</button>
+  <p id="walletStatus" style="color: lime">🔌 Not connected</p>
 
   <!-- 💾 Save Profile -->
-  <div id="saveProfileSection" style="margin-top: 10px;">
-    <h3>💾 Save My Profile (for future rewards)</h3>
-    <input id="nameInput" placeholder="👤 Name (optional)" style="margin-bottom: 5px;" /><br/>
-    <input id="emailInput" placeholder="📧 Email (optional)" /><br/>
-    <button id="saveProfileBtn">✅ Save Profile</button>
-  </div>
+  <h3 style="margin-top: 10px;">💾 Save My Profile (for future rewards)</h3>
+  <input id="name" placeholder="Name (optional)" style="margin-bottom: 5px;" /><br/>
+  <input id="email" placeholder="Email (optional)" /><br/>
+  <button id="saveProfileBtn" class="solana-button">💾 Save Profile</button>
 
   <!-- 📈 Live Prices -->
-  <h2>📈 Live Prices</h2>
-  <pre style="font-family: monospace; font-size: 16px; margin: 10px 0;">
-BTC: <span id="btc-price">...</span>
-ETH: <span id="eth-price">...</span>
-SOL: <span id="sol-price">...</span>
-  </pre>
+  <h2 style="font-size: 16px; margin: 10px 0;">📈 Live Prices</h2>
+  <span id="btc-price">BTC: ...</span><br/>
+  <span id="eth-price">ETH: ...</span><br/>
+  <span id="sol-price">SOL: ...</span>
 
-  <!-- 🛠 Services -->
-  <h2>🛠 Services Offered</h2>
-  <ul style="list-style-type: none; padding: 0; max-width: 600px; margin: 0 auto; text-align: left;">
-    <li>💼 Software as a Service (SaaS)</li>
+  <!-- 🧰 Services -->
+  <h2>🧰 Services Offered</h2>
+  <ul style="max-width: 600px; margin: 0 auto; text-align: left;">
+    <li>📦 Software as a Service (SaaS)</li>
     <li>📊 Technical Analysis Reports</li>
-    <li>📈 Fundamental Analysis</li>
-    <li>🔁 On/Off Ramping Help</li>
-    <li>📉 Token Research & Insights</li>
-    <li>🛡 Risk-Management Strategy</li>
-    <li>👨‍🏫 One-on-One Consultations</li>
+    <li>🔍 Fundamental Analysis</li>
+    <li>💸 On/Off Ramping Help</li>
+    <li>🧠 Token Research & Insights</li>
+    <li>🛡️ Risk Management Strategy</li>
+    <li>👥 One-on-One Consultations</li>
   </ul>
 
   <!-- 🤖 CrimznBot -->
   <h2>🤖 CrimznBot - Ask Anything</h2>
-  <input type="text" id="userInput" placeholder="Ask a crypto question..." />
-  <button id="askCrimznBtn">🧠 Send</button>
+  <input id="user-input" placeholder="Ask a crypto question..." />
+  <button id="askCrimznBtn" class="solana-button">📩 Send</button>
   <div id="response-box" class="response-box"></div>
 
-  <!-- 🔒 Paywall -->
+  <!-- 🧱 Paywall -->
   <div id="paywall" class="hidden" style="margin-top: 20px;">
-    <p>🔒 You’ve used your 3 free questions — please unlock CrimznBot to continue.</p>
+    <p>🚫 You’ve used your 3 free questions – please unlock CrimznBot to continue.</p>
     <button id="solana-pay-btn" class="solana-button">🔓 Unlock with 0.025 SOL</button>
   </div>
 
   <!-- 📊 PulseIt -->
   <h2>📊 PulseIt - Sentiment Analyzer</h2>
   <input id="pulseInput" placeholder="Type a topic like 'ETF' or 'war'" />
-  <button id="analyzeBtn">📈 Analyze</button>
-  <div id="pulseResult" style="margin-top: 10px;"></div>
+  <button id="pulseBtn" class="solana-button">🧠 Analyze</button>
+  <p id="pulseResult"></p>
 
-  <!-- 📡 Radar -->
-  <h2 style="margin-top: 40px;">📡 Market Cycle Top Radar</h2>
-  <button onclick="window.open('whitepaper.html','_blank')">📄 View Whitepaper</button>
-  <button onclick="window.open('radar.html','_blank')">📊 Open Market Radar</button>
+  <!-- 🧭 Explore -->
+  <h2>🧭 Explore</h2>
+  <a href="whitepaper.html" class="solana-button">📄 View Whitepaper</a>
+  <a href="radar.html" class="solana-button">📡 Open Market Radar</a>
 
-  <!-- 💸 Sponsor -->
-  <div style="border: 1px solid orange; padding: 30px; margin-top: 30px;">
-    <h3>🌟 Become a Sponsor</h3>
-    <p>🔥 Featured in every CrimznBot reply</p>
-    <p>💼 Logo in Telegram + Discord footer</p>
-    <p>📈 Mentioned in replies & listed in whitepaper</p>
-    <p>🚀 Included in site + marketing</p>
-    <button onclick="window.open('sponsor.html', '_blank')">🤝 Learn More / Apply</button>
-  </div>
+  <!-- 💼 Become a Sponsor -->
+  <h2 style="margin-top: 30px; margin-bottom: 20px;">💼 Become a Sponsor</h2>
+  <p>Want to support CryptoConsult and get listed here?</p>
+  <a href="sponsor.html" class="solana-button">💼 Learn More / Apply</a>
 
-  <!-- 📱 Contact -->
-  <p>📨 Telegram + Discord: <strong style="color: #10f0ff;">@crimznbot</strong></p>
+  <!-- 📬 Contact -->
+  <h2>📬 Contact</h2>
+  <p>Telegram & Discord: <strong>@crimznbot</strong></p>
 
-  <!-- 📜 Footer -->
-  <p style="margin-top: 40px; font-size: 12px;">© 2025 by Crimzn – All Rights Reserved</p>
+  <!-- 🦾 Footer -->
+  <h2 style="color: #f0f0f0;">© 2025 by <strong style="color: #00ffff;">@Crimznbot</strong></h2>
+  <p style="font-size: 12px;">CryptoConsult™ - All Rights Reserved</p>
 
-  <!-- 💹 Price Script -->
-  <script>
+  <!-- 📈 Price Script -->
+  <script type="module">
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
         const data = await res.json();
-        document.getElementById("btc-price").innerText = "$" + data.bitcoin.usd;
-        document.getElementById("eth-price").innerText = "$" + data.ethereum.usd;
-        document.getElementById("sol-price").innerText = "$" + data.solana.usd;
-      } catch (e) {
-        document.getElementById("btc-price").innerText = "⚠️";
-        document.getElementById("eth-price").innerText = "⚠️";
-        document.getElementById("sol-price").innerText = "⚠️";
+        document.getElementById("btc-price").innerText = "BTC: $" + data.bitcoin.usd;
+        document.getElementById("eth-price").innerText = "ETH: $" + data.ethereum.usd;
+        document.getElementById("sol-price").innerText = "SOL: $" + data.solana.usd;
+      } catch (err) {
+        console.error("Price fetch failed", err);
       }
     });
   </script>
 
-  <!-- 🧠 Load CrimznApp -->
+  <!-- 🚀 Load CrimznApp -->
   <script type="module" src="app-main.js?v=crimznJuly28v2"></script>
 </body>
 </html>
+EOF

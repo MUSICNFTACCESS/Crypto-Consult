@@ -19,6 +19,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const pulseInput = document.getElementById("pulseInput");
   const pulseBox = document.getElementById("pulseBox");
   const promptInput = document.getElementById("promptInput"); // ✅ FIX
+  const paywall = document.getElementById("paywall"); // 🔓 Paywall DOM reference
+
 
   // 🧠 Toggle wallet button visibility on page load
   if (window.solana?.isConnected) {
@@ -40,7 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
     paywall.style.display = "block";
   }
 
-  // 🔗 Connect Wallet
+
+// 🔗 Connect Wallet
   async function connectWallet() {
     if (!window.solana || !window.solana.isPhantom) {
       alert("Phantom Wallet not detected. Please install Phantom to continue.");
@@ -53,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
     walletBtn.innerText = "🔌 Disconnect Wallet";
 
     // ✅ Unlock check
-    await checkUnlockStatus(connectedWallet);
+    await checkSolanaUnlock(connectedWallet);
     await loadUserProfile(connectedWallet);
   }
 
@@ -115,19 +118,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 🔓 Firebase Unlock Check
-  async function checkUnlockStatus(pubkey) {
+  // 🔓 Solana Pay Unlock Check
+  async function checkSolanaUnlock(pubkey) {
     try {
       const res = await fetch(`/api/check-unlock?wallet=${pubkey}`);
       const data = await res.json();
-      if (data.success && data.hasPaid === "true") {
+      if (data?.unlocked === true || localStorage.getItem("hasPaid") === "true") {
         localStorage.setItem("hasPaid", "true");
         promptInput.disabled = false;
         askBtn.disabled = false;
         paywall.style.display = "none";
-        console.log("✅ Firebase confirms unlock. CrimznBot is free to use.");
+        console.log("✅ Wallet has unlocked. CrimznBot is free to use.");
       } else {
-        console.log("⛔️ Wallet has NOT unlocked CrimznBot yet.");
+        console.log("🔒 Wallet has not unlocked. CrimznBot yet to be paid.");
       }
     } catch (e) {
       console.error("❌ Unlock check failed:", e);
@@ -148,6 +151,40 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   fetchPricesForCrimznBot();
+
+  // 🤖 Ask CrimznBot
+  askBtn.addEventListener("click", async () => {
+    responseBox.innerText = "🤖 CrimznBot is thinking...";
+    try {
+      const res = await fetch("/api/crimznbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: promptInput.value, wallet: connectedWallet }),
+      });
+      const data = await res.json();
+      responseBox.innerHTML = `<span style="color: lime;">🧠 ${data.response}</span>`;
+      questionCount++;
+      localStorage.setItem("questionCount", questionCount);
+    } catch (err) {
+      responseBox.innerHTML = `<span style="color: red;">❌ CrimznBot Error: ${err.message}</span>`;
+    }
+  });
+
+  // 💥 PulseIt: Sentiment Analyzer
+  pulseBtn.addEventListener("click", async () => {
+    const topic = pulseInput.value.trim();
+    if (!topic) return;
+
+    pulseBox.innerHTML = "📊 Analyzing sentiment...";
+    try {
+      const res = await fetch(`/api/sentiment?topic=${encodeURIComponent(topic)}`);
+      const data = await res.json();
+      pulseBox.innerHTML = `📉 Sentiment Score: ${data.score}<br>📝 Summary: ${data.summary}`;
+    } catch (err) {
+      console.error("❌ PulseIt Error:", err);
+      pulseBox.innerHTML = "❌ Failed to fetch sentiment.";
+    }
+  });
 
   // 🤖 Ask CrimznBot
   askBtn.addEventListener("click", async () => {

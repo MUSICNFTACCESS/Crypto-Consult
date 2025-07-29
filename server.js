@@ -302,20 +302,20 @@ app.post("/api/save-profile", async (req, res) => {
   }
 });
 
+// ✅ Catch malformed URI paths (e.g. /%c0%ae%c0%ae/)
+app.use((req, res, next) => {
+  try {
+      decodeURIComponent(req.path);
+          next();
+            } catch (err) {
+                console.error("❌ Malformed URI path blocked:", req.path);
+                    return res.status(400).send("Bad Request");
+                      }
+                      });
 // 🔒 Block unknown API routes (404 clean)
 app.all("/api/*", (_, res) => {
   res.status(404).json({ error: "❌ Invalid API route" });
 });
 
-// 🪞 Wildcard route to frontend
-app.get("*", (_, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-// 🚀 Start Server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
 
 // 🔁 Server cache-bust: crimznJuly25v2

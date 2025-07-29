@@ -302,16 +302,30 @@ app.post("/api/save-profile", async (req, res) => {
   }
 });
 
-// ✅ Catch malformed URI paths (e.g. /%c0%ae%c0%ae/)
+// Catch malformed URI paths
 app.use((req, res, next) => {
   try {
-      decodeURIComponent(req.path);
-          next();
-            } catch (err) {
-                console.error("❌ Malformed URI path blocked:", req.path);
-                    return res.status(400).send("Bad Request");
-                      }
-                      });
+  decodeURIComponent(req.path);
+  next();
+  } catch (err) {
+  console.error("Malformed URI path blocked:", req.path);
+  return res.status(400).send("Bad Request");
+  }
+  });
+
+// Final catch-all to serve frontend
+app.get("*", (req, res) => {
+res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+console.log("Reached end of server.js — about to listen...");
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+console.log(`Server running on port ${PORT}`);
+});
+
+
 // 🔒 Block unknown API routes (404 clean)
 app.all("/api/*", (_, res) => {
   res.status(404).json({ error: "❌ Invalid API route" });
@@ -319,3 +333,48 @@ app.all("/api/*", (_, res) => {
 
 
 // 🔁 Server cache-bust: crimznJuly25v2
+
+// ✅ Save Profile to Firestore
+app.post("/save-profile", async (req, res) => {
+  try {
+    const { wallet, name, email } = req.body;
+    if (!wallet) return res.status(400).json({ error: "Wallet address required" });
+
+    const userRef = db.collection("users").doc(wallet);
+    await userRef.set({ name: name || "", email: email || "", updated: Date.now() }, { merge: true });
+
+    res.status(200).json({ message: "✅ Profile saved" });
+  } catch (err) {
+    console.error("❌ Error saving profile:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// 🧠 CrimznBot Chat Handler
+app.post("/ask", async (req, res) => {
+  try {
+    const { question, wallet } = req.body;
+    if (!question) return res.status(400).json({ error: "Question missing" });
+
+    // (Optional) check wallet logic here...
+    const aiResponse = await getCrimznBotResponse(question, wallet); // assumes you have this function already
+    res.status(200).json({ answer: aiResponse });
+  } catch (err) {
+    console.error("❌ Error in /ask route:", err);
+    res.status(500).json({ error: "CrimznBot error" });
+  }
+});
+
+// 📊 PulseIt - Sentiment Analyzer
+app.post("/pulse-it", async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text) return res.status(400).json({ error: "Missing text" });
+
+    const pulse = await analyzeSentiment(text); // assumes this function exists
+    res.status(200).json({ sentiment: pulse });
+  } catch (err) {
+    console.error("❌ PulseIt error:", err);
+    res.status(500).json({ error: "Sentiment analysis failed" });
+  }
+});

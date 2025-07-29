@@ -1,4 +1,4 @@
-// 🔧 Crimzn Consult – Full Logic (Wallet, Firebase, Helius, Bot, PulseIt)
+// 🧠 Crimzn Consult - Full Logic (Wallet, Firebase, Helius, Bot, PulseIt)
 document.addEventListener("DOMContentLoaded", async () => {
   // 🎯 DOM Elements
   const connectBtn = document.getElementById("connectWalletBtn");
@@ -18,16 +18,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
   let hasPaid = localStorage.getItem("hasPaid") === "true";
 
-  // 💸 Live Prices (BTC, ETH, SOL)
+  // 📈 Live Prices (BTC, ETH, SOL)
   try {
-    const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
+    const res = await fetch("/livePrices");
     const data = await res.json();
     document.getElementById("livePrices").innerHTML = `
       BTC: $${data.bitcoin.usd}<br>
       ETH: $${data.ethereum.usd}<br>
       SOL: $${data.solana.usd}
     `;
-  } catch {
+  } catch (e) {
     document.getElementById("livePrices").innerText = "⚠️ Error loading prices.";
   }
 
@@ -36,10 +36,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const resp = await window.solana.connect();
       connectedWallet = resp.publicKey.toString();
-      walletStatus.innerText = \`✅ Connected: \${connectedWallet.slice(0, 4)}...\${connectedWallet.slice(-4)}\`;
+      walletStatus.innerText = `✅ Connected: \${connectedWallet.slice(0, 4)}...\${connectedWallet.slice(-4)}`;
       connectBtn.classList.add("hidden");
       disconnectBtn.classList.remove("hidden");
-    } catch {
+    } catch (e) {
       alert("❌ Wallet connection failed.");
     }
   };
@@ -47,12 +47,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ❌ Disconnect Wallet
   disconnectBtn.onclick = () => {
     connectedWallet = null;
-    walletStatus.innerText = "🔌 Not connected";
+    walletStatus.innerText = "⚠️ Not connected";
     connectBtn.classList.remove("hidden");
     disconnectBtn.classList.add("hidden");
   };
 
-  // 🔥 Firebase – Save Profile
+  // 📝 Firebase - Save Profile
   saveProfileBtn.onclick = async () => {
     const profile = {
       name: nameInput.value || "Anonymous",
@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  // 🤖 CrimznBot – Ask Question
+  // 🤖 CrimznBot - Ask Question
   askBtn.onclick = async () => {
     const prompt = document.getElementById("user-input").value.trim();
     if (!prompt) return;
@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       questionCount++;
       localStorage.setItem("questionCount", questionCount);
-      if (questionCount >= 3 && !hasPaid) {
+      if (questionCount > 3 && !hasPaid) {
         solanaPayBtn.classList.remove("hidden");
       }
     } catch {
@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  // 🔓 Solana Pay + Helius – Unlock Access
+  // 💸 Solana Pay + Helius - Unlock Access
   solanaPayBtn.onclick = async () => {
     if (!connectedWallet) return alert("Connect wallet first!");
 
@@ -114,9 +114,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         body: JSON.stringify({ wallet: connectedWallet }),
       });
       const data = await res.json();
-      if (data.paid) {
+      if (data.hasPaid) {
         localStorage.setItem("hasPaid", "true");
-        hasPaid = true;
         solanaPayBtn.classList.add("hidden");
         responseBox.innerText = "✅ Access Unlocked!";
       } else {
@@ -127,7 +126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  // 📊 PulseIt – Sentiment Analyzer
+  // 📊 PulseIt - Sentiment Analyzer
   pulseBtn.onclick = async () => {
     const input = pulseInput.value.trim();
     if (!input) return;
@@ -139,13 +138,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         body: JSON.stringify({ text: input }),
       });
       const json = await res.json();
-      pulseResult.innerText = \`📊 Sentiment: \${json.result}\`;
+      pulseResult.innerText = `📊 Sentiment: \${json.result}`;
     } catch {
       pulseResult.innerText = "⚠️ Error analyzing sentiment.";
     }
   };
 
-  // 🧹 Reset Input
+  // 🔁 Reset input after ask
   document.getElementById("user-input").value = "";
   responseBox.scrollIntoView({ behavior: "smooth" });
 });

@@ -2,6 +2,7 @@
 const admin = require("firebase-admin");
 const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
+const fs = require("fs");
 
 // 🔐 Decode Firebase service account key from ENV
 let serviceAccount;
@@ -20,13 +21,11 @@ const db = getFirestore();
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const fs = require("fs");
 const fetch = require("node-fetch");
 const { encodeURL } = require("@solana/pay");
 const { PublicKey } = require("@solana/web3.js");
 const nacl = require("tweetnacl");
 const crypto = require("crypto");
-const fs = require("fs");
 const path = require("path");
 
 // 🌐 Environment Variables

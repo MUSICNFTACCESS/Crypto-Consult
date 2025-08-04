@@ -7,3 +7,8 @@ node_modules/
 .DS_Store
 .env
 force-redeploy.txt
+# Ignore all secret keys
+firebase-*.json
+.env.local
+*.txt
+test.json

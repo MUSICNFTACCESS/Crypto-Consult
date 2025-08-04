@@ -15,11 +15,22 @@ const admin = require("firebase-admin");
 const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 
-const serviceAccount = JSON.parse(
-  Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64, "base64").toString("utf8")
-);
-initializeApp({ credential: cert(serviceAccount) });
-const db = getFirestore();
+try {
+  const rawKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64;
+  console.log("🔥 ENV Loaded:", typeof rawKey);
+  console.log("📏 ENV Length:", (rawKey || "").length);
+
+  const serviceAccount = JSON.parse(
+    Buffer.from(rawKey, "base64").toString("utf8")
+  );
+  initializeApp({ credential: cert(serviceAccount) });
+  console.log("✅ Firebase key parsed successfully");
+
+  var db = getFirestore();
+} catch (err) {
+  console.error("❌ Firebase key parse failed:", err);
+  process.exit(1);
+}
 
 // 🌍 Global Variables
 const SOLANA_ADDRESS = process.env.SOLANA_ADDRESS;

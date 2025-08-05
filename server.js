@@ -229,11 +229,6 @@ app.use(
   })
 );
 
-// 🌐 Wildcard Route
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
 // 🚀 Start Server
 app.listen(PORT, () => {
   console.log("🔥 Server running on port", PORT);
@@ -252,4 +247,9 @@ app.get("/livePrices", async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: "Failed to load prices" });
   }
+});
+
+// 🌐 Wildcard Route (put this last!)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });

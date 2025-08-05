@@ -1,81 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
-<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CryptoConsult by Crimzn</title>
-  <link rel="stylesheet" href="style.css?v=crimznAug04v2" />
-</head>
-<body>
-  <h1>🟠 CryptoConsult by Crimzn</h1>
+<!DOCTYPE html>  <html lang="en">  
+  <head>  
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>  
+    <meta charset="UTF-8" />  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />  
+    <title>CryptoConsult by Crimzn</title>  
+    <link rel="stylesheet" href="style.css?v=crimznAug05v1" />  
+  </head>  
+  <body>  
+    <h1>🟠 CryptoConsult by Crimzn</h1>  <!-- 🔐 Wallet -->  
+<button id="connectWalletBtn" class="solana-button">🟣 Connect Wallet</button>  
+<button id="disconnectWalletBtn" class="solana-button hidden">❌ Disconnect</button>  
+<p id="walletStatus" style="color: lime">🔌 Not connected</p>  
 
-  <!-- 🔐 Wallet -->
-  <button id="connectWalletBtn" class="solana-button">🟣 Connect Wallet</button>
-  <button id="disconnectWalletBtn" class="solana-button">❌ Disconnect</button>
-  <p id="walletStatus" style="color: lime">🔌 Not connected</p>
+<!-- 💾 Save Profile Trigger -->  
+<h3 style="margin-top: 10px;">💾 Save My Profile (for future rewards)</h3>  
+<button id="openProfileModal" class="solana-button">✍️ Enter Info</button>  
 
-  <!-- 💾 Save Profile -->
-  <h3 style="margin-top: 10px;">💾 Save My Profile (for future rewards)</h3>
-  <input id="name" placeholder="Name (optional)" style="margin-bottom: 5px;" /><br/>
-  <input id="email" placeholder="Email (optional)" /><br/>
-  <button id="saveProfileBtn" class="solana-button">💾 Save Profile</button>
+<!-- 💾 Profile Modal -->  
+<div id="profileModal" class="modal hidden">  
+  <div class="modal-content">  
+    <span class="close" id="closeProfileModal">&times;</span>  
+    <h3>💾 Save My Profile</h3>  
+    <input id="name" placeholder="Name (optional)" /><br />  
+    <input id="email" placeholder="Email (optional)" /><br />  
+    <button id="saveProfileBtn" class="solana-button">💾 Save to Firebase</button>  
+  </div>  
+</div>  
 
-  <!-- 📈 Live Prices -->
-  <h2 style="font-size: 16px; margin: 10px 0;">📈 Live Prices</h2>
-  <span id="btc-price">BTC: ...</span><br/>
-  <span id="eth-price">ETH: ...</span><br/>
-  <span id="sol-price">SOL: ...</span>
-  <p id="livePrices" style="color: orange; font-weight: bold;"></p>
+<!-- 📈 Live Prices -->  
+<h2 style="font-size: 16px; margin: 10px 0;">📈 Live Prices</h2>  
+<span id="btc-price">BTC: ...</span><br />  
+<span id="eth-price">ETH: ...</span><br />  
+<span id="sol-price">SOL: ...</span>  
+<p id="livePrices" style="color: orange; font-weight: bold;"></p>  
 
-  <!-- 🧰 Services -->
-  <h2>🧰 Services Offered</h2>
-  <ul style="max-width: 600px; margin: 0 auto; text-align: left;">
-    <li>📦 Software as a Service (SaaS)</li>
-    <li>📊 Technical Analysis Reports</li>
-    <li>🔍 Fundamental Analysis</li>
-    <li>💸 On/Off Ramping Help</li>
-    <li>🧠 Token Research & Insights</li>
-    <li>🛡️ Risk Management Strategy</li>
-    <li>👥 One-on-One Consultations</li>
-  </ul>
+<!-- 🧰 Services -->  
+<h2>🧰 Services Offered</h2>  
+<ul style="max-width: 600px; margin: 0 auto; text-align: left;">  
+  <li>📦 Software as a Service (SaaS)</li>  
+  <li>📊 Technical Analysis Reports</li>  
+  <li>🔍 Fundamental Analysis</li>  
+  <li>💸 On/Off Ramping Help</li>  
+  <li>🧠 Token Research & Insights</li>  
+  <li>🛡️ Risk Management Strategy</li>  
+  <li>👥 One-on-One Consultations</li>  
+</ul>  
 
-  <!-- 🤖 CrimznBot -->
-  <h2>🤖 CrimznBot - Ask Anything</h2>
-  <input id="user-input" placeholder="Ask a crypto question..." />
-  <button id="askCrimznBtn" class="solana-button">📩 Send</button>
-  <div id="response-box" class="response-box"></div>
+<!-- 🤖 CrimznBot -->  
+<h2>🤖 CrimznBot - Ask Anything</h2>  
+<input id="user-input" placeholder="Ask a crypto question..." />  
+<button id="askCrimznBtn" class="solana-button">📩 Send</button>  
+<div id="response-box" class="response-box"></div>  
 
-  <!-- 🧱 Paywall -->
-  <div id="paywall" class="hidden" style="margin-top: 20px;">
-    <p>🚫 You’ve used your 3 free questions – please unlock CrimznBot to continue.</p>
-    <button id="solana-pay-btn" class="solana-button">🔓 Unlock with 0.025 SOL</button>
-  </div>
+<!-- 🧱 Paywall -->  
+<div id="paywall" class="hidden" style="margin-top: 20px;">  
+  <p>🚫 You’ve used your 3 free questions – please unlock CrimznBot to continue.</p>  
+  <button id="solana-pay-btn" class="solana-button hidden">🔓 Unlock with 0.025 SOL</button>  
+</div>  
 
-  <!-- 📊 PulseIt -->
-  <h2>📊 PulseIt - Sentiment Analyzer</h2>
-  <input id="pulseInput" placeholder="Type a topic like 'ETF' or 'war'" />
-  <button id="pulseBtn" class="solana-button">🧠 Analyze</button>
-  <p id="pulseResult"></p>
+<!-- 📊 PulseIt -->  
+<h2>📊 PulseIt - Sentiment Analyzer</h2>  
+<input id="pulseInput" placeholder="Type a topic like 'ETF' or 'war'" />  
+<button id="pulseBtn" class="solana-button">🧠 Analyze</button>  
+<p id="pulseResult"></p>  
 
-  <!-- 🧭 Explore -->
-  <h2>🧭 Explore</h2>
-  <a href="radar.html" class="solana-button">📡 Market Cycle Radar</a>
-  <a href="whitepaper.html" class="solana-button">📄 Read the Whitepaper</a>
-  <a href="faq.html" class="solana-button">📚 FAQ</a>
+<!-- 🧭 Explore -->  
+<h2>🧭 Explore</h2>  
+<a href="radar.html" class="solana-button">📡 Market Cycle Radar</a>  
+<a href="whitepaper.html" class="solana-button">📄 Read the Whitepaper</a>  
+<a href="faq.html" class="solana-button">📚 FAQ</a>  
+<a href="sponsor.html" class="solana-button">💰 Become a Sponsor</a>
 
-  <!-- 📬 Contact -->
-  <h2>📬 Contact</h2>
-  <p>Telegram & Discord: <strong>@crimznbot</strong></p>
+  <!-- 📬 Contact -->  <h2>📬 Contact</h2>  
+<p>Telegram: <strong>@crimznbot</strong></p>  
+<p>Discord: <strong>@crimznbot</strong></p>  
+<p>X (Twitter): <strong>@crimzn</strong></p>  
+<p>Email: <a href="mailto:crimzncipriano@gmail.com" class="solana-button">📧 Email Me</a></p>  <!-- 🦾 Footer -->  
+<h2 style="color: #f0f0f0;">© 2025 by <strong style="color: #00ffff;">@Crimznbot</strong></h2>  
+<p style="font-size: 12px;">CryptoConsult™ - All Rights Reserved</p>  
+<p style="color: #ccc; font-size: 12px;">  
+  🔧 Built by Crimzn • Powered by Solana & Helius  
+</p>  
 
-  <!-- 🦾 Footer -->
-  <h2 style="color: #f0f0f0;">© 2025 by <strong style="color: #00ffff;">@Crimznbot</strong></h2>
-  <p style="font-size: 12px;">CryptoConsult™ - All Rights Reserved</p>
+<!-- 🚀 Load CrimznApp -->  
+<script type="module" src="app-main.js?v=crimznAug05v1"></script>
 
-
-  <!-- 🚀 Load CrimznApp -->
-<link rel="stylesheet" href="style.css?v=crimznAug04v2" />
-<script type="module" src="app-main.js?v=crimznAug04v2"></script>
-</body>
-</html>
-
+  </body>  
+</html>  

@@ -1,6 +1,8 @@
 // ✅ Load Solana Web3 globally
 const solanaWeb3 = window.solanaWeb3;
 
+console.log("🚀 Crimzn Consult v=crimznAug05v2 loaded at", new Date().toISOString());
+
 // 🚀 Crimzn Consult - Full Logic (Wallet, Firebase, Helius, Bot, PulseIt)
 document.addEventListener("DOMContentLoaded", async () => {
   // 🎯 DOM Elements
@@ -16,10 +18,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   const pulseInput = document.getElementById("pulseInput");
   const pulseResult = document.getElementById("pulseResult");
   const walletStatus = document.getElementById("walletStatus");
+  const paywall = document.getElementById("paywall");
+
+  const openModalBtn = document.getElementById("openProfileModal");
+  const closeModalBtn = document.getElementById("closeProfileModal");
+  const profileModal = document.getElementById("profileModal");
 
   let connectedWallet = null;
   let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
   let hasPaid = localStorage.getItem("hasPaid") === "true";
+
+  // 🎯 Modal open/close
+  openModalBtn.onclick = () => {
+    profileModal.classList.remove("hidden");
+  };
+  closeModalBtn.onclick = () => {
+    profileModal.classList.add("hidden");
+  };
 
   // 📈 Live Prices (BTC, ETH, SOL)
   try {
@@ -39,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const resp = await window.solana.connect();
       connectedWallet = resp.publicKey.toString();
-      walletStatus.innerText = `✅ Connected: \${connectedWallet.slice(0, 4)}...\${connectedWallet.slice(-4)}`;
+      walletStatus.innerText = `✅ Connected: ${connectedWallet.slice(0, 4)}...${connectedWallet.slice(-4)}`;
       connectBtn.classList.add("hidden");
       disconnectBtn.classList.remove("hidden");
     } catch (e) {
@@ -70,6 +85,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         body: JSON.stringify(profile),
       });
       alert("✅ Profile saved.");
+      profileModal.classList.add("hidden");
     } catch {
       alert("❌ Failed to save profile.");
     }
@@ -81,7 +97,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!prompt) return;
 
     if (!hasPaid && questionCount >= 3) {
-      document.querySelector(".paywall").classList.remove("hidden");
+      paywall.classList.remove("hidden");
       responseBox.innerText = "🔒 You've reached your limit. Please unlock.";
       return;
     }
@@ -98,7 +114,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       questionCount++;
       localStorage.setItem("questionCount", questionCount);
-      if (questionCount > 3 && !hasPaid) {
+
+      if (questionCount === 3 && !hasPaid) {
+        paywall.classList.remove("hidden");
         solanaPayBtn.classList.remove("hidden");
       }
     } catch {
@@ -120,6 +138,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (data.hasPaid) {
         localStorage.setItem("hasPaid", "true");
         solanaPayBtn.classList.add("hidden");
+        paywall.classList.add("hidden");
         responseBox.innerText = "✅ Access Unlocked!";
       } else {
         alert("❌ Payment not detected yet.");
@@ -141,7 +160,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         body: JSON.stringify({ text: input }),
       });
       const json = await res.json();
-      pulseResult.innerText = `📊 Sentiment: \${json.result}`;
+      pulseResult.innerText = `📊 Sentiment: ${json.result}`;
     } catch {
       pulseResult.innerText = "⚠️ Error analyzing sentiment.";
     }

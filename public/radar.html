@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>🧠 Cycle Top Radar</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cycle Top Radar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
   <style>
     body {
@@ -13,22 +13,18 @@
       text-align: center;
       padding: 20px;
     }
-    h1 {
-      font-size: 22px;
-      margin-top: 0.5em;
-    }
+    h1 { font-size: 22px; margin-top: 0.5em; }
     .tab {
       background: #111;
       display: inline-block;
-      padding: 10px 12px;
-      margin: 3px;
-      border: 2px solid #f7931a;
-      border-radius: 8px;
+      color: #f7931a;
+      margin: 0.3em;
+      padding: 10px 20px;
       cursor: pointer;
-      user-select: none;
+      border-radius: 8px;
     }
     .tab.active {
-      background-color: #f7931a;
+      background: #f7931a;
       color: black;
     }
     .chart-container {
@@ -39,22 +35,21 @@
       display: block;
     }
     .back-button {
-      margin-top: 1em;
       display: inline-block;
-      background-color: #f7931a;
-      color: #000;
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-family: monospace;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #111;
+      color: #f7931a;
       text-decoration: none;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
-  <h1>📊 On The Radar: Crypto Cycle Top Dashboard</h1>
-  <p>🔴 Visualize key crypto metrics to time market cycles, spot tops, and confirm trends.</p>
+  <h1>🧠 On The Radar: Crypto Cycle Top Dashboard</h1>
+  <p>📊 Visualize key crypto metrics to time market cycles, spot tops, and confirm trends.</p>
 
-  <!-- Tab Buttons -->
+  <!-- 🔘 Tab Buttons -->
   <div class="tab" data-id="btc">BTC/USD</div>
   <div class="tab" data-id="eth">ETH/USD</div>
   <div class="tab" data-id="sol">SOL/USD</div>
@@ -62,141 +57,129 @@
   <div class="tab" data-id="solbtc">SOL/BTC</div>
   <div class="tab" data-id="dominance">BTC Dominance</div>
 
-  <!-- Charts -->
-  <div id="btc" class="chart-container active">
-    <div id="btc-chart"></div>
-  </div>
-  <div id="eth" class="chart-container">
-    <div id="eth-chart"></div>
-  </div>
-  <div id="sol" class="chart-container">
-    <div id="sol-chart"></div>
-  </div>
-  <div id="ethbtc" class="chart-container">
-    <div id="ethbtc-chart"></div>
-  </div>
-  <div id="solbtc" class="chart-container">
-    <div id="solbtc-chart"></div>
-  </div>
-  <div id="dominance" class="chart-container">
-    <div id="dominance-chart"></div>
-  </div>
+  <!-- 📈 Chart Containers -->
+  <div id="btc" class="chart-container active"><div id="btc-chart"></div></div>
+  <div id="eth" class="chart-container"><div id="eth-chart"></div></div>
+  <div id="sol" class="chart-container"><div id="sol-chart"></div></div>
+  <div id="ethbtc" class="chart-container"><div id="ethbtc-chart"></div></div>
+  <div id="solbtc" class="chart-container"><div id="solbtc-chart"></div></div>
+  <div id="dominance" class="chart-container"><div id="dominance-chart"></div></div>
 
-  <!-- Back -->
-  <a href="index.html" class="solana-button">🔙 Back to Site</a>
+  <a href="index.html" class="back-button">⬅️ Back to Site</a>
 
-  <!-- Chart Scripts -->
-  <script type="text/javascript">
-    new TradingView.widget({
-      container_id: "btc-chart",
-      width: "100%",
-      height: 600,
-      symbol: "BITSTAMP:BTCUSD",
-      interval: "1D",
-      timezone: "Etc/UTC",
-      theme: "dark",
-      style: "1",
-      locale: "en",
-      toolbar_bg: "#f1f3f6",
-      enable_publishing: false,
-      hide_side_toolbar: false,
-      allow_symbol_change: true
-    });
-
-    new TradingView.widget({
-      container_id: "eth-chart",
-      width: "100%",
-      height: 600,
-      symbol: "BINANCE:ETHUSDT",
-      interval: "1D",
-      timezone: "Etc/UTC",
-      theme: "dark",
-      style: "1",
-      locale: "en",
-      toolbar_bg: "#f1f3f6",
-      enable_publishing: false,
-      hide_side_toolbar: false,
-      allow_symbol_change: true
-    });
-
-    new TradingView.widget({
-      container_id: "sol-chart",
-      width: "100%",
-      height: 600,
-      symbol: "BINANCE:SOLUSDT",
-      interval: "1D",
-      timezone: "Etc/UTC",
-      theme: "dark",
-      style: "1",
-      locale: "en",
-      toolbar_bg: "#f1f3f6",
-      enable_publishing: false,
-      hide_side_toolbar: false,
-      allow_symbol_change: true
-    });
-
-    new TradingView.widget({
-      container_id: "ethbtc-chart",
-      width: "100%",
-      height: 600,
-      symbol: "BINANCE:ETHBTC",
-      interval: "1D",
-      timezone: "Etc/UTC",
-      theme: "dark",
-      style: "1",
-      locale: "en",
-      toolbar_bg: "#f1f3f6",
-      enable_publishing: false,
-      hide_side_toolbar: false,
-      allow_symbol_change: true
-    });
-
-    new TradingView.widget({
-      container_id: "solbtc-chart",
-      width: "100%",
-      height: 600,
-      symbol: "BINANCE:SOLBTC",
-      interval: "1D",
-      timezone: "Etc/UTC",
-      theme: "dark",
-      style: "1",
-      locale: "en",
-      toolbar_bg: "#f1f3f6",
-      enable_publishing: false,
-      hide_side_toolbar: false,
-      allow_symbol_change: true
-    });
-
-    new TradingView.widget({
-      container_id: "dominance-chart",
-      width: "100%",
-      height: 600,
-      symbol: "CRYPTOCAP:BTC.D",
-      interval: "1D",
-      timezone: "Etc/UTC",
-      theme: "dark",
-      style: "1",
-      locale: "en",
-      toolbar_bg: "#f1f3f6",
-      enable_publishing: false,
-      hide_side_toolbar: false,
-      allow_symbol_change: true
-    });
-  </script>
-
-  <!-- Tab Logic -->
+  <!-- 📜 TradingView Widgets (Deferred) -->
   <script>
-    const tabs = document.querySelectorAll('.tab');
-    const sections = document.querySelectorAll('.chart-container');
+    document.addEventListener("DOMContentLoaded", () => {
+      // Tabs
+      const tabs = document.querySelectorAll('.tab');
+      const charts = document.querySelectorAll('.chart-container');
 
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
 
-        const id = tab.getAttribute('data-id');
-        sections.forEach(sec => sec.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+          const id = tab.getAttribute('data-id');
+          charts.forEach(c => c.classList.remove('active'));
+          document.getElementById(id).classList.add('active');
+        });
+      });
+
+      // TradingView Widgets
+      new TradingView.widget({
+        container_id: "btc-chart",
+        width: "100%",
+        height: 600,
+        symbol: "BINANCE:BTCUSDT",
+        interval: "1D",
+        timezone: "Etc/UTC",
+        theme: "dark",
+        style: "1",
+        locale: "en",
+        toolbar_bg: "#f1f3f6",
+        enable_publishing: false,
+        hide_side_toolbar: false,
+        allow_symbol_change: true
+      });
+
+      new TradingView.widget({
+        container_id: "eth-chart",
+        width: "100%",
+        height: 600,
+        symbol: "BINANCE:ETHUSDT",
+        interval: "1D",
+        timezone: "Etc/UTC",
+        theme: "dark",
+        style: "1",
+        locale: "en",
+        toolbar_bg: "#f1f3f6",
+        enable_publishing: false,
+        hide_side_toolbar: false,
+        allow_symbol_change: true
+      });
+
+      new TradingView.widget({
+        container_id: "sol-chart",
+        width: "100%",
+        height: 600,
+        symbol: "BINANCE:SOLUSDT",
+        interval: "1D",
+        timezone: "Etc/UTC",
+        theme: "dark",
+        style: "1",
+        locale: "en",
+        toolbar_bg: "#f1f3f6",
+        enable_publishing: false,
+        hide_side_toolbar: false,
+        allow_symbol_change: true
+      });
+
+      new TradingView.widget({
+        container_id: "ethbtc-chart",
+        width: "100%",
+        height: 600,
+        symbol: "BINANCE:ETHBTC",
+        interval: "1D",
+        timezone: "Etc/UTC",
+        theme: "dark",
+        style: "1",
+        locale: "en",
+        toolbar_bg: "#f1f3f6",
+        enable_publishing: false,
+        hide_side_toolbar: false,
+        allow_symbol_change: true
+      });
+
+      new TradingView.widget({
+        container_id: "solbtc-chart",
+        width: "100%",
+        height: 600,
+        symbol: "BINANCE:SOLBTC",
+        interval: "1D",
+        timezone: "Etc/UTC",
+        theme: "dark",
+        style: "1",
+        locale: "en",
+        toolbar_bg: "#f1f3f6",
+        enable_publishing: false,
+        hide_side_toolbar: false,
+        allow_symbol_change: true
+      });
+
+      new TradingView.widget({
+        container_id: "dominance-chart",
+        width: "100%",
+        height: 600,
+        symbol: "CRYPTOCAP:BTC.D",
+        interval: "1D",
+        timezone: "Etc/UTC",
+        theme: "dark",
+        style: "1",
+        locale: "en",
+        toolbar_bg: "#f1f3f6",
+        enable_publishing: false,
+        hide_side_toolbar: false,
+        allow_symbol_change: true
       });
     });
   </script>

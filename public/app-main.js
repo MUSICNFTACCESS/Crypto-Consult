@@ -24,6 +24,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const closeModalBtn = document.getElementById("closeProfileModal");
   const profileModal = document.getElementById("profileModal");
 
+  // ✅ Force-hide profile modal on first load
+  profileModal.classList.add("hidden");
+
   let connectedWallet = null;
   let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
   let hasPaid = localStorage.getItem("hasPaid") === "true";

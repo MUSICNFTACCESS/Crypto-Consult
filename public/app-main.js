@@ -24,20 +24,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   const closeModalBtn = document.getElementById("closeProfileModal");
   const profileModal = document.getElementById("profileModal");
 
-  // ✅ Force-hide profile modal on first load
+// ✅ Force-hide profile modal on first load
+profileModal.classList.add("hidden");
+
+// 🎯 Modal open/close
+openModalBtn.onclick = () => {
+  profileModal.classList.remove("hidden");
+};
+closeModalBtn.onclick = () => {
   profileModal.classList.add("hidden");
-
-  let connectedWallet = null;
-  let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
-  let hasPaid = localStorage.getItem("hasPaid") === "true";
-
-  // 🎯 Modal open/close
-  openModalBtn.onclick = () => {
-    profileModal.classList.remove("hidden");
-  };
-  closeModalBtn.onclick = () => {
-    profileModal.classList.add("hidden");
-  };
+};
 
   // 📈 Live Prices (BTC, ETH, SOL)
   try {
@@ -93,6 +89,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       alert("❌ Failed to save profile.");
     }
   };
+
+let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
+let hasPaid = localStorage.getItem("hasPaid") === "true";
 
   // 🤖 CrimznBot - Ask Question
   askBtn.onclick = async () => {

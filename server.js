@@ -196,24 +196,38 @@ app.post("/pulse", async (req, res) => {
 });
 
 // 🧱 Middleware
-app.use(express.json());
-app.use(cors());
-app.use(helmet());
 app.use(
   helmet.contentSecurityPolicy({
     useDefaults: true,
     directives: {
-      "script-src": ["'self'", "https://unpkg.com"],
-    },
+      "default-src": ["'self'"],
+      "script-src": [
+        "'self'",
+        "'unsafe-inline'",
+        "https://unpkg.com",
+        "https://s3.tradingview.com",
+        "https://www.tradingview.com",
+        "https://commerce.coinbase.com",
+        "https://www.paypal.com",
+        "https://www.paypalobjects.com"
+      ],
+      "frame-src": [
+        "https://s.tradingview.com",
+        "https://www.tradingview.com",
+        "https://commerce.coinbase.com",
+        "https://www.paypal.com"
+      ],
+      "style-src": [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com"
+      ],
+      "font-src": [
+        "https://fonts.gstatic.com"
+      ]
+    }
   })
 );
-app.use(rateLimit({
-  windowMs: 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false
-}));
-app.use(express.static(path.join(__dirname, "public")));
 
 // 🌐 Wildcard Route
 app.get("*", (req, res) => {

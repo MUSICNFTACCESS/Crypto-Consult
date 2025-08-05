@@ -1,7 +1,3 @@
-// ✅ Load Solana Web3 globally
-window.solanaWeb3 = solanaWeb3;
-const solanaWeb3 = window.solanaWeb3;
-
 console.log("🚀 Crimzn Consult v=crimznAug05v2 loaded at", new Date().toISOString());
 
 // 🚀 Crimzn Consult - Full Logic (Wallet, Firebase, Helius, Bot, PulseIt)

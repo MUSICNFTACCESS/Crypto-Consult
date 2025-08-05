@@ -1,4 +1,3 @@
-// 🧪 No-op change to trigger Git commit
 // 🔥 Crimzn Consult Backend - Final Merge: gpt-4o + Firebase + CrimznBot + PulseIt
 require("dotenv").config();
 
@@ -21,20 +20,24 @@ console.log("🔑 HELIUS_API_KEY:", process.env.HELIUS_API_KEY ? "FOUND" : "❌ 
 console.log("💼 SOLANA_ADDRESS:", process.env.SOLANA_ADDRESS ? "FOUND" : "❌ MISSING");
 console.log("🧠 OPENAI_API_KEY:", process.env.OPENAI_API_KEY ? "FOUND" : "❌ MISSING");
 
-// 🔐 Firebase Setup (Base64-safe)
+// ✅ Firebase Decode + Init
 const admin = require("firebase-admin");
-let serviceAccount;
+const { initializeApp, cert } = require("firebase-admin/app");
+const { getFirestore } = require("firebase-admin/firestore");
+
 try {
-  const jsonStr = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64, "base64").toString("utf8");
-  serviceAccount = JSON.parse(jsonStr);
-  console.log("✅ Firebase service account parsed");
+  const base64Key = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64;
+  const decodedKey = Buffer.from(base64Key, "base64").toString("utf-8");
+  const firebaseConfig = JSON.parse(decodedKey);
+
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+    credential: cert(firebaseConfig),
   });
+
+  console.log("🔥 Firebase initialized successfully");
 } catch (err) {
-  console.error("❌ Failed to decode Firebase key:", err.message);
+  console.error("❌ Failed to decode Firebase key or initialize Firebase:", err);
 }
-const db = admin.firestore();
 
 // ⚙️ App Init
 const app = express();

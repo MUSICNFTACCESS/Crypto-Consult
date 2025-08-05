@@ -1,8 +1,5 @@
-// ✅ Load Solana Web3 globally
-const solanaWeb3 = window.solanaWeb3;
-
-// 🚀 Crimzn Consult - Full Logic (Wallet, Firebase, Helius, Bot, PulseIt)
-document.addEventListener("DOMContentLoaded", async () => {x
+// 🧠 Crimzn Consult - Full Logic (Wallet, Firebase, Helius, Bot, PulseIt)
+document.addEventListener("DOMContentLoaded", async () => {
   // 🎯 DOM Elements
   const connectBtn = document.getElementById("connectWalletBtn");
   const disconnectBtn = document.getElementById("disconnectWalletBtn");
@@ -79,7 +76,7 @@ document.addEventListener("DOMContentLoaded", async () => {x
   askBtn.onclick = async () => {
     const prompt = document.getElementById("user-input").value.trim();
     if (!prompt) return;
-
+y
     if (!hasPaid && questionCount >= 3) {
       document.querySelector(".paywall").classList.remove("hidden");
       responseBox.innerText = "🔒 You've reached your limit. Please unlock.";

@@ -1,11 +1,11 @@
-cd ~/Crypto-Consult/public && cat > index.html << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
+<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CryptoConsult by Crimzn</title>
-  <link rel="stylesheet" href="app-style.css?v=crimznJuly28v2" />
+  <link rel="stylesheet" href="style.css?v=crimznAug04v2" />
 </head>
 <body>
   <h1>🟠 CryptoConsult by Crimzn</h1>
@@ -72,23 +72,10 @@ cd ~/Crypto-Consult/public && cat > index.html << 'EOF'
   <h2 style="color: #f0f0f0;">© 2025 by <strong style="color: #00ffff;">@Crimznbot</strong></h2>
   <p style="font-size: 12px;">CryptoConsult™ - All Rights Reserved</p>
 
-  <!-- 📈 Price Script -->
-  <script type="module">
-    document.addEventListener("DOMContentLoaded", async () => {
-      try {
-        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
-        const data = await res.json();
-        document.getElementById("btc-price").innerText = "BTC: $" + data.bitcoin.usd;
-        document.getElementById("eth-price").innerText = "ETH: $" + data.ethereum.usd;
-        document.getElementById("sol-price").innerText = "SOL: $" + data.solana.usd;
-      } catch (err) {
-        console.error("Price fetch failed", err);
-      }
-    });
-  </script>
 
   <!-- 🚀 Load CrimznApp -->
-  <script type="module" src="app-main.js?v=crimznJuly28v2"></script>
+<link rel="stylesheet" href="style.css?v=crimznAug04v2" />
+<script type="module" src="app-main.js?v=crimznAug04v2"></script>
 </body>
 </html>
-EOF
+

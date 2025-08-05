@@ -12,3 +12,4 @@ firebase-*.json
 .env.local
 *.txt
 test.json
+firebase-key.json

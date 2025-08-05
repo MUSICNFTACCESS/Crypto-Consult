@@ -20,7 +20,7 @@ console.log("🔑 HELIUS_API_KEY:", process.env.HELIUS_API_KEY ? "FOUND" : "❌ 
 console.log("💼 SOLANA_ADDRESS:", process.env.SOLANA_ADDRESS ? "FOUND" : "❌ MISSING");
 console.log("🧠 OPENAI_API_KEY:", process.env.OPENAI_API_KEY ? "FOUND" : "❌ MISSING");
 
-// ✅ Firebase Decode + Init
+// 🔐 Firebase Admin Setup (base64-encoded key in Render)
 const admin = require("firebase-admin");
 const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
@@ -29,12 +29,10 @@ try {
   const base64Key = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64;
   const decodedKey = Buffer.from(base64Key, "base64").toString("utf-8");
   const firebaseConfig = JSON.parse(decodedKey);
-
   admin.initializeApp({
     credential: cert(firebaseConfig),
   });
-
-  console.log("🔥 Firebase initialized successfully");
+  console.log("✅ Firebase initialized successfully");
 } catch (err) {
   console.error("❌ Failed to decode Firebase key or initialize Firebase:", err);
 }

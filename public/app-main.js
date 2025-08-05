@@ -2,7 +2,7 @@
 const solanaWeb3 = window.solanaWeb3;
 
 // 🚀 Crimzn Consult - Full Logic (Wallet, Firebase, Helius, Bot, PulseIt)
-document.addEventListener("DOMContentLoaded", async () => {x
+document.addEventListener("DOMContentLoaded", async () => {
   // 🎯 DOM Elements
   const connectBtn = document.getElementById("connectWalletBtn");
   const disconnectBtn = document.getElementById("disconnectWalletBtn");

@@ -199,6 +199,14 @@ app.post("/pulse", async (req, res) => {
 app.use(express.json());
 app.use(cors());
 app.use(helmet());
+app.use(
+  helmet.contentSecurityPolicy({
+    useDefaults: true,
+    directives: {
+      "script-src": ["'self'", "https://unpkg.com"],
+    },
+  })
+);
 app.use(rateLimit({
   windowMs: 60 * 1000,
   max: 100,

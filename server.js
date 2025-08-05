@@ -228,3 +228,14 @@ app.listen(PORT, () => {
 });
 
 // 🛠️ No-op change to force rebuild v=crimznAug05v1
+
+// 📈 Live Prices API
+app.get("/livePrices", async (req, res) => {
+  try {
+    const result = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
+    const data = await result.json();
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: "Failed to load prices" });
+  }
+});

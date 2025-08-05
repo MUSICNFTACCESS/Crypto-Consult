@@ -220,3 +220,5 @@ app.listen(PORT, () => {
   console.log("🧠 CrimznBot + PulseIt + SaveProfile + Firebase booted ✅");
   console.log("⚡ Built by Crimzn, powered by Solana + Helius");
 });
+// 🔁 No-op change to force rebuild Mon Aug 5 2025
+

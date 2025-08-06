@@ -201,33 +201,34 @@ app.post("/save-profile", async (req, res) => {
 });
 
 // 📊 PulseIt: GPT-4o Sentiment Analyzer with Emojis + Reasoning
-app.post("/pulse-it", async (req, res) => {
+app.post("/pulseit", async (req, res) => {
   const { text } = req.body;
   if (!text) return res.send("❌ Missing input.");
 
-  try {
-    const s = new sentiment();
-    const result = s.analyze(text);
-    let vibe = "😐 Neutral ⚪";
-    if (result.score > 2) vibe = "📈 Bullish 🟢";
-    else if (result.score < -2) vibe = "📉 Bearish 🔴";
+  const sentiment = new Sentiment();
+  const result = sentiment.analyze(text);
 
+  let vibe = "🟢 Bullish 🚀";
+  if (result.score < 0) vibe = "🔴 Bearish 🧨";
+  else if (result.score === 0) vibe = "🟡 Neutral 🤔";
+
+  try {
     const gptReply = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are PulseIt, a crypto market sentiment analyst. Based on the score and message, respond in 1 sentence explaining the sentiment."
+            content: "You are PulseIt, a crypto market sentiment analyst. Based on the score and message, respond in 1 sentence explaining the sentiment.",
           },
           {
             role: "user",
-            content: `Sentiment text: "${text}"\nRaw score: ${result.score}`
+            content: `Sentiment text: "${text}"\nRaw score: ${result.score}`,
           },
         ],
       }),

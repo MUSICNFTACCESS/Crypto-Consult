@@ -1,171 +1,164 @@
-console.log("🚀 Crimzn Consult v=crimznAug05v2 loaded at", new Date().toISOString());
+// ✅ Crimzn Consult - app-main.js Full Patch (Aug 6)
+// Fixes: save-profile route, hasPaid sync, PulseIt, wallet connect, emoji fix
 
-// 🚀 Crimzn Consult - Full Logic (Wallet, Firebase, Helius, Bot, PulseIt)
 document.addEventListener("DOMContentLoaded", async () => {
-  // 🎯 DOM Elements
   const connectBtn = document.getElementById("connectWalletBtn");
   const disconnectBtn = document.getElementById("disconnectWalletBtn");
-  const saveProfileBtn = document.getElementById("saveProfileBtn");
+  const saveBtn = document.getElementById("saveProfileBtn");
   const askBtn = document.getElementById("askCrimznBtn");
-  const responseBox = document.getElementById("response-box");
+  const pulseBtn = document.getElementById("pulseBtn");
+  const solanaPayBtn = document.getElementById("solana-pay-btn");
+
   const nameInput = document.getElementById("name");
   const emailInput = document.getElementById("email");
-  const solanaPayBtn = document.getElementById("solana-pay-btn");
-  const pulseBtn = document.getElementById("pulseBtn");
+  const userInput = document.getElementById("user-input");
+  const responseBox = document.getElementById("response-box");
   const pulseInput = document.getElementById("pulseInput");
   const pulseResult = document.getElementById("pulseResult");
   const walletStatus = document.getElementById("walletStatus");
-  const paywall = document.getElementById("paywall");
 
-  const openModalBtn = document.getElementById("openProfileModal");
-  const closeModalBtn = document.getElementById("closeProfileModal");
-  const profileModal = document.getElementById("profileModal");
+  let connectedWallet = null;
 
-// ✅ Force-hide profile modal on first load
-profileModal.classList.add("hidden");
-
-// 🎯 Modal open/close
-openModalBtn.onclick = () => {
-  profileModal.classList.remove("hidden");
-};
-closeModalBtn.onclick = () => {
-  profileModal.classList.add("hidden");
-};
-
-  // 📈 Live Prices (BTC, ETH, SOL)
-  try {
-    const res = await fetch("/livePrices");
-    const data = await res.json();
-    document.getElementById("livePrices").innerHTML = `
-      BTC: $${data.bitcoin.usd}<br>
-      ETH: $${data.ethereum.usd}<br>
-      SOL: $${data.solana.usd}
-    `;
-  } catch (e) {
-    document.getElementById("livePrices").innerText = "⚠️ Error loading prices.";
-  }
-
-  // 🔌 Connect Wallet
-  connectBtn.onclick = async () => {
-    try {
-      const resp = await window.solana.connect();
-      connectedWallet = resp.publicKey.toString();
-      walletStatus.innerText = `✅ Connected: ${connectedWallet.slice(0, 4)}...${connectedWallet.slice(-4)}`;
-      connectBtn.classList.add("hidden");
-      disconnectBtn.classList.remove("hidden");
-    } catch (e) {
-      alert("❌ Wallet connection failed.");
-    }
-  };
-
-  // ❌ Disconnect Wallet
-  disconnectBtn.onclick = () => {
-    connectedWallet = null;
-    walletStatus.innerText = "⚠️ Not connected";
-    connectBtn.classList.remove("hidden");
-    disconnectBtn.classList.add("hidden");
-  };
-
-  // 📝 Firebase - Save Profile
-  saveProfileBtn.onclick = async () => {
-    const profile = {
-      name: nameInput.value || "Anonymous",
-      email: emailInput.value || "not provided",
-      wallet: connectedWallet || "not connected",
+  // ✅ Wallet Connect
+  if (window.solana && window.solana.isPhantom) {
+    connectBtn.onclick = async () => {
+      try {
+        const resp = await window.solana.connect();
+        connectedWallet = resp.publicKey.toString();
+        localStorage.setItem("wallet", connectedWallet);
+        walletStatus.innerText = `🔌 Connected: ${connectedWallet.slice(0, 4)}...`;
+        connectBtn.classList.add("hidden");
+        disconnectBtn.classList.remove("hidden");
+      } catch (e) {
+        alert("❌ Wallet connection failed.");
+      }
     };
 
-    try {
-      await fetch("/save-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profile),
-      });
-      alert("✅ Profile saved.");
-      profileModal.classList.add("hidden");
-    } catch {
-      alert("❌ Failed to save profile.");
+    disconnectBtn.onclick = () => {
+      connectedWallet = null;
+      localStorage.removeItem("wallet");
+      walletStatus.innerText = "🔌 Not connected";
+      connectBtn.classList.remove("hidden");
+      disconnectBtn.classList.add("hidden");
+    };
+
+    const savedWallet = localStorage.getItem("wallet");
+    if (savedWallet) {
+      try {
+        const resp = await window.solana.connect({ onlyIfTrusted: true });
+        connectedWallet = resp.publicKey.toString();
+        walletStatus.innerText = `🔌 Connected: ${connectedWallet.slice(0, 4)}...`;
+        connectBtn.classList.add("hidden");
+        disconnectBtn.classList.remove("hidden");
+      } catch (err) {
+        console.warn("Auto-connect failed.");
+      }
     }
-  };
+  } else {
+    alert("👻 Phantom Wallet not found. Please install it.");
+  }
 
-let questionCount = parseInt(localStorage.getItem("questionCount")) || 0;
-let hasPaid = localStorage.getItem("hasPaid") === "true";
-
-  // 🤖 CrimznBot - Ask Question
+  // ✅ Ask CrimznBot
   askBtn.onclick = async () => {
-    const prompt = document.getElementById("user-input").value.trim();
-    if (!prompt) return;
-
-    if (!hasPaid && questionCount >= 3) {
-      paywall.classList.remove("hidden");
-      responseBox.innerText = "🔒 You've reached your limit. Please unlock.";
+    const prompt = userInput.value.trim();
+    const hasPaid = localStorage.getItem("hasPaid") === "true";
+    if (!prompt || !connectedWallet) {
+      responseBox.innerText = "⚠️ Enter a question and connect wallet.";
       return;
     }
 
-    responseBox.innerText = "🧠 CrimznBot thinking...";
     try {
       const res = await fetch("/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, wallet: connectedWallet, hasPaid })
       });
-      const data = await res.json();
-      responseBox.innerText = "🟢 " + data.response;
 
-      questionCount++;
-      localStorage.setItem("questionCount", questionCount);
-
-      if (questionCount === 3 && !hasPaid) {
-        paywall.classList.remove("hidden");
-        solanaPayBtn.classList.remove("hidden");
-      }
+      const answer = await res.text();
+      responseBox.innerText = answer;
     } catch {
-      responseBox.innerText = "❌ Error getting response.";
+      responseBox.innerText = "❌ Failed to get a response.";
     }
+
+    userInput.value = "";
+    responseBox.scrollIntoView({ behavior: "smooth" });
   };
 
-  // 💸 Solana Pay + Helius - Unlock Access
-  solanaPayBtn.onclick = async () => {
-    if (!connectedWallet) return alert("Connect wallet first!");
-
-    try {
-      const res = await fetch("/verify-payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wallet: connectedWallet }),
-      });
-      const data = await res.json();
-      if (data.hasPaid) {
-        localStorage.setItem("hasPaid", "true");
-        solanaPayBtn.classList.add("hidden");
-        paywall.classList.add("hidden");
-        responseBox.innerText = "✅ Access Unlocked!";
-      } else {
-        alert("❌ Payment not detected yet.");
-      }
-    } catch {
-      alert("❌ Error verifying payment.");
-    }
-  };
-
-  // 📊 PulseIt - Sentiment Analyzer
+  // ✅ PulseIt Sentiment
   pulseBtn.onclick = async () => {
     const input = pulseInput.value.trim();
     if (!input) return;
+
     pulseResult.innerText = "🧠 Analyzing...";
     try {
       const res = await fetch("/pulse-it", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: input }),
+        body: JSON.stringify({ text: input })
       });
       const json = await res.json();
-      pulseResult.innerText = `📊 Sentiment: ${json.result}`;
+      pulseResult.innerText = `🧠 Sentiment: ${json.result}`;
     } catch {
-      pulseResult.innerText = "⚠️ Error analyzing sentiment.";
+      pulseResult.innerText = "❌ Error analyzing sentiment.";
+    }
+
+    pulseInput.value = "";
+    pulseResult.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // ✅ Save Profile
+  saveBtn.onclick = async () => {
+    if (!connectedWallet) return alert("⚠️ Connect your wallet first.");
+    const profile = {
+      wallet: connectedWallet,
+      name: nameInput.value || "Anonymous",
+      email: emailInput.value || "not provided"
+    };
+
+    try {
+      const res = await fetch("/save-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile)
+      });
+
+      const result = await res.text();
+      alert(result);
+    } catch {
+      alert("❌ Failed to save profile.");
     }
   };
 
-  // 🔁 Reset input after ask
-  document.getElementById("user-input").value = "";
-  responseBox.scrollIntoView({ behavior: "smooth" });
+  // ✅ Unlock CrimznBot
+  solanaPayBtn.onclick = async () => {
+    if (!connectedWallet) return alert("⚠️ Connect your wallet first.");
+
+    try {
+      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+      const sender = new solanaWeb3.PublicKey(connectedWallet);
+      const receiver = new solanaWeb3.PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
+
+      const transaction = new solanaWeb3.Transaction().add(
+        solanaWeb3.SystemProgram.transfer({
+          fromPubkey: sender,
+          toPubkey: receiver,
+          lamports: 25000000
+        })
+      );
+
+      transaction.feePayer = sender;
+      transaction.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
+      const signed = await window.solana.signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(signature);
+
+      alert("✅ CrimznBot unlocked!");
+      localStorage.setItem("hasPaid", "true");
+      solanaPayBtn.classList.add("hidden");
+      document.getElementById("paywall").classList.add("hidden");
+    } catch (err) {
+      console.error("❌ Unlock failed:", err);
+      alert("❌ Unlock failed. Try again.");
+    }
+  };
 });

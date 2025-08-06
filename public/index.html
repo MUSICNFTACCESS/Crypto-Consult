@@ -8,80 +8,82 @@
   <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
 </head>
 <body>
+
   <h1>🧠 CryptoConsult by Crimzn</h1>
 
-<!-- 💼 Services Offered -->
-<h2>💼 Services Offered</h2>
-<ul>
-  <li>🛠️ Software as a Service (SaaS)</li>
-  <li>🔐 Wallet Setup & Security</li>
-  <li>📊 Technical Analysis & Market Insights</li>
-  <li>🚀 Token Launch Guidance</li>
-  <li>📚 Educational Sessions & Onboarding</li>
-  <li>🧠 Strategy Calls & Portfolio Reviews</li>
-</ul>
+  <!-- 📋 Services Offered -->
+  <h2>💼 Services Offered</h2>
+  <ul>
+    <li>🚀 Software as a Service (SaaS)</li>
+    <li>🔐 Wallet Setup & Security</li>
+    <li>📊 Technical Analysis & Market Insights</li>
+    <li>📈 Token Launch Guidance</li>
+    <li>🎓 Educational Sessions & Onboarding</li>
+    <li>📞 Strategy Calls & Portfolio Reviews</li>
+  </ul>
 
-  <!-- 🔌 Wallet -->
+  <!-- 🟣 Wallet -->
   <button id="connectWalletBtn" class="solana-button">🟣 Connect Wallet</button>
   <button id="disconnectWalletBtn" class="solana-button hidden">❌ Disconnect</button>
   <p id="walletStatus" style="color: lime">🔌 Not connected</p>
 
-  <!-- 🔓 Open Modal Button -->
-  <button id="openModalBtn" class="solana-button">💾 Save My Profile (for future rewards)</button>
+  <!-- 🔓 Save Profile -->
+  <button id="openProfileModal" class="solana-button">💾 Save My Profile (for future rewards)</button>
 
-  <!-- 🧾 Profile Modal -->
+  <!-- 🔐 Profile Modal -->
   <div id="profileModal" class="modal hidden">
     <div class="modal-content">
       <span id="closeProfileModal" class="close-button">❌</span>
-      <h2>🎉 Save Your Profile</h2>
-      <input id="name" type="text" placeholder="Name (optional)" /><br/>
-      <input id="email" type="email" placeholder="Email (optional)" /><br/>
+      <h3>Save Profile</h3>
+      <input id="name" placeholder="Name (optional)" /><br />
+      <input id="email" placeholder="Email (optional)" /><br />
       <button id="saveProfileBtn" class="solana-button">💾 Save to Firebase</button>
     </div>
   </div>
 
-  <!-- 📈 Live Prices -->
+  <!-- 💸 Paywall -->
+  <div id="paywall" class="hidden" style="margin-top: 20px;">
+    <p>🔒 You’ve used your 3 free questions — please unlock CrimznBot to continue.</p>
+    <button id="solana-pay-btn" class="solana-button hidden">🔓 Unlock with 0.025 SOL</button>
+  </div>
+
+  <!-- 📉 Live Prices -->
   <h2>📈 Live Prices</h2>
-  <p><span id="price-btc" class="orange-font wm-gt bold">Loading...</span></p>
+  <p id="livePrices" class="orange-font wm-gt bold">Loading...</p>
 
   <!-- 🤖 CrimznBot -->
   <h2>🤖 Ask CrimznBot – Ask Anything...</h2>
-  <input id="questionInput" placeholder="e.g. What's BTC doing?" />
+  <input id="user-input" type="text" placeholder="e.g. What's BTC doing?" />
   <button id="askCrimznBtn" class="solana-button">📤 Send</button>
   <div id="response-box" class="response-box"></div>
 
-  <!-- 🔓 Paywall -->
-  <div id="paywall" class="hidden" style="margin-top: 20px;">
-    <p>🔐 You’ve used your 3 free questions — please unlock CrimznBot to continue.</p>
-    <button id="unlockWithSolBtn" class="solana-button hidden">💰 Unlock with 0.025 SOL</button>
-  </div>
-
-  <!-- 🧠 PulseIt - Sentiment Analyzer -->
+  <!-- 💬 PulseIt -->
   <h2>🧠 PulseIt - Sentiment Analyzer</h2>
   <input id="pulseInput" placeholder="Type a topic like 'ETF' or 'war'" />
   <button id="pulseBtn" class="solana-button">🔍 Analyze</button>
-  <div id="pulseOutput" class="response-box"></div>
+  <div id="pulseResult" class="pulse-result"></div>
 
-  <!-- 🌍 Explore -->
-  <h2>🌍 Explore</h2>
+  <!-- 🌐 Explore -->
+  <h2>🔎 Explore</h2>
   <a href="radar.html" class="solana-button">📊 Market Cycle Radar</a>
-  <a href="whitepaper.html" class="solana-button">📜 Read the Whitepaper</a>
+  <a href="whitepaper.html" class="solana-button">📄 Read the Whitepaper</a>
   <a href="faq.html" class="solana-button">❓ FAQ</a>
-  <a href="sponsor.html" class="solana-button">🤝 Become a Sponsor</a>
+  <a href="sponsor.html" class="solana-button">💰 Become a Sponsor</a>
 
+  <!-- 📞 Contact -->
+  <h2>📨 Contact</h2>
+  <p>
+    <a href="mailto:crimzncipriano@gmail.com" class="solana-button">✉️ Email Me</a>
+    <a href="https://t.me/CrimznBot" class="solana-button" target="_blank">🗨️ Telegram @CrimznBot</a>
+    <a href="https://discord.com/users/CrimznBot" class="solana-button" target="_blank">🟣 Discord</a>
+    <a href="https://x.com/crimzn" class="solana-button" target="_blank">❌ X (Twitter) @crimzn</a>
+  </p>
 
-<!-- 📬 Contact -->
-<h2>📬 Contact</h2>
-<p>
-  <a href="mailto:crimzncipriano@gmail.com" class="solana-button">📧 Email Me</a>
-  <a href="https://t.me/CrimznBot" class="solana-button" target="_blank">💬 Telegram @CrimznBot</a>
-  <a href="https://discord.com/users/CrimznBot" class="solana-button" target="_blank">👾 Discord @CrimznBot</a>
-  <a href="https://x.com/crimzn" class="solana-button" target="_blank">🐦 X (Twitter) @crimzn</a>
-</p>
-  <h2 style="color: #00ffff;">© 2025 by <strong>🧠 CrimznBot</strong></h2>
+  <!-- ⚡ Footer -->
+  <p style="color: #00ffff;">© 2025 by <strong>💬 CrimznBot</strong></p>
   <p>🚀 Built by Crimzn — powered by Solana & Helius</p>
 
-<!-- 🧠 Load CrimznApp -->
-<script type="module" src="app-main.js?v=crimznAug05v6"></script>
+  <!-- 🧠 Load CrimznApp -->
+  <script type="module" src="app-main.js?v=crimznAug05v6"></script>
 </body>
 </html>

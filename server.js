@@ -154,7 +154,7 @@ app.post("/save-profile", async (req, res) => {
 });
 
 // 📊 PulseIt: GPT-4o Sentiment Analyzer with Emojis + Reasoning
-app.post("/pulse", async (req, res) => {
+app.post("/pulse-it", async (req, res) => {
   const { text } = req.body;
   if (!text) return res.send("❌ Missing input.");
 
@@ -230,26 +230,26 @@ app.use(
   })
 );
 
-// 🚀 Start Server
-app.listen(PORT, () => {
-  console.log("🔥 Server running on port", PORT);
-  console.log("🧠 CrimznBot + PulseIt + SaveProfile + Firebase booted ✅");
-  console.log("⚡ Built by Crimzn, powered by Solana + Helius");
-});
-
-// 🛠️ No-op change to force rebuild v=crimznAug05v1
-
-// 📈 Live Prices API
+// ✅ Live Prices Route
 app.get("/livePrices", async (req, res) => {
   try {
     const result = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
     const data = await result.json();
-    res.json(data);
-  } catch (e) {
-    res.status(500).json({ error: "Failed to load prices" });
+    res.json(data); // ✅ This sends the data to the frontend
+  } catch (err) {
+    console.error("Error fetching prices:", err);
+    res.status(500).json({ error: "Failed to fetch prices" });
   }
 });
 
+// 🔄 Wildcard route to serve frontend for unmatched paths
 app.get("*", (req, res) => {
-res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// 🚀 Start Server — must be last!
+app.listen(PORT, () => {
+  console.log("🔥 Server running on port", PORT);
+  console.log("🧠 CrimznBot + PulseIt + SaveProfile + Firebase booted ✅");
+  console.log("⚡ Built by Crimzn, powered by Solana + Helius");
 });

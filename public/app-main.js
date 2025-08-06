@@ -1,3 +1,4 @@
+console.log("🧠 Crimzn Consult v=crimznAug06v1 loaded", new Date().toISOString());
 // ✅ Crimzn Consult - app-main.js Full Patch (Aug 6)
 // Fixes: save-profile route, hasPaid sync, PulseIt, wallet connect, emoji fix
 

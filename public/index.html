@@ -10,22 +10,33 @@
 <body>
   <h1>🧠 CryptoConsult by Crimzn</h1>
 
+<!-- 💼 Services Offered -->
+<h2>💼 Services Offered</h2>
+<ul>
+  <li>🛠️ Software as a Service (SaaS)</li>
+  <li>🔐 Wallet Setup & Security</li>
+  <li>📊 Technical Analysis & Market Insights</li>
+  <li>🚀 Token Launch Guidance</li>
+  <li>📚 Educational Sessions & Onboarding</li>
+  <li>🧠 Strategy Calls & Portfolio Reviews</li>
+</ul>
+
   <!-- 🔌 Wallet -->
   <button id="connectWalletBtn" class="solana-button">🟣 Connect Wallet</button>
   <button id="disconnectWalletBtn" class="solana-button hidden">❌ Disconnect</button>
   <p id="walletStatus" style="color: lime">🔌 Not connected</p>
 
-  <!-- 💾 Save Profile Trigger -->
-  <button id="saveProfileBtn" class="solana-button">💾 Save My Profile (for future rewards)</button>
+  <!-- 🔓 Open Modal Button -->
+  <button id="openModalBtn" class="solana-button">💾 Save My Profile (for future rewards)</button>
 
   <!-- 🧾 Profile Modal -->
   <div id="profileModal" class="modal hidden">
     <div class="modal-content">
-      <span class="close-button" id="closeProfileModal">❌</span>
-      <h2>📝 Save My Profile</h2>
-      <input id="name" placeholder="Name (optional)" /><br/>
-      <input id="email" placeholder="Email (optional)" /><br/>
-      <button id="saveToFirebaseBtn" class="solana-button">💾 Save to Firebase</button>
+      <span id="closeProfileModal" class="close-button">❌</span>
+      <h2>🎉 Save Your Profile</h2>
+      <input id="name" type="text" placeholder="Name (optional)" /><br/>
+      <input id="email" type="email" placeholder="Email (optional)" /><br/>
+      <button id="saveProfileBtn" class="solana-button">💾 Save to Firebase</button>
     </div>
   </div>
 
@@ -58,22 +69,19 @@
   <a href="faq.html" class="solana-button">❓ FAQ</a>
   <a href="sponsor.html" class="solana-button">🤝 Become a Sponsor</a>
 
-  <!-- 📬 Contact -->
-  <h2>📬 Contact</h2>
-  <p><strong>@CrimznBot</strong> on Telegram</p>
-  <p><a href="mailto:crimzncipriano@gmail.com" class="solana-button">📧 Email Me</a></p>
 
-  <hr />
+<!-- 📬 Contact -->
+<h2>📬 Contact</h2>
+<p>
+  <a href="mailto:crimzncipriano@gmail.com" class="solana-button">📧 Email Me</a>
+  <a href="https://t.me/CrimznBot" class="solana-button" target="_blank">💬 Telegram @CrimznBot</a>
+  <a href="https://discord.com/users/CrimznBot" class="solana-button" target="_blank">👾 Discord @CrimznBot</a>
+  <a href="https://x.com/crimzn" class="solana-button" target="_blank">🐦 X (Twitter) @crimzn</a>
+</p>
   <h2 style="color: #00ffff;">© 2025 by <strong>🧠 CrimznBot</strong></h2>
   <p>🚀 Built by Crimzn — powered by Solana & Helius</p>
 
-  <!-- 🧠 Load CrimznApp -->
-<link rel="stylesheet" href="style.css?v=crimznAug05v5" />
+<!-- 🧠 Load CrimznApp -->
 <script type="module" src="app-main.js?v=crimznAug05v5"></script>
-</body>
-</html>
-  <!-- 🧠 Load CrimznApp -->
-  <script type="module" src="app-main.js?v=crimznAug05v5"></script>
-  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
 </body>
 </html>

@@ -25,22 +25,62 @@ const admin = require("firebase-admin");
 const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 
-try {
-  const base64Key = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64;
-  const decodedKey = Buffer.from(base64Key, "base64").toString("utf-8");
-  const firebaseConfig = JSON.parse(decodedKey);
-  admin.initializeApp({
-    credential: cert(firebaseConfig),
-  });
-  console.log("✅ Firebase initialized successfully");
-} catch (err) {
-  console.error("❌ Failed to decode Firebase key or initialize Firebase:", err);
-}
+const base64Key = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64;
+const decodedKey = Buffer.from(base64Key, "base64").toString("utf-8");
+
+console.log("🔍 Decoded Firebase Key Preview:\n", decodedKey.slice(0, 500));
+
+const firebaseConfig = JSON.parse(decodedKey);
+admin.initializeApp({ credential: cert(firebaseConfig) });
+const db = getFirestore();
 
 // ⚙️ App Init
 const app = express();
+app.use(cors());
+app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 const PORT = process.env.PORT || 3000;
+
+// 🧱 Middleware
+app.use(helmet());
+app.use(rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
+app.use(
+  helmet.contentSecurityPolicy({
+    useDefaults: true,
+    directives: {
+      "default-src": ["'self'"],
+      "script-src": [
+        "'self'",
+        "'unsafe-inline'",
+        "https://unpkg.com",
+        "https://s3.tradingview.com",
+        "https://www.tradingview.com",
+        "https://commerce.coinbase.com",
+        "https://www.paypal.com",
+        "https://www.paypalobjects.com"
+      ],
+      "frame-src": [
+        "https://s.tradingview.com",
+        "https://www.tradingview.com",
+        "https://commerce.coinbase.com",
+        "https://www.paypal.com"
+      ],
+      "style-src": [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com"
+      ],
+      "font-src": [
+        "https://fonts.gstatic.com"
+      ]
+    }
+  })
+);
 
 // 🔓 Usage Tracking
 const walletUsage = {};
@@ -115,7 +155,7 @@ app.post("/ask", async (req, res) => {
           {
             role: "system",
             content:
-              "You are CrimznBot, a strategic, no-fluff crypto consultant. You give clear, insightful answers like a market-savvy degen who’s also a professional. Stick to facts, use short paragraphs, bold key terms, and reference real crypto concepts. Never say you're an AI.",
+              "You are CrimznBot, a strategic, no-fluff crypto consultant. You give clear, insightful answers like a market-savvy degen who’s also a professional. Keep it sharp, accurate, and helpful — avoid filler, stay laser-focused on crypto, trading, and strategy."
           },
           {
             role: "user",
@@ -125,9 +165,17 @@ app.post("/ask", async (req, res) => {
       }),
     });
 
-    const json = await reply.json();
-    const answer = json.choices?.[0]?.message?.content || "🤖 CrimznBot didn’t have a clean read on that.";
-    res.send(answer);
+    const aiData = await reply.json();
+    const answer = aiData.choices?.[0]?.message?.content || "🤖 CrimznBot didn’t have a clean read on that.";
+
+    const escapeHTML = (str) =>
+      str.replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+
+    res.send(escapeHTML(answer));
   } catch (err) {
     console.error("🛑 CrimznBot error:", err.message);
     res.send("❌ Something went wrong. Try again in a bit.");
@@ -140,7 +188,7 @@ app.post("/save-profile", async (req, res) => {
   if (!wallet) return res.status(400).send("❌ Wallet is required.");
 
   try {
-    await db.collection("users").doc(wallet).set({
+    await db.collection("profiles").doc(wallet).set({
       wallet,
       name: name || "",
       email: email || "",
@@ -161,9 +209,9 @@ app.post("/pulse-it", async (req, res) => {
   try {
     const s = new sentiment();
     const result = s.analyze(text);
-    let vibe = "😐 Neutral";
-    if (result.score > 2) vibe = "📈 Bullish";
-    else if (result.score < -2) vibe = "📉 Bearish";
+    let vibe = "😐 Neutral ⚪";
+    if (result.score > 2) vibe = "📈 Bullish 🟢";
+    else if (result.score < -2) vibe = "📉 Bearish 🔴";
 
     const gptReply = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -176,12 +224,12 @@ app.post("/pulse-it", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: "You are PulseIt, a crypto market sentiment analyst. Based on the score and message, respond in 1 sentence explaining the sentiment. Always include the correct emoji — 📈 for Bullish, 📉 for Bearish, 😐 for Neutral — and explain why in plain English.",
+            content: "You are PulseIt, a crypto market sentiment analyst. Based on the score and message, respond in 1 sentence explaining the sentiment."
           },
           {
             role: "user",
             content: `Sentiment text: "${text}"\nRaw score: ${result.score}`
-          }
+          },
         ],
       }),
     });
@@ -196,46 +244,12 @@ app.post("/pulse-it", async (req, res) => {
   }
 });
 
-// 🧱 Middleware
-app.use(
-  helmet.contentSecurityPolicy({
-    useDefaults: true,
-    directives: {
-      "default-src": ["'self'"],
-      "script-src": [
-        "'self'",
-        "'unsafe-inline'",
-        "https://unpkg.com",
-        "https://s3.tradingview.com",
-        "https://www.tradingview.com",
-        "https://commerce.coinbase.com",
-        "https://www.paypal.com",
-        "https://www.paypalobjects.com"
-      ],
-      "frame-src": [
-        "https://s.tradingview.com",
-        "https://www.tradingview.com",
-        "https://commerce.coinbase.com",
-        "https://www.paypal.com"
-      ],
-      "style-src": [
-        "'self'",
-        "'unsafe-inline'",
-        "https://fonts.googleapis.com"
-      ],
-      "font-src": [
-        "https://fonts.gstatic.com"
-      ]
-    }
-  })
-);
-
 // ✅ Live Prices Route
 app.get("/livePrices", async (req, res) => {
   try {
     const result = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
     const data = await result.json();
-    res.json(data); // ✅ This sends the data to the frontend
+    res.json(data);
   } catch (err) {
     console.error("Error fetching prices:", err);
     res.status(500).json({ error: "Failed to fetch prices" });

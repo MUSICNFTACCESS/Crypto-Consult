@@ -28,7 +28,6 @@ const { getFirestore } = require("firebase-admin/firestore");
 const base64Key = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64;
 const decodedKey = Buffer.from(base64Key, "base64").toString("utf-8");
 
-console.log("🔍 Decoded Firebase Key Preview:\n", decodedKey.slice(0, 500));
 
 const firebaseConfig = JSON.parse(decodedKey);
 admin.initializeApp({ credential: cert(firebaseConfig) });

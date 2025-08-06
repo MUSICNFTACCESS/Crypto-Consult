@@ -1,4 +1,4 @@
-/* 🌑 Global Styles */
+/* 🌐 Global Styles */
 body {
   background-color: #000;
   color: #f0f0f0;
@@ -8,7 +8,7 @@ body {
   padding: 20px;
 }
 
-/* 🔘 Solana-style Button */
+/* 🟣 Solana-style Button */
 .solana-button {
   background-color: #512da8;
   color: white;
@@ -21,51 +21,52 @@ body {
   transition: background-color 0.2s ease;
   font-family: monospace;
 }
+
 .solana-button:hover {
-  background-color: #7e57c2;
+  background-color: #6757c2;
 }
 
-/* ❌ Utility Classes */
+/* 🛠️ Utility Classes */
 .hidden {
   display: none !important;
-  display: none;
 }
 
-/* 🧾 Modal Styles */
-.modal {
+/* 🪟 Modal Styles */
+#modal {
   display: flex;
   justify-content: center;
   align-items: center;
-  position: fixed;
   z-index: 9999;
-  left: 0;
+  position: fixed;
   top: 0;
-  width: 100%;
+  left: 0;
   height: 100%;
+  width: 100%;
   background-color: rgba(0, 0, 0, 0.75);
 }
+
 .modal-content {
   background-color: #1e1e1e;
-  color: #fff;
-  padding: 20px;
   border-radius: 12px;
   width: 90%;
   max-width: 400px;
   box-shadow: 0 0 12px #00ffcc;
   text-align: center;
 }
+
 .modal-content input {
   padding: 8px;
-  width: 90%;
-  margin: 5px 0;
+  width: 95%;
   border-radius: 6px;
   border: none;
   background: #333;
   color: #fff;
 }
+
 .modal-content button {
   margin-top: 10px;
 }
+
 .close {
   color: #fff;
   float: right;
@@ -74,57 +75,58 @@ body {
   cursor: pointer;
 }
 
-/* 🧠 CrimznBot Response Box */
-.response-box {
+/* 🤖 CrimznBot Response Box */
+#response-box {
   background-color: #111;
-  color: #0f0;
   padding: 10px;
   margin-top: 10px;
-  border-radius: 8px;
-  font-family: monospace;
+  color: #00ff99;
+  font-family: Courier, monospace;
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
-  word-wrap: break-word;
+  border: 1px solid #333;
   white-space: pre-wrap;
 }
 
-/* 💡 Paywall Box */
+/* 🔓 Paywall */
 #paywall {
   text-align: center;
   background-color: #220000;
-  color: #ffcc00;
   padding: 15px;
+  color: #fff;
   border: 2px dashed #ffcc00;
-  border-radius: 8px;
   max-width: 600px;
   margin: 20px auto;
 }
 
-/* 📉 PulseIt Result */
+/* 🧠 PulseIt Result */
 #pulseResult {
-  font-weight: bold;
   margin-top: 10px;
+  color: #00ff99;
+  font-family: Courier, monospace;
+  white-space: pre-wrap;
 }
 
-/* 📈 Live Prices Section */
+/* 📊 Live Prices Section */
 #livePrices {
   font-size: 14px;
   margin-bottom: 20px;
 }
 
-/* 🧭 Explore + Contact Buttons */
+/* 🔗 Explore + Contact Buttons */
 a.solana-button {
   text-decoration: none;
   display: inline-block;
 }
 
-/* 🦾 Footer */
+/* 🔚 Footer */
 footer {
   margin-top: 30px;
   font-size: 12px;
   color: #ccc;
 }
+
 footer strong {
   color: #00ffff;
 }

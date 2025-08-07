@@ -1,15 +1,12 @@
-console.log("🧠 Crimzn Consult v=crimznAug06v1 loaded", new Date().toISOString());
-// ✅ Crimzn Consult - app-main.js Full Patch (Aug 6)
-// Fixes: save-profile route, hasPaid sync, PulseIt, wallet connect, emoji fix
+console.log("🧠 Crimzn Consult v=crimznAug07v2 loaded", new Date().toISOString());
+// ✅ Crimzn Consult - app-main.js Full Patch (Aug 7, 2025)
+// Fixes: saveProfileBtn error, askBtn scope, PulseIt sync, modal logic
 
 document.addEventListener("DOMContentLoaded", async () => {
   const connectBtn = document.getElementById("connectWalletBtn");
   const disconnectBtn = document.getElementById("disconnectWalletBtn");
   const saveBtn = document.getElementById("saveProfileBtn");
-  document.getElementById("profileModal").classList.remove("hidden");
-  document.getElementById("profileModal").classList.remove("hidden");
-const askBtn = document.getElementById("askBtn");
-});
+  const askBtn = document.getElementById("askBtn");
   const pulseBtn = document.getElementById("pulseBtn");
   const solanaPayBtn = document.getElementById("solana-pay-btn");
 
@@ -20,7 +17,9 @@ const askBtn = document.getElementById("askBtn");
   const pulseInput = document.getElementById("pulseInput");
   const pulseResult = document.getElementById("pulseResult");
   const walletStatus = document.getElementById("walletStatus");
+
   let connectedWallet = null;
+});
 
   // ✅ Wallet Connect
   if (window.solana && window.solana.isPhantom) {

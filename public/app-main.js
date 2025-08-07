@@ -167,7 +167,6 @@ saveBtn.addEventListener("click", () => {
       alert("❌ Unlock failed. Try again.");
     }
   };
-});
 
 // 🪟 Modal Open/Close Logic
 const openModalBtn = document.getElementById("openProfileModal");

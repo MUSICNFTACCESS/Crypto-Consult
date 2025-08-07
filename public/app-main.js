@@ -150,6 +150,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const answer = await res.text();
       responseBox.innerText = answer;
+  // 👇 Show paywall when free tier is exhausted
+
+  if (typeof answer === "string" && answer.includes("3 free questions used")) {
+
+    const paywall = document.getElementById("paywall");
+
+    if (paywall) paywall.classList.remove("hidden");
+
+    const unlockBtn = document.getElementById("solana-pay-btn");
+
+    if (unlockBtn) unlockBtn.classList.remove("hidden");
+
+  }
     } catch {
       responseBox.innerText = "❌ Failed to get a response.";
     }

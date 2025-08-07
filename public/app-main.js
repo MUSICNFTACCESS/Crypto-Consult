@@ -168,3 +168,18 @@ saveBtn.addEventListener("click", () => {
     }
   };
 });
+
+// 🪟 Modal Open/Close Logic
+const openModalBtn = document.getElementById("openProfileModal");
+const closeModalBtn = document.getElementById("closeProfileModal");
+const modal = document.getElementById("profileModal");
+
+if (openModalBtn && closeModalBtn && modal) {
+  openModalBtn.addEventListener("click", () => {
+    modal.classList.remove("hidden");
+  });
+
+  closeModalBtn.addEventListener("click", () => {
+    modal.classList.add("hidden");
+  });
+}

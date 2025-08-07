@@ -8,6 +8,11 @@
   <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
 </head>
 <body>
+  <div id="priceBar" style="display:flex;gap:12px;padding:8px 12px;background:#111;color:#0f0;font-family:monospace;">
+    <span>BTC: <strong id="btcPrice">--</strong></span>
+    <span>ETH: <strong id="ethPrice">--</strong></span>
+    <span>SOL: <strong id="solPrice">--</strong></span>
+  </div>
 <button id="askBtn" class="solana-button">Ask CrimznBot</button>
 
   <h1>🧠 CryptoConsult by Crimzn</h1>
@@ -85,6 +90,6 @@
   <p>🚀 Built by Crimzn — powered by Solana & Helius</p>
 
   <!-- 🧠 Load CrimznApp -->
-<script type="module" src="app-main.js?v=crimznAug07v2"></script>
+<script defer src="app-main.js"></script>
 </body>
 </html>

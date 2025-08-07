@@ -165,7 +165,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     pulseResult.innerText = "🧠 Analyzing...";
     try {
-      const res = await fetch("/pulse-it", {
+      const res = await fetch("/pulseit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: input }),
@@ -199,7 +199,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadPrices() {
     try {
       const res = await fetch(
-        "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd"
+        "/livePrices"
       );
       const data = await res.json();
 

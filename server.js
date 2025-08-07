@@ -212,64 +212,152 @@ app.post("/save-profile", async (req, res) => {
   }
 });
 
-// 📊 PulseIt: GPT-4o Sentiment Analyzer with Emojis + Reasoning
+// ====== Live Prices Route (server-side proxy to CoinGecko) ======
+app.get("/livePrices", async (req, res) => {
+  try {
+    // ✅ FIX: add lightweight cache + user-agent header to reduce CoinGecko rate-limit failures
+    if (!global.__PRICE_CACHE__) {
+      global.__PRICE_CACHE__ = { data: null, ts: 0 };
+    }
+    const now = Date.now();
+    if (global.__PRICE_CACHE__.data && (now - global.__PRICE_CACHE__.ts) < 60_000) {
+      return res.json(global.__PRICE_CACHE__.data);
+    }
+
+    const r = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd",
+      {
+        headers: {
+          "accept": "application/json",
+          "user-agent": "CrimznConsult/1.0", // ✅ FIX: helps avoid some public API blocks
+        },
+      }
+    );
+    if (!r.ok) throw new Error(`CoinGecko HTTP ${r.status}`);
+    const data = await r.json();
+
+    // ✅ FIX: cache the successful response for 60s
+    global.__PRICE_CACHE__ = { data, ts: now };
+
+    res.json(data);
+  } catch (err) {
+    console.error("Error fetching prices:", err.message);
+    res.status(502).json({ error: "Failed to fetch prices" }); // unchanged response shape
+  }
+});
+
+
+// ====== ONE PulseIt route (GPT-4o with local fallback) ======
 app.post("/pulseit", async (req, res) => {
-  const { text } = req.body;
-  if (!text) return res.status(400).send("❌ Missing text");
+  const { text } = req.body || {};
+
+  // ✅ FIX: stricter empty-text guard
+  if (!text || typeof text !== "string" || !text.trim()) {
+    return res.status(400).json({ error: "❌ Missing text." });
+  }
+
+  // map score to readable vibe (unchanged)
+  const vibeMap = {
+    2: "very bullish",
+    1: "bullish",
+    0: "neutral",
+    "-1": "bearish",
+    "-2": "very bearish",
+  };
+
+  const emojiFor = (s) =>
+    s >= 2 ? "🚀" :
+    s === 1 ? "🟢" :
+    s === 0 ? "⚪️" :
+    s === -1 ? "🔻" :
+    "⛔️";
 
   try {
-    const vibeMap = {
-      "very positive": "🚀 Extremely Bullish",
-      "positive": "📈 Bullish",
-      "neutral": "🤔 Neutral",
-      "negative": "📉 Bearish",
-      "very negative": "💀 Extremely Bearish",
+    // --- OpenAI (preferred) ---
+    const payload = {
+      model: "gpt-4o", // or "gpt-4o-mini" if you prefer
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are PulseIt, a crypto market sentiment analyst. Return a JSON object with: score (-2..2) and explanation (short).",
+        },
+        {
+          role: "user",
+          content: `Analyze the sentiment of this text for crypto price action: "${text}".`,
+        },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
     };
 
-    const pulsePrompt = `You are PulseIt, a crypto market sentiment analyst. Based on the score and message, respond in 1 sentence explaining the sentiment.`;
-
-    const gptResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: pulsePrompt },
-          { role: "user", content: `Message: "${text}"` },
-        ],
-      }),
+      body: JSON.stringify(payload),
     });
 
-    const json = await gptResponse.json();
-    const explanation = json.choices?.[0]?.message?.content?.trim() || "🤖 No explanation.";
-    const score = explanation.includes("bull") || explanation.includes("🚀") ? 2
-                : explanation.includes("bear") || explanation.includes("💀") ? -2
-                : 0;
-    const vibe = score > 1 ? vibeMap["very positive"]
-               : score > 0 ? vibeMap["positive"]
-               : score < -1 ? vibeMap["very negative"]
-               : score < 0 ? vibeMap["negative"]
-               : vibeMap["neutral"];
+    if (!aiRes.ok) throw new Error(`OpenAI HTTP ${aiRes.status}`);
 
-    res.send(`🧠 PulseIt Score: ${score} → ${vibe}\n💬 ${explanation}`);
-  } catch (e) {
-    console.error("⚠️ PulseIt error:", e.message);
-    res.status(500).send("❌ PulseIt failed.");
-  }
-});
+    const aiData = await aiRes.json();
 
-// ✅ Live Prices Route
-app.get("/livePrices", async (req, res) => {
-  try {
-    const result = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
-    const data = await result.json();
-    res.json(data);
+    // ✅ FIX: safer extraction of content + strict JSON parse
+    const content =
+      aiData?.choices?.[0]?.message?.content ??
+      aiData?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments ??
+      "{}";
+
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      throw new Error("OpenAI invalid JSON content");
+    }
+
+    // ✅ FIX: score normalization and type safety
+    let score = Number.parseInt(parsed.score, 10);
+    if (Number.isNaN(score)) throw new Error("OpenAI score missing");
+    score = Math.max(-2, Math.min(2, score));
+
+    const response = {
+      score,
+      vibe: vibeMap[score],
+      emoji: emojiFor(score),
+      explanation: parsed.explanation || "",
+      model: "gpt-4o",
+    };
+
+    return res.json(response);
   } catch (err) {
-    console.error("Error fetching prices:", err);
-    res.status(500).json({ error: "Failed to fetch prices" });
+    console.warn("⚠️ OpenAI failed, falling back to local sentiment:", err.message);
+
+    // --- Fallback: local 'sentiment' package ---
+    try {
+      const Sentiment = require("sentiment");
+      const pulse = new Sentiment();
+      const result = pulse.analyze(text);
+
+      // ✅ FIX: simple heuristic to -2..2 (unchanged behavior)
+      const s =
+        result.score > 3 ? 2 :
+        result.score > 0 ? 1 :
+        result.score === 0 ? 0 :
+        result.score > -3 ? -1 : -2;
+
+      return res.json({
+        score: s,
+        vibe: vibeMap[s],
+        emoji: emojiFor(s),
+        explanation: "Local fallback sentiment.",
+        model: "sentiment-local",
+      });
+    } catch (e2) {
+      console.error("❌ PulseIt fallback also failed:", e2.message);
+      return res.status(500).json({ error: "PulseIt failed." });
+    }
   }
 });
 
@@ -283,25 +371,4 @@ app.listen(PORT, () => {
   console.log("🔥 Server running on port", PORT);
   console.log("🧠 CrimznBot + PulseIt + SaveProfile + Firebase booted ✅");
   console.log("⚡ Built by Crimzn, powered by Solana + Helius");
-});
-// 🧠 PulseIt Sentiment Analysis API
-app.post("/pulse-it", async (req, res) => {
-  const { text } = req.body;
-  if (!text) return res.send("❌ Missing text.");
-
-  try {
-    const analysis = new sentiment();
-    const result = analysis.analyze(text);
-
-    const score = result.score;
-    let emoji = "🤔 Neutral";
-    if (score > 0) emoji = "🚀 Positive";
-    else if (score < 0) emoji = "🔻 Negative";
-
-    console.log(`🧠 PulseIt Score: ${score} → ${emoji}`);
-    res.send(`🧠 PulseIt Score: ${score} → ${emoji}\\n💬 ${result.comparative >= 0.5 ? "The sentiment is highly positive" : "The sentiment is neutral or mixed"}, as indicated by: "${text}"`);
-  } catch (e) {
-    console.error("❌ PulseIt Error:", e.message);
-    res.status(500).send("❌ PulseIt analysis failed.");
-  }
 });

@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const saveBtn = document.getElementById("saveProfileBtn");
   document.getElementById("profileModal").classList.remove("hidden");
   document.getElementById("profileModal").classList.remove("hidden");
+const askBtn = document.getElementById("askBtn");
 });
   const pulseBtn = document.getElementById("pulseBtn");
   const solanaPayBtn = document.getElementById("solana-pay-btn");

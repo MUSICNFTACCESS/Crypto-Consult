@@ -283,3 +283,24 @@ app.listen(PORT, () => {
   console.log("🧠 CrimznBot + PulseIt + SaveProfile + Firebase booted ✅");
   console.log("⚡ Built by Crimzn, powered by Solana + Helius");
 });
+// 🧠 PulseIt Sentiment Analysis API
+app.post("/pulse-it", async (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.send("❌ Missing text.");
+
+  try {
+    const analysis = new sentiment();
+    const result = analysis.analyze(text);
+
+    const score = result.score;
+    let emoji = "🤔 Neutral";
+    if (score > 0) emoji = "🚀 Positive";
+    else if (score < 0) emoji = "🔻 Negative";
+
+    console.log(`🧠 PulseIt Score: ${score} → ${emoji}`);
+    res.send(`🧠 PulseIt Score: ${score} → ${emoji}\\n💬 ${result.comparative >= 0.5 ? "The sentiment is highly positive" : "The sentiment is neutral or mixed"}, as indicated by: "${text}"`);
+  } catch (e) {
+    console.error("❌ PulseIt Error:", e.message);
+    res.status(500).send("❌ PulseIt analysis failed.");
+  }
+});

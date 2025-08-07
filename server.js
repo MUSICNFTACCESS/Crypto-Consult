@@ -22,16 +22,27 @@ console.log("🧠 OPENAI_API_KEY:", process.env.OPENAI_API_KEY ? "FOUND" : "❌ 
 
 // 🔐 Firebase Admin Setup (base64-encoded key in Render)
 const admin = require("firebase-admin");
-const { initializeApp, cert } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
 
-const base64Key = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64;
-const decodedKey = Buffer.from(base64Key, "base64").toString("utf-8");
+let serviceAccount;
+try {
+  const decodedKey = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64, "base64").toString("utf-8");
+  serviceAccount = JSON.parse(decodedKey);
+} catch (e) {
+  console.error("❌ Error parsing Firebase key:", e.message);
+}
 
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+    console.log("✅ Firebase Admin initialized");
+  } catch (e) {
+    console.error("❌ Firebase Admin init failed:", e.message);
+  }
+}
 
-const firebaseConfig = JSON.parse(decodedKey);
-admin.initializeApp({ credential: cert(firebaseConfig) });
-const db = getFirestore();
+const db = admin.firestore();
 
 // ⚙️ App Init
 const app = express();
@@ -203,17 +214,20 @@ app.post("/save-profile", async (req, res) => {
 // 📊 PulseIt: GPT-4o Sentiment Analyzer with Emojis + Reasoning
 app.post("/pulseit", async (req, res) => {
   const { text } = req.body;
-  if (!text) return res.send("❌ Missing input.");
-
-  const sentiment = new Sentiment();
-  const result = sentiment.analyze(text);
-
-  let vibe = "🟢 Bullish 🚀";
-  if (result.score < 0) vibe = "🔴 Bearish 🧨";
-  else if (result.score === 0) vibe = "🟡 Neutral 🤔";
+  if (!text) return res.status(400).send("❌ Missing text");
 
   try {
-    const gptReply = await fetch("https://api.openai.com/v1/chat/completions", {
+    const vibeMap = {
+      "very positive": "🚀 Extremely Bullish",
+      "positive": "📈 Bullish",
+      "neutral": "🤔 Neutral",
+      "negative": "📉 Bearish",
+      "very negative": "💀 Extremely Bearish",
+    };
+
+    const pulsePrompt = `You are PulseIt, a crypto market sentiment analyst. Based on the score and message, respond in 1 sentence explaining the sentiment.`;
+
+    const gptResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -222,25 +236,27 @@ app.post("/pulseit", async (req, res) => {
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
-          {
-            role: "system",
-            content: "You are PulseIt, a crypto market sentiment analyst. Based on the score and message, respond in 1 sentence explaining the sentiment.",
-          },
-          {
-            role: "user",
-            content: `Sentiment text: "${text}"\nRaw score: ${result.score}`,
-          },
+          { role: "system", content: pulsePrompt },
+          { role: "user", content: `Message: "${text}"` },
         ],
       }),
     });
 
-    const gptData = await gptReply.json();
-    const explanation = gptData.choices?.[0]?.message?.content?.trim() || "No additional insight.";
+    const json = await gptResponse.json();
+    const explanation = json.choices?.[0]?.message?.content?.trim() || "🤖 No explanation.";
+    const score = explanation.includes("bull") || explanation.includes("🚀") ? 2
+                : explanation.includes("bear") || explanation.includes("💀") ? -2
+                : 0;
+    const vibe = score > 1 ? vibeMap["very positive"]
+               : score > 0 ? vibeMap["positive"]
+               : score < -1 ? vibeMap["very negative"]
+               : score < 0 ? vibeMap["negative"]
+               : vibeMap["neutral"];
 
-    res.send(`🧠 PulseIt Score: ${result.score} → ${vibe}\n💬 ${explanation}`);
+    res.send(`🧠 PulseIt Score: ${score} → ${vibe}\n💬 ${explanation}`);
   } catch (e) {
     console.error("⚠️ PulseIt error:", e.message);
-    res.send("❌ Error analyzing sentiment.");
+    res.status(500).send("❌ PulseIt failed.");
   }
 });
 

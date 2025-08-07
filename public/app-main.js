@@ -16,39 +16,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const pulseBtn = document.getElementById("pulseBtn");
   const solanaPayBtn = document.getElementById("solana-pay-btn");
 
-// ✅ Unlock CrimznBot
-solanaPayBtn.onclick = async () => {
-  if (!connectedWallet) return alert("⚠️ Connect your wallet first.");
-
-  try {
-    const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
-    const sender = new solanaWeb3.PublicKey(connectedWallet);
-    const receiver = new solanaWeb3.PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
-
-    const transaction = new solanaWeb3.Transaction().add(
-      solanaWeb3.SystemProgram.transfer({
-        fromPubkey: sender,
-        toPubkey: receiver,
-        lamports: 25000000,
-      })
-    );
-
-    transaction.feePayer = sender;
-    transaction.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
-    const signed = await window.solana.signTransaction(transaction);
-    const signature = await connection.sendRawTransaction(signed.serialize());
-    await connection.confirmTransaction(signature);
-
-    alert("✅ CrimznBot unlocked!");
-    localStorage.setItem("hasPaid", "true");
-    solanaPayBtn.classList.add("hidden");
-    document.getElementById("paywall").classList.add("hidden");
-  } catch (err) {
-    console.error("❌ Unlock failed:", err);
-    alert("❌ Unlock failed. Try again.");
-  }
-};
-
   const nameInput = document.getElementById("name");
   const emailInput = document.getElementById("email");
   const userInput = document.getElementById("user-input");
@@ -59,11 +26,66 @@ solanaPayBtn.onclick = async () => {
 
   let connectedWallet = null;
 
-if (localStorage.getItem("hasPaid") === "true") {
-  document.getElementById("paywall").classList.add("hidden");
-  solanaPayBtn.classList.add("hidden");
-}
-});
+  // ✅ Unlock CrimznBot
+  solanaPayBtn.onclick = async () => {
+    if (!connectedWallet) return alert("⚠️ Connect your wallet first.");
+
+    try {
+      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+      const sender = new solanaWeb3.PublicKey(connectedWallet);
+      const receiver = new solanaWeb3.PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
+
+      const transaction = new solanaWeb3.Transaction().add(
+        solanaWeb3.SystemProgram.transfer({
+          fromPubkey: sender,
+          toPubkey: receiver,
+          lamports: 25000000,
+        })
+      );
+
+      transaction.feePayer = sender;
+      transaction.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
+      const signed = await window.solana.signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(signature);
+
+      alert("✅ CrimznBot unlocked!");
+      localStorage.setItem("hasPaid", "true");
+      solanaPayBtn.classList.add("hidden");
+      document.getElementById("paywall").classList.add("hidden");
+    } catch (err) {
+      console.error("❌ Unlock failed:", err);
+      alert("❌ Unlock failed. Try again.");
+    }
+  };
+
+  // ✅ Save Profile
+  saveBtn.onclick = async () => {
+    if (!connectedWallet) return alert("⚠️ Connect your wallet first.");
+    const profile = {
+      wallet: connectedWallet,
+      name: nameInput.value || "Anonymous",
+      email: emailInput.value || "not provided"
+    };
+
+    try {
+      const res = await fetch("/save-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile)
+      });
+
+      const result = await res.text();
+      alert(result);
+    } catch {
+      alert("❌ Failed to save profile.");
+    }
+  };
+
+  if (localStorage.getItem("hasPaid") === "true") {
+    document.getElementById("paywall").classList.add("hidden");
+    solanaPayBtn.classList.add("hidden");
+  }
 
   // ✅ Wallet Connect
   if (window.solana && window.solana.isPhantom) {
@@ -152,41 +174,34 @@ if (localStorage.getItem("hasPaid") === "true") {
     pulseResult.scrollIntoView({ behavior: "smooth" });
   };
 
-  // ✅ Save Profile
-  saveBtn.onclick = async () => {
-    if (!connectedWallet) return alert("⚠️ Connect your wallet first.");
-    const profile = {
-      wallet: connectedWallet,
-      name: nameInput.value || "Anonymous",
-      email: emailInput.value || "not provided"
-    };
+  // 🪟 Modal Open/Close Logic
+  const openModalBtn = document.getElementById("openProfileModal");
+  const closeModalBtn = document.getElementById("closeProfileModal");
+  const modal = document.getElementById("profileModal");
 
+  if (openModalBtn && closeModalBtn && modal) {
+    openModalBtn.addEventListener("click", () => {
+      modal.classList.remove("hidden");
+    });
+
+    closeModalBtn.addEventListener("click", () => {
+      modal.classList.add("hidden");
+    });
+  }
+
+  // 📈 Load Live Prices
+  async function loadPrices() {
     try {
-      const res = await fetch("/save-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profile)
-      });
-
-      const result = await res.text();
-      alert(result);
+      const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
+      const prices = await res.json();
+      document.getElementById("btc-price").innerText = `$${prices.bitcoin.usd}`;
+      document.getElementById("eth-price").innerText = `$${prices.ethereum.usd}`;
+      document.getElementById("sol-price").innerText = `$${prices.solana.usd}`;
     } catch {
-      alert("❌ Failed to save profile.");
+      console.error("❌ Failed to load prices.");
     }
-  };
+  }
 
-
-// 🪟 Modal Open/Close Logic
-const openModalBtn = document.getElementById("openProfileModal");
-const closeModalBtn = document.getElementById("closeProfileModal");
-const modal = document.getElementById("profileModal");
-
-if (openModalBtn && closeModalBtn && modal) {
-  openModalBtn.addEventListener("click", () => {
-    modal.classList.remove("hidden");
-  });
-
-  closeModalBtn.addEventListener("click", () => {
-    modal.classList.add("hidden");
-  });
-}
+  loadPrices();
+  setInterval(loadPrices, 30000);
+});

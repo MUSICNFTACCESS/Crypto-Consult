@@ -31,9 +31,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!connectedWallet) return alert("⚠️ Connect your wallet first.");
 
     try {
-      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("mainnet-beta"));
+      const connection = new solanaWeb3.Connection(
+        solanaWeb3.clusterApiUrl("mainnet-beta")
+      );
       const sender = new solanaWeb3.PublicKey(connectedWallet);
-      const receiver = new solanaWeb3.PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
+      const receiver = new solanaWeb3.PublicKey(
+        "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF"
+      );
 
       const transaction = new solanaWeb3.Transaction().add(
         solanaWeb3.SystemProgram.transfer({
@@ -62,17 +66,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ✅ Save Profile
   saveBtn.onclick = async () => {
     if (!connectedWallet) return alert("⚠️ Connect your wallet first.");
+
     const profile = {
       wallet: connectedWallet,
       name: nameInput.value || "Anonymous",
-      email: emailInput.value || "not provided"
+      email: emailInput.value || "not provided",
     };
 
     try {
       const res = await fetch("/save-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profile)
+        body: JSON.stringify(profile),
       });
 
       const result = await res.text();
@@ -82,6 +87,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
+  // Hide paywall if already paid
   if (localStorage.getItem("hasPaid") === "true") {
     document.getElementById("paywall").classList.add("hidden");
     solanaPayBtn.classList.add("hidden");
@@ -139,7 +145,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const res = await fetch("/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, wallet: connectedWallet, hasPaid })
+        body: JSON.stringify({ prompt, wallet: connectedWallet, hasPaid }),
       });
 
       const answer = await res.text();
@@ -162,7 +168,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const res = await fetch("/pulse-it", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: input })
+        body: JSON.stringify({ text: input }),
       });
       const json = await res.json();
       pulseResult.innerText = `🧠 Sentiment: ${json.result}`;
@@ -192,16 +198,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 📈 Load Live Prices
   async function loadPrices() {
     try {
-      const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd");
-      const prices = await res.json();
-      document.getElementById("btc-price").innerText = `$${prices.bitcoin.usd}`;
-      document.getElementById("eth-price").innerText = `$${prices.ethereum.usd}`;
-      document.getElementById("sol-price").innerText = `$${prices.solana.usd}`;
-    } catch {
-      console.error("❌ Failed to load prices.");
+      const res = await fetch(
+        "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd"
+      );
+      const data = await res.json();
+
+      const btc = data.bitcoin.usd.toLocaleString();
+      const eth = data.ethereum.usd.toLocaleString();
+      const sol = data.solana.usd.toLocaleString();
+
+      document.getElementById("btcPrice").innerText = `$${btc}`;
+      document.getElementById("ethPrice").innerText = `$${eth}`;
+      document.getElementById("solPrice").innerText = `$${sol}`;
+    } catch (err) {
+      console.warn("⚠️ Failed to load prices (CoinGecko may be rate limiting).");
+      document.getElementById("btcPrice").innerText = "N/A";
+      document.getElementById("ethPrice").innerText = "N/A";
+      document.getElementById("solPrice").innerText = "N/A";
     }
   }
 
-  loadPrices();
-  setInterval(loadPrices, 30000);
-});
+  loadPrices(); // 🔁 Trigger on page load
+}); // ✅ Final closing brace to balance all blocks

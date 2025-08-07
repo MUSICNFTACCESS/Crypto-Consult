@@ -6,6 +6,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const connectBtn = document.getElementById("connectWalletBtn");
   const disconnectBtn = document.getElementById("disconnectWalletBtn");
   const saveBtn = document.getElementById("saveProfileBtn");
+saveBtn.addEventListener("click", () => {
+  document.getElementById("profileModal").classList.remove("hidden");
+});
   const askBtn = document.getElementById("askCrimznBtn");
   const pulseBtn = document.getElementById("pulseBtn");
   const solanaPayBtn = document.getElementById("solana-pay-btn");

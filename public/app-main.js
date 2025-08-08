@@ -27,6 +27,7 @@ if (solanaPayBtn) {
     if (!connectedWallet) return alert("⚠️ Connect your wallet first.");
 
     try {
+      // [UPDATED] Use cluster RPC + modern blockhash/confirm flow
       const connection = new solanaWeb3.Connection(
         solanaWeb3.clusterApiUrl("mainnet-beta")
       );
@@ -43,7 +44,7 @@ if (solanaPayBtn) {
       );
       tx.feePayer = sender;
 
-      // modern blockhash flow
+      // [UPDATED] modern blockhash flow + explicit commitment
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       tx.recentBlockhash = blockhash;
 
@@ -54,7 +55,7 @@ if (solanaPayBtn) {
         "confirmed"
       );
 
-      // Show unlock status immediately in green
+      // [NEW] Show unlocked badge immediately
       const unlockStatusEl = document.getElementById("unlockStatus");
       if (unlockStatusEl) {
         unlockStatusEl.style.display = "block";
@@ -64,19 +65,19 @@ if (solanaPayBtn) {
 
       alert("✅ CrimznBot unlocked!");
       localStorage.setItem("hasPaid", "true");
-      localStorage.removeItem("askedLocal"); // 🔄 RESET local free-question counter
+      localStorage.removeItem("askedLocal"); // reset local free-question counter
       console.log("🔓 Payment confirmed — free question counter reset to 0");
 
       const pw = document.getElementById("paywall");
       if (pw) pw.classList.add("hidden");
       solanaPayBtn.classList.add("hidden");
       document.getElementById("solana-pay-btn")?.classList.add("hidden");
-    } catch (err) { // [FIX] add missing catch block
+    } catch (err) {
       console.error("❌ Unlock failed:", err);
       alert("Unlock failed — transaction not signed/confirmed. Retry or check Phantom.");
-    } // [FIX] closes try/catch
-  }; // [FIX] closes onclick handler
-} // [FIX] closes if (solanaPayBtn)
+    }
+  };
+}
 // ========================= /UNLOCK =========================
 
   // ========================= SAVE PROFILE (unchanged) =========================

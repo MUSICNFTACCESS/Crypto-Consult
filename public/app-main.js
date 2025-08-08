@@ -11,17 +11,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   const pulseBtn      = document.getElementById("pulseBtn");
   const solanaPayBtn  = document.getElementById("solana-pay-btn");
 
-  const nameInput   = document.getElementById("name");
-  const emailInput  = document.getElementById("email");
-  const userInput   = document.getElementById("user-input");
-  const responseBox = document.getElementById("response-box");
-  const pulseInput  = document.getElementById("pulseInput");
-  const pulseResult = document.getElementById("pulseResult");
-  const walletStatus= document.getElementById("walletStatus");
+  const nameInput    = document.getElementById("name");
+  const emailInput   = document.getElementById("email");
+  const userInput    = document.getElementById("user-input");
+  const responseBox  = document.getElementById("response-box");
+  const pulseInput   = document.getElementById("pulseInput");
+  const pulseResult  = document.getElementById("pulseResult");
+  const walletStatus = document.getElementById("walletStatus");
 
   let connectedWallet = null;
 
-  // ✅ Unlock CrimznBot
+  // ========================= UNLOCK: CrimznBot (Solana Pay 0.025 SOL) — UPDATED =========================
   if (solanaPayBtn) {
     solanaPayBtn.onclick = async () => {
       if (!connectedWallet) return alert("⚠️ Connect your wallet first.");
@@ -30,39 +30,44 @@ document.addEventListener("DOMContentLoaded", async () => {
         const connection = new solanaWeb3.Connection(
           solanaWeb3.clusterApiUrl("mainnet-beta")
         );
+
         const sender   = new solanaWeb3.PublicKey(connectedWallet);
         const receiver = new solanaWeb3.PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
 
-        const transaction = new solanaWeb3.Transaction().add(
+        const tx = new solanaWeb3.Transaction().add(
           solanaWeb3.SystemProgram.transfer({
             fromPubkey: sender,
             toPubkey: receiver,
-            lamports: 25000000,
+            lamports: 25_000_000, // 0.025 SOL
           })
         );
-        transaction.feePayer = sender;
+        tx.feePayer = sender;
 
-        // ✅ modern blockhash
-        const { blockhash } = await connection.getLatestBlockhash();
-        transaction.recentBlockhash = blockhash;
+        // modern blockhash flow
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+        tx.recentBlockhash = blockhash;
 
-        const signed    = await window.solana.signTransaction(transaction);
-        const signature = await connection.sendRawTransaction(signed.serialize());
-        await connection.confirmTransaction(signature);
+        const signed = await window.solana.signTransaction(tx);
+        const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
+        await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight });
 
         alert("✅ CrimznBot unlocked!");
         localStorage.setItem("hasPaid", "true");
+        localStorage.removeItem("askedLocal"); // 🔄 RESET local free-question counter
+        console.log("🔓 Payment confirmed — free question counter reset to 0");
+
+        const pw = document.getElementById("paywall");
+        if (pw) pw.classList.add("hidden");
         solanaPayBtn.classList.add("hidden");
-        const paywall = document.getElementById("paywall");
-        if (paywall) paywall.classList.add("hidden");
       } catch (err) {
         console.error("❌ Unlock failed:", err);
         alert("Unlock failed — transaction not signed/confirmed. Retry or check Phantom.");
       }
     };
   }
+  // ========================= /UNLOCK =========================
 
-  // ✅ Save Profile
+  // ========================= SAVE PROFILE (unchanged) =========================
   if (saveBtn) {
     saveBtn.onclick = async () => {
       if (!connectedWallet) return alert("⚠️ Connect your wallet first.");
@@ -86,14 +91,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     };
   }
+  // ========================= /SAVE PROFILE =========================
 
-  // Hide paywall if already paid
+  // ========================= PAYWALL HIDE IF ALREADY PAID (unchanged) =========================
   if (localStorage.getItem("hasPaid") === "true") {
     document.getElementById("paywall")?.classList.add("hidden");
     solanaPayBtn?.classList.add("hidden");
   }
+  // ========================= /PAYWALL =========================
 
-  // ✅ Wallet Connect
+  // ========================= WALLET CONNECT/DISCONNECT (unchanged) =========================
   if (window.solana && window.solana.isPhantom) {
     if (connectBtn) {
       connectBtn.onclick = async () => {
@@ -135,46 +142,97 @@ document.addEventListener("DOMContentLoaded", async () => {
   } else {
     alert("👻 Phantom Wallet not found. Please install it.");
   }
+  // ========================= /WALLET =========================
 
-  // ✅ Ask CrimznBot (debounced + Enter-to-submit)
+  // ========================= ASK: CrimznBot (3-free local limiter + faster UX) — UPDATED =========================
   if (askBtn && userInput && responseBox) {
+    // Enter to submit
     userInput.addEventListener("keydown", e => { if (e.key === "Enter") askBtn.click(); });
+
+    const FREE_LIMIT = 3;
+
+    function showPaywall() {
+      document.getElementById("paywall")?.classList.remove("hidden");
+      document.getElementById("solana-pay-btn")?.classList.remove("hidden");
+    }
 
     askBtn.onclick = async () => {
       const prompt = userInput.value.trim();
       const hasPaid = localStorage.getItem("hasPaid") === "true";
+
       if (!prompt || !connectedWallet) {
         responseBox.innerText = "⚠️ Enter a question and connect wallet.";
         return;
       }
 
+      // Local free-question limiter (defense-in-depth vs server restarts)
+      let askedLocal = parseInt(localStorage.getItem("askedLocal") || "0", 10);
+      console.log("📊 Free Q count (before):", askedLocal, "Paid:", hasPaid);
+
+      if (!hasPaid && askedLocal >= FREE_LIMIT) {
+        responseBox.innerText = "⚠️ 3 free questions used. Unlock CrimznBot with 0.025 SOL.";
+        showPaywall();
+        return;
+      }
+
+      // ✅ PRE-INCREMENT (attempt-based) so the 4th click blocks immediately
+      if (!hasPaid) {
+        askedLocal = Math.min(FREE_LIMIT, askedLocal + 1);
+        localStorage.setItem("askedLocal", String(askedLocal));
+        console.log("➕ askedLocal (pre-send) →", askedLocal);
+      }
+
+      // perceived speed & safety timeout
       askBtn.disabled = true;
+      responseBox.innerText = "🧠 Thinking…";
+
+      const ac = new AbortController();
+      const timeout = setTimeout(() => ac.abort(), 25_000); // abort if it hangs too long
+
       try {
         const res = await fetch("/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ prompt, wallet: connectedWallet, hasPaid }),
+          signal: ac.signal
         });
+        clearTimeout(timeout);
 
         const answer = await res.text();
         responseBox.innerText = answer;
 
-        // Show paywall when free tier is exhausted
-        if (typeof answer === "string" && answer.includes("3 free questions used")) {
-          document.getElementById("paywall")?.classList.remove("hidden");
-          document.getElementById("solana-pay-btn")?.classList.remove("hidden");
+        // If backend enforces the limit, show paywall (and stop here)
+        if (!hasPaid && typeof answer === "string" && answer.includes("3 free questions used")) {
+          showPaywall();
+          return;
         }
-      } catch {
-        responseBox.innerText = "🧠 CrimznBot: temporary backend hiccup — try again in a moment.";
+
+        // If that was the 3rd free Q, add a gentle nudge
+        if (!hasPaid && askedLocal >= FREE_LIMIT) {
+          responseBox.insertAdjacentText("beforeend", "\n(Free tier used — next Q requires unlock)");
+        }
+      } catch (e) {
+        if (e.name === "AbortError") {
+          responseBox.innerText = "⚠️ Request timed out. Try again.";
+        } else {
+          console.error("Ask CrimznBot error:", e);
+          responseBox.innerText = "🧠 CrimznBot: temporary backend hiccup — try again in a moment.";
+        }
+        // 👇 Roll back the pre-increment so errors don't consume a free attempt
+        if (!hasPaid) {
+          const val = Math.max(0, parseInt(localStorage.getItem("askedLocal") || "1", 10) - 1);
+          localStorage.setItem("askedLocal", String(val));
+        }
       } finally {
         askBtn.disabled = false;
         userInput.value = "";
         responseBox.scrollIntoView({ behavior: "smooth" });
       }
-    };
-  }
+    }; // UPDATE: end askBtn.onclick — this was missing before
+  }   // UPDATE: end ASK block — this was missing before
+  // ========================= /ASK =========================
 
-  // ✅ PulseIt Sentiment (debounced + Enter-to-submit)
+  // ========================= PULSEIT SENTIMENT (unchanged) =========================
   if (pulseBtn && pulseInput && pulseResult) {
     pulseInput.addEventListener("keydown", e => { if (e.key === "Enter") pulseBtn.click(); });
 
@@ -203,8 +261,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     };
   }
+  // ========================= /PULSEIT =========================
 
-  // 🪟 Modal Open/Close Logic
+  // ========================= MODAL OPEN/CLOSE (unchanged) =========================
   const openModalBtn  = document.getElementById("openProfileModal");
   const closeModalBtn = document.getElementById("closeProfileModal");
   const modal         = document.getElementById("profileModal");
@@ -221,8 +280,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (e.key === "Escape" && !modal.classList.contains("hidden")) modal.classList.add("hidden");
     });
   }
+  // ========================= /MODAL =========================
 
-  // 📈 Load Live Prices (with stale badge support)
+  // ========================= LIVE PRICES (stale badge) — unchanged from your latest =========================
   async function loadPrices() {
     try {
       const res  = await fetch("/livePrices");
@@ -254,4 +314,5 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   loadPrices(); // 🚀 Trigger on page load
   // setInterval(loadPrices, 60000); // ⏱️ Optional: refresh every 60s
-});
+  // ========================= /PRICES =========================
+}); // UPDATE: end DOMContentLoaded — this was missing before

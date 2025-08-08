@@ -356,7 +356,7 @@ app.post("/pulse", async (req, res) => {
       "-2": "Risk-off language dominates; fear and capitulation vibes."
     };
 
-    return res.json({
+return res.json({
       score,
       vibe,
       emoji,
@@ -373,16 +373,16 @@ app.post("/pulse", async (req, res) => {
       model: "fallback-last"
     });
   }
-}
+});
 
-// 🔄 Wildcard route to serve frontend for unmatched paths
+// Wildcard route to serve frontend for unmatched paths
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // 🚀 Start Server — must be last!
 app.listen(PORT, () => {
-  console.log("🔥 Server running on port", PORT);
-  console.log("🧠 CrimznBot + PulseIt + SaveProfile + Firebase booted ✅");
-  console.log("⚡ Built by Crimzn, powered by Solana + Helius");
+  console.log(`✅ Server running on port`, PORT);
+  console.log(`🤖 CrimznBot + PulseIt + SaveProfile + Firebase booted ✅`);
+  console.log(`⚡ Built by Crimzn, powered by Solana + Helius`);
 });

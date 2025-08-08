@@ -44,41 +44,51 @@ if (solanaPayBtn) {
       );
       tx.feePayer = sender;
 
-      // [UPDATED] modern blockhash flow + explicit commitment
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-      tx.recentBlockhash = blockhash;
+// modern blockhash + explicit commitment + mobile-friendly send
+// make sure the session is live (Phantom mobile can go stale)
+try { await window.solana.connect(); } catch (_) {}
 
-      const signed = await window.solana.signTransaction(tx);
-      const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
-      await connection.confirmTransaction(
-        { signature: sig, blockhash, lastValidBlockHeight },
-        "confirmed"
-      );
+const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+tx.recentBlockhash = blockhash;
+tx.feePayer = sender;
 
-      // [NEW] Show unlocked badge immediately
-      const unlockStatusEl = document.getElementById("unlockStatus");
-      if (unlockStatusEl) {
-        unlockStatusEl.style.display = "block";
-        unlockStatusEl.style.color = "lime";
-        unlockStatusEl.textContent = "✅ CrimznBot Unlocked!";
-      }
+// Prefer Phantom mobile's one-shot API
+const { signature } = await window.solana.signAndSendTransaction(tx, {
+  preflightCommitment: "confirmed",
+});
 
-      alert("✅ CrimznBot unlocked!");
-      localStorage.setItem("hasPaid", "true");
-      localStorage.removeItem("askedLocal"); // reset local free-question counter
-      console.log("🔓 Payment confirmed — free question counter reset to 0");
+// Confirm on chain
+await connection.confirmTransaction(
+  { signature, blockhash, lastValidBlockHeight },
+  "confirmed"
+);
 
-      const pw = document.getElementById("paywall");
-      if (pw) pw.classList.add("hidden");
-      solanaPayBtn.classList.add("hidden");
-      document.getElementById("solana-pay-btn")?.classList.add("hidden");
-    } catch (err) {
-      console.error("❌ Unlock failed:", err);
-      alert("Unlock failed — transaction not signed/confirmed. Retry or check Phantom.");
-    }
-  };
+// Show unlock status immediately in green
+const unlockStatusEl = document.getElementById("unlockStatus");
+if (unlockStatusEl) {
+  unlockStatusEl.style.display = "block";
+  unlockStatusEl.style.color = "lime";
+  unlockStatusEl.textContent = "✅ CrimznBot Unlocked!";
 }
+
+localStorage.setItem("hasPaid", "true");
+localStorage.removeItem("askedLocal"); // reset local free-question counter
+console.log("🔓 Payment confirmed — free question counter reset to 0");
+
+const pw = document.getElementById("paywall");
+if (pw) pw.classList.add("hidden");
+solanaPayBtn.classList.add("hidden");
+document.getElementById("solana-pay-btn")?.classList.add("hidden");
+alert("✅ CrimznBot unlocked!");
+} catch (err) {
+  console.error("❌ Unlock failed:", err);
+  const msg = (err && (err.message || err.toString())) || "Unknown error";
+  alert(`Unlock failed — ${msg}. Retry or check Phantom.`);
+}
+}; // end onclick
+} // end if(solanaPayBtn)
 // ========================= /UNLOCK =========================
+
 
   // ========================= SAVE PROFILE (unchanged) =========================
   if (saveBtn) {

@@ -43,28 +43,34 @@ document.addEventListener("DOMContentLoaded", async () => {
         );
         tx.feePayer = sender;
 
-        // modern blockhash flow
-        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-        tx.recentBlockhash = blockhash;
+// modern blockhash flow
+const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+tx.recentBlockhash = blockhash;
 
-        const signed = await window.solana.signTransaction(tx);
-        const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
-        await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight });
+const signed = await window.solana.signTransaction(tx);
+const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
+await connection.confirmTransaction(
+  { signature: sig, blockhash, lastValidBlockHeight },
+  "confirmed"
+);
 
-        alert("✅ CrimznBot unlocked!");
-        localStorage.setItem("hasPaid", "true");
-        localStorage.removeItem("askedLocal"); // 🔄 RESET local free-question counter
-        console.log("🔓 Payment confirmed — free question counter reset to 0");
+// Show unlock status immediately in green
+const unlockStatusEl = document.getElementById("unlockStatus");
+if (unlockStatusEl) {
+  unlockStatusEl.style.display = "block";
+  unlockStatusEl.style.color = "lime";
+  unlockStatusEl.textContent = "✅ CrimznBot Unlocked!";
+}
 
-        const pw = document.getElementById("paywall");
-        if (pw) pw.classList.add("hidden");
-        solanaPayBtn.classList.add("hidden");
-      } catch (err) {
-        console.error("❌ Unlock failed:", err);
-        alert("Unlock failed — transaction not signed/confirmed. Retry or check Phantom.");
-      }
-    };
-  }
+alert("✅ CrimznBot unlocked!");
+localStorage.setItem("hasPaid", "true");
+localStorage.removeItem("askedLocal"); // 🔄 RESET local free-question counter
+console.log("🔓 Payment confirmed — free question counter reset to 0");
+
+const pw = document.getElementById("paywall");
+if (pw) pw.classList.add("hidden");
+solanaPayBtn.classList.add("hidden");
+document.getElementById("solana-pay-btn")?.classList.add("hidden");
   // ========================= /UNLOCK =========================
 
   // ========================= SAVE PROFILE (unchanged) =========================

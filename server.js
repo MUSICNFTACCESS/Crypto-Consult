@@ -33,9 +33,9 @@ try {
 
 if (!admin.apps.length) {
   try {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
     console.log("✅ Firebase Admin initialized");
   } catch (e) {
     console.error("❌ Firebase Admin init failed:", e.message);
@@ -218,6 +218,7 @@ app.post("/ask", async (req, res) => {
   }
 }
 
+}); // closes app.post("/ask")
 // 👤 Save Profile to Firebase
 app.post("/save-profile", async (req, res) => {
   const { wallet, name, email } = req.body;
@@ -271,7 +272,7 @@ app.get("/livePrices", async (req, res) => {
   }
 });
 
-
+// ======== PULSEIT SENTIMENT ANALYZER (GPT-4o, 🟢🔴⚪) ========
 app.post("/pulse", async (req, res) => {
   const { text } = req.body;
   if (!text || !text.trim()) {
@@ -281,31 +282,21 @@ app.post("/pulse", async (req, res) => {
   if (!process.env.OPENAI_API_KEY) {
     console.error("❌ OPENAI_API_KEY missing for PulseIt.");
     return res.json({
-      score: 0,
       vibe: "Neutral",
-      emoji: "😐",
+      emoji: "⚪",
       explanation: "Sentiment unavailable — server not configured.",
       model: "fallback"
     });
   }
 
   try {
-    const payload = {
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are PulseIt — a crypto sentiment specialist. " +
-            "Your output must be strictly: { 'score': -2..2, 'vibe': 'Bullish/Bearish/Neutral', 'emoji': '📈/📉/😐', 'explanation': '<short reasoning>' }. " +
-            "Determine sentiment from a trader's perspective, using market psychology. " +
-            "Keep explanation to one short sentence. No fluff, no extra text."
-        },
-        { role: "user", content: `Analyze crypto market sentiment for: "${text}"` }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.2
-    };
+const systemPrompt =
+  "You are PulseIt — a crypto sentiment specialist. " +
+  "Analyze the user's text from a trader's perspective using market psychology. " +
+  "Classify the sentiment as Bullish, Bearish, or Neutral and explicitly include that word in your answer, " +
+  "followed by exactly ONE concise sentence explaining WHY. " +
+  "Example: 'Bullish — strong buying interest and positive momentum signals.' " +
+  "No extra commentary beyond the sentiment and reasoning.";
 
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -313,65 +304,63 @@ app.post("/pulse", async (req, res) => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Text: "${text}"` }
+        ],
+        temperature: 0.2
+      })
     });
 
     if (!aiRes.ok) throw new Error(`OpenAI HTTP ${aiRes.status}`);
     const aiData = await aiRes.json();
-    const content = aiData.choices?.[0]?.message?.content || "{}";
-    const parsed = JSON.parse(content);
+    const explanation = (aiData.choices?.[0]?.message?.content || "").trim();
 
-    const score = Math.max(-2, Math.min(2, Number(parsed.score)));
-    res.json({
-      score,
-      vibe: parsed.vibe || "Neutral",
-      emoji: parsed.emoji || "😐",
-      explanation: parsed.explanation || "",
-      model: "gpt-4o-mini"
-    });
+    // Decide emoji + vibe from the explanation text
+    let vibe = "Neutral";
+    let emoji = "⚪";
+    const lower = explanation.toLowerCase();
+    if (lower.includes("bullish")) { vibe = "Bullish"; emoji = "🟢"; }
+    else if (lower.includes("bearish")) { vibe = "Bearish"; emoji = "🔴"; }
 
-} catch (err) {
-  console.error("⚠️ PulseIt failed:", err.message);
-  try {
-    // Local fallback using 'sentiment' library
-    const Sentiment = require("sentiment");
-    const s = new Sentiment();
-    const r = s.analyze(text || "");
+    return res.json({ vibe, emoji, explanation, model: "gpt-4o" });
 
-    // Map to -2..2 scale
-    let score = 0;
-    if (r.score > 3) score = 2;
-    else if (r.score > 0) score = 1;
-    else if (r.score < -3) score = -2;
-    else if (r.score < 0) score = -1;
+  } catch (err) {
+    console.error("⚠️ PulseIt failed:", err.message);
+    try {
+      // Local fallback using 'sentiment'
+      const Sentiment = require("sentiment");
+      const s = new Sentiment();
+      const r = s.analyze(text || "");
 
-    const vibe = score > 0 ? "Bullish" : score < 0 ? "Bearish" : "Neutral";
-    const emoji = score > 0 ? "📈" : score < 0 ? "📉" : "😐";
+      let vibe = "Neutral";
+      let emoji = "⚪";
+      if (r.score > 0) { vibe = "Bullish"; emoji = "🟢"; }
+      else if (r.score < 0) { vibe = "Bearish"; emoji = "🔴"; }
 
-    const reasonMap = {
-      "2":  "Language leans risk-on and confidence is elevated.",
-      "1":  "Tone tilts positive with mild risk appetite.",
-      "0":  "Mixed cues; market likely waits for confirmation.",
-      "-1": "Defensive tone with caution and drawdown concern.",
-      "-2": "Risk-off language dominates; fear and capitulation vibes."
-    };
+      const reasonMap = {
+        Bullish: "Positive language and risk-on intent dominate.",
+        Bearish: "Negative tone and risk-off posture dominate.",
+        Neutral: "Mixed cues with no clear directional bias."
+      };
 
-return res.json({
-      score,
-      vibe,
-      emoji,
-      explanation: reasonMap[String(score)],
-      model: "fallback-local"
-    });
-  } catch (e2) {
-    console.error("PulseIt local fallback failed:", e2.message);
-    return res.json({
-      score: 0,
-      vibe: "Neutral",
-      emoji: "😐",
-      explanation: "Indecisive tone; participants waiting on signal.",
-      model: "fallback-last"
-    });
+      return res.json({
+        vibe,
+        emoji,
+        explanation: reasonMap[vibe],
+        model: "fallback-local"
+      });
+    } catch (e2) {
+      console.error("PulseIt local fallback failed:", e2.message);
+      return res.json({
+        vibe: "Neutral",
+        emoji: "⚪",
+        explanation: "Indecisive tone; participants waiting on signal.",
+model: "fallback-last"
+      });
+    }
   }
 });
 
@@ -382,7 +371,7 @@ app.get("*", (req, res) => {
 
 // 🚀 Start Server — must be last!
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port`, PORT);
-  console.log(`🤖 CrimznBot + PulseIt + SaveProfile + Firebase booted ✅`);
-  console.log(`⚡ Built by Crimzn, powered by Solana + Helius`);
+  console.log("✅ Server running on port", PORT);
+  console.log("🤖 CrimznBot + PulseIt + SaveProfile + Firebase booted ✅");
+  console.log("⚡ Built by Crimzn, powered by Solana + Helius");
 });

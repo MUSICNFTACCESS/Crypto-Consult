@@ -21,57 +21,63 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let connectedWallet = null;
 
-  // ========================= UNLOCK: CrimznBot (Solana Pay 0.025 SOL) — UPDATED =========================
-  if (solanaPayBtn) {
-    solanaPayBtn.onclick = async () => {
-      if (!connectedWallet) return alert("⚠️ Connect your wallet first.");
+// ========================= UNLOCK: CrimznBot (Solana Pay 0.025 SOL) — UPDATED =========================
+if (solanaPayBtn) {
+  solanaPayBtn.onclick = async () => {
+    if (!connectedWallet) return alert("⚠️ Connect your wallet first.");
 
-      try {
-        const connection = new solanaWeb3.Connection(
-          solanaWeb3.clusterApiUrl("mainnet-beta")
-        );
+    try {
+      const connection = new solanaWeb3.Connection(
+        solanaWeb3.clusterApiUrl("mainnet-beta")
+      );
 
-        const sender   = new solanaWeb3.PublicKey(connectedWallet);
-        const receiver = new solanaWeb3.PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
+      const sender   = new solanaWeb3.PublicKey(connectedWallet);
+      const receiver = new solanaWeb3.PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
 
-        const tx = new solanaWeb3.Transaction().add(
-          solanaWeb3.SystemProgram.transfer({
-            fromPubkey: sender,
-            toPubkey: receiver,
-            lamports: 25_000_000, // 0.025 SOL
-          })
-        );
-        tx.feePayer = sender;
+      const tx = new solanaWeb3.Transaction().add(
+        solanaWeb3.SystemProgram.transfer({
+          fromPubkey: sender,
+          toPubkey: receiver,
+          lamports: 25_000_000, // 0.025 SOL
+        })
+      );
+      tx.feePayer = sender;
 
-// modern blockhash flow
-const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-tx.recentBlockhash = blockhash;
+      // modern blockhash flow
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      tx.recentBlockhash = blockhash;
 
-const signed = await window.solana.signTransaction(tx);
-const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
-await connection.confirmTransaction(
-  { signature: sig, blockhash, lastValidBlockHeight },
-  "confirmed"
-);
+      const signed = await window.solana.signTransaction(tx);
+      const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
+      await connection.confirmTransaction(
+        { signature: sig, blockhash, lastValidBlockHeight },
+        "confirmed"
+      );
 
-// Show unlock status immediately in green
-const unlockStatusEl = document.getElementById("unlockStatus");
-if (unlockStatusEl) {
-  unlockStatusEl.style.display = "block";
-  unlockStatusEl.style.color = "lime";
-  unlockStatusEl.textContent = "✅ CrimznBot Unlocked!";
-}
+      // Show unlock status immediately in green
+      const unlockStatusEl = document.getElementById("unlockStatus");
+      if (unlockStatusEl) {
+        unlockStatusEl.style.display = "block";
+        unlockStatusEl.style.color = "lime";
+        unlockStatusEl.textContent = "✅ CrimznBot Unlocked!";
+      }
 
-alert("✅ CrimznBot unlocked!");
-localStorage.setItem("hasPaid", "true");
-localStorage.removeItem("askedLocal"); // 🔄 RESET local free-question counter
-console.log("🔓 Payment confirmed — free question counter reset to 0");
+      alert("✅ CrimznBot unlocked!");
+      localStorage.setItem("hasPaid", "true");
+      localStorage.removeItem("askedLocal"); // 🔄 RESET local free-question counter
+      console.log("🔓 Payment confirmed — free question counter reset to 0");
 
-const pw = document.getElementById("paywall");
-if (pw) pw.classList.add("hidden");
-solanaPayBtn.classList.add("hidden");
-document.getElementById("solana-pay-btn")?.classList.add("hidden");
-  // ========================= /UNLOCK =========================
+      const pw = document.getElementById("paywall");
+      if (pw) pw.classList.add("hidden");
+      solanaPayBtn.classList.add("hidden");
+      document.getElementById("solana-pay-btn")?.classList.add("hidden");
+    } catch (err) { // [FIX] add missing catch block
+      console.error("❌ Unlock failed:", err);
+      alert("Unlock failed — transaction not signed/confirmed. Retry or check Phantom.");
+    } // [FIX] closes try/catch
+  }; // [FIX] closes onclick handler
+} // [FIX] closes if (solanaPayBtn)
+// ========================= /UNLOCK =========================
 
   // ========================= SAVE PROFILE (unchanged) =========================
   if (saveBtn) {

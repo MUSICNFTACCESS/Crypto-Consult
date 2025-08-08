@@ -168,7 +168,7 @@ app.post("/ask", async (req, res) => {
 
     if (!reply.ok) throw new Error(`OpenAI HTTP ${reply.status}`);
     const aiData = await reply.json();
-    const answer = aiData.choices?.[0]?.message?.content || "🧠 CrimznBot: no clean read — trade the levels and wait for confirmation.";
+    const answer = aiData.choices?.[0]?.message?.content || "⚠️ CrimznBot had no response.";
     res.send(answer);
 
 } catch (err) {

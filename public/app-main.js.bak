@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("paywall").classList.add("hidden");
     } catch (err) {
       console.error("❌ Unlock failed:", err);
-      alert("Unlock failed — transaction not signed/confirmed. Retry or check Phantom.");
+      alert("❌ Unlock failed. Try again.");
     }
   };
 

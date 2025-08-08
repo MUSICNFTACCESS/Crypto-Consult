@@ -21,74 +21,79 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let connectedWallet = null;
 
-// ========================= UNLOCK: CrimznBot (Solana Pay 0.025 SOL) — MOBILE-FIRST =========================
-if (solanaPayBtn) {
-  solanaPayBtn.onclick = async () => {
-    if (!connectedWallet) return alert("⚠️ Connect your wallet first.");
+// ========================= UNLOCK: CrimznBot (0.025 SOL) — PHANTOM-MOBILE PROVEN =========================
+solanaPayBtn.onclick = async () => {
+  console.log("[UNLOCK] click");
 
-    try {
-      // Prefer Helius if a key is injected; otherwise fall back to public cluster
-      const rpcUrl = (window.HELIUS_API_KEY)
-        ? `https://mainnet.helius-rpc.com/?api-key=${window.HELIUS_API_KEY}`
-        : solanaWeb3.clusterApiUrl("mainnet-beta");
+  // Require Phantom and force an 'interactive' connect so the approval sheet will show
+  let resp;
+  try {
+    console.log("[UNLOCK] connecting Phantom…");
+    resp = await window.solana.connect();
+    console.log("[UNLOCK] connected", resp?.publicKey?.toString());
+  } catch (e) {
+    console.error("[UNLOCK] connect failed", e);
+    throw e;
+  }
 
-      const connection = new solanaWeb3.Connection(rpcUrl, { commitment: "confirmed" });
+  const pk = resp.publicKey.toString();
+  connectedWallet = pk;
 
-      // Ensure Phantom session is live (mobile sessions can go stale)
-      try { await window.solana.connect({ onlyIfTrusted: true }); } catch (_) {}
+  // Connection (always mainnet for unlock)
+  const connection = new solanaWeb3.Connection(
+    solanaWeb3.clusterApiUrl("mainnet-beta"),
+    { commitment: "confirmed" }
+  );
 
-      const sender   = new solanaWeb3.PublicKey(connectedWallet);
-      const receiver = new solanaWeb3.PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
+  console.log("[UNLOCK] building tx…");
 
-      const tx = new solanaWeb3.Transaction().add(
-        solanaWeb3.SystemProgram.transfer({
-          fromPubkey: sender,
-          toPubkey: receiver,
-          lamports: 25_000_000, // 0.025 SOL
-        })
-      );
-      tx.feePayer = sender;
+  // Build the 0.025 SOL transfer
+  const sender   = new solanaWeb3.PublicKey(pk);
+  const receiver = new solanaWeb3.PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
+  const tx = new solanaWeb3.Transaction().add(
+    solanaWeb3.SystemProgram.transfer({
+      fromPubkey: sender,
+      toPubkey: receiver,
+      lamports: 25_000_000, // 0.025 SOL
+    })
+  );
+  tx.feePayer = sender;
 
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
-      tx.recentBlockhash = blockhash;
+  console.log("[UNLOCK] fetching blockhash…");
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+  tx.recentBlockhash = blockhash;
+  console.log("[UNLOCK] got blockhash", blockhash.slice(0, 6), "lastValid", lastValidBlockHeight);
 
-      let signature;
+  let signature;
+  console.log("[UNLOCK] signing/sending…");
+  if (window.solana.signAndSendTransaction) {
+    const res = await window.solana.signAndSendTransaction(tx, { preflightCommitment: "confirmed" });
+    signature = res.signature;
+    console.log("[UNLOCK] signature", signature);
+  } else {
+    const signed = await window.solana.signTransaction(tx);
+    signature = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
+    console.log("[UNLOCK] signature", signature);
+  }
 
-      // Prefer Phantom's one-shot API (best on mobile / in-app browser)
-      if (window.solana.signAndSendTransaction) {
-        const res = await window.solana.signAndSendTransaction(tx, { preflightCommitment: "confirmed" });
-        signature = res.signature;
-      } else {
-        // Fallback: sign, then send ourselves
-        const signed = await window.solana.signTransaction(tx);
-        signature = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
-      }
+  console.log("[UNLOCK] confirming…");
+  await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
+  console.log("[UNLOCK] confirmed!");
 
-      // Confirm on chain
-      await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
-
-      // UI: show unlocked, persist state
-      const unlockStatusEl = document.getElementById("unlockStatus");
-      if (unlockStatusEl) {
-        unlockStatusEl.style.display = "block";
-        unlockStatusEl.style.color = "lime";
-        unlockStatusEl.textContent = "✅ CrimznBot Unlocked!";
-      }
-
-      localStorage.setItem("hasPaid", "true");
-      localStorage.removeItem("askedLocal");
-      const pw = document.getElementById("paywall");
-      if (pw) pw.classList.add("hidden");
-      solanaPayBtn.classList.add("hidden");
-      document.getElementById("solana-pay-btn")?.classList.add("hidden");
-      alert("✅ CrimznBot unlocked!");
-    } catch (err) {
-      console.error("❌ Unlock failed:", err);
-      const msg = (err && (err.message || err.toString())) || "Unknown error";
-      alert(`Unlock failed — ${msg}. Retry or check Phantom.`);
-    }
-  };
-}
+  // UI + state
+  const unlockStatusEl = document.getElementById("unlockStatus");
+  if (unlockStatusEl) {
+    unlockStatusEl.style.display = "block";
+    unlockStatusEl.style.color = "lime";
+    unlockStatusEl.textContent = "✅ CrimznBot Unlocked!";
+  }
+  localStorage.setItem("hasPaid", "true");
+  localStorage.removeItem("askedLocal");
+  document.getElementById("paywall")?.classList.add("hidden");
+  solanaPayBtn.classList.add("hidden");
+  document.getElementById("solana-pay-btn")?.classList.add("hidden");
+  alert("✅ CrimznBot unlocked!");
+};
 // ========================= /UNLOCK =========================
 
   // ========================= SAVE PROFILE (unchanged) =========================

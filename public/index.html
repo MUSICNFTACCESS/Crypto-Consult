@@ -4,52 +4,59 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CryptoConsult by Crimzn</title>
-  <link rel="stylesheet" href="style.css?v=crimznAug06v1" />
+  <link rel="icon" type="image/png" href="brand.png" />
+  <link rel="stylesheet" href="style.css?v=crimznAug08v1" />
   <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
 </head>
 <body>
-  <div id="priceBar" style="display:flex;gap:12px;padding:8px 12px;background:#111;color:#0f0;font-family:monospace;">
-    <span>BTC: <strong id="btcPrice">--</strong></span>
-    <span>ETH: <strong id="ethPrice">--</strong></span>
-    <span>SOL: <strong id="solPrice">--</strong></span>
+<div id="priceBar" style="display:flex;gap:12px;padding:8px 12px;background:#111;color:#0f0;font-family:monospace;">
+  <span>BTC: <strong id="btcPrice">--</strong></span>
+  <span>ETH: <strong id="ethPrice">--</strong></span>
+  <span>SOL: <strong id="solPrice">--</strong></span>
+  <span id="price-stale" style="font-size:.8em; opacity:.7; margin-left:.5rem; display:none;">(stale)</span>
+</div>
+
+<!-- Brand Image -->
+<div style="text-align:center; margin: 20px 0;">
+  <img src="brand.png" alt="CryptoConsult Brand" style="max-width:300px;width:100%;height:auto;box-shadow:0 0 15px rgba(0,255,170,0.6);border-radius:8px;" />
+</div>
+
+<h1>🧠 CryptoConsult by Crimzn</h1>
+
+<!-- 📋 Services Offered -->
+<h2>💼 Services Offered</h2>
+<ul>
+  <li>🚀 Software as a Service (SaaS)</li>
+  <li>🔐 Wallet Setup & Security</li>
+  <li>📊 Technical Analysis & Market Insights</li>
+  <li>📈 Token Launch Guidance</li>
+  <li>🎓 Educational Sessions & Onboarding</li>
+  <li>📞 Strategy Calls & Portfolio Reviews</li>
+</ul>
+
+<!-- 🟣 Wallet -->
+<button id="connectWalletBtn" class="solana-button">🟣 Connect Wallet</button>
+<button id="disconnectWalletBtn" class="solana-button hidden">❌ Disconnect</button>
+<p id="walletStatus" style="color: lime">🔌 Not connected</p>
+
+<!-- 🔓 Save Profile -->
+<button id="openProfileModal" class="solana-button">💾 Save My Profile (for future rewards)</button>
+
+<!-- 🔐 Profile Modal -->
+<div id="profileModal" class="modal hidden">
+  <div class="modal-content">
+    <span id="closeProfileModal" class="close-button">❌</span>
+    <h3>Save Profile</h3>
+    <input id="name" placeholder="Name (optional)" /><br />
+    <input id="email" placeholder="Email (optional)" /><br />
+    <button id="saveProfileBtn" class="solana-button">💾 Save to Firebase</button>
   </div>
+</div>
 
-  <h1>🧠 CryptoConsult by Crimzn</h1>
-
-  <!-- 📋 Services Offered -->
-  <h2>💼 Services Offered</h2>
-  <ul>
-    <li>🚀 Software as a Service (SaaS)</li>
-    <li>🔐 Wallet Setup & Security</li>
-    <li>📊 Technical Analysis & Market Insights</li>
-    <li>📈 Token Launch Guidance</li>
-    <li>🎓 Educational Sessions & Onboarding</li>
-    <li>📞 Strategy Calls & Portfolio Reviews</li>
-  </ul>
-
-  <!-- 🟣 Wallet -->
-  <button id="connectWalletBtn" class="solana-button">🟣 Connect Wallet</button>
-  <button id="disconnectWalletBtn" class="solana-button hidden">❌ Disconnect</button>
-  <p id="walletStatus" style="color: lime">🔌 Not connected</p>
-
-  <!-- 🔓 Save Profile -->
-  <button id="openProfileModal" class="solana-button">💾 Save My Profile (for future rewards)</button>
-
-  <!-- 🔐 Profile Modal -->
-  <div id="profileModal" class="modal hidden">
-    <div class="modal-content">
-      <span id="closeProfileModal" class="close-button">❌</span>
-      <h3>Save Profile</h3>
-      <input id="name" placeholder="Name (optional)" /><br />
-      <input id="email" placeholder="Email (optional)" /><br />
-      <button id="saveProfileBtn" class="solana-button">💾 Save to Firebase</button>
-    </div>
-  </div>
-
-  <!-- 💸 Paywall -->
-  <div id="paywall" class="hidden" style="margin-top: 20px;">
-    <button id="solana-pay-btn" class="solana-button hidden">🔓 Unlock with 0.025 SOL</button>
-  </div>
+<!-- 💸 Paywall -->
+<div id="paywall" class="hidden" style="margin-top: 20px;">
+  <button id="solana-pay-btn" class="solana-button hidden">🔓 Unlock with 0.025 SOL</button>
+</div>
 
 <!-- 🤖 CrimznBot -->
 <h2>🤖 Ask CrimznBot – Ask Anything...</h2>
@@ -57,33 +64,33 @@
 <button id="askBtn" class="solana-button">📤 Send</button>
 <div id="response-box" class="response-box"></div>
 
-  <!-- 💬 PulseIt -->
-  <h2>🧠 PulseIt - Sentiment Analyzer</h2>
-  <input id="pulseInput" placeholder="Type a topic like 'ETF' or 'war'" />
-  <button id="pulseBtn" class="solana-button">🔍 Analyze</button>
-  <div id="pulseResult" class="pulse-result"></div>
+<!-- 💬 PulseIt -->
+<h2>🧠 PulseIt - Sentiment Analyzer</h2>
+<input id="pulseInput" placeholder="Type a topic like 'ETF' or 'war'" />
+<button id="pulseBtn" class="solana-button">🔍 Analyze</button>
+<div id="pulseResult" class="pulse-result"></div>
 
-  <!-- 🌐 Explore -->
-  <h2>🔎 Explore</h2>
-  <a href="radar.html" class="solana-button">📊 Market Cycle Radar</a>
-  <a href="whitepaper.html" class="solana-button">📄 Read the Whitepaper</a>
-  <a href="faq.html" class="solana-button">❓ FAQ</a>
-  <a href="sponsor.html" class="solana-button">💰 Become a Sponsor</a>
+<!-- 🌐 Explore -->
+<h2>🔎 Explore</h2>
+<a href="radar.html" class="solana-button">📊 Market Cycle Radar</a>
+<a href="whitepaper.html" class="solana-button">📄 Read the Whitepaper</a>
+<a href="faq.html" class="solana-button">❓ FAQ</a>
+<a href="sponsor.html" class="solana-button">💰 Become a Sponsor</a>
 
-  <!-- 📞 Contact -->
-  <h2>📨 Contact</h2>
-  <p>
-    <a href="mailto:crimzncipriano@gmail.com" class="solana-button">✉️ Email Me</a>
-    <a href="https://t.me/CrimznBot" class="solana-button" target="_blank">🗨️ Telegram @CrimznBot</a>
-    <a href="https://discord.com/users/CrimznBot" class="solana-button" target="_blank">🟣 Discord</a>
-    <a href="https://x.com/crimzn" class="solana-button" target="_blank">❌ X (Twitter) @crimzn</a>
-  </p>
+<!-- 📞 Contact -->
+<h2>📨 Contact</h2>
+<p>
+  <a href="mailto:crimzncipriano@gmail.com" class="solana-button">✉️ Email Me</a>
+  <a href="https://t.me/CrimznBot" class="solana-button" target="_blank">🗨️ Telegram @CrimznBot</a>
+  <a href="https://discord.com/users/CrimznBot" class="solana-button" target="_blank">🟣 Discord</a>
+  <a href="https://x.com/crimzn" class="solana-button" target="_blank">❌ X (Twitter) @crimzn</a>
+</p>
 
-  <!-- ⚡ Footer -->
-  <p style="color: #00ffff;">© 2025 by <strong>💬 CrimznBot</strong></p>
-  <p>🚀 Built by Crimzn — powered by Solana & Helius</p>
+<!-- ⚡ Footer -->
+<p style="color: #00ffff;">© 2025 by <strong>💬 CrimznBot</strong></p>
+<p>🚀 Built by Crimzn — powered by Solana & Helius</p>
 
-  <!-- 🧠 Load CrimznApp -->
-<script defer src="app-main.js"></script>
+<!-- 🧠 Load CrimznApp -->
+<script defer src="app-main.js?v=crimznAug08v1"></script>
 </body>
 </html>

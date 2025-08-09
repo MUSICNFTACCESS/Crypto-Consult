@@ -34,7 +34,7 @@ if (solanaPayBtn) {
         try {
           const resp = await (window.phantom?.solana ?? window.solana)?.connect();
           connectedWallet = resp?.publicKey?.toString();
-        } catch {
+        } catch (e) {
           return alert("Connect your wallet first.");
         }
       }
@@ -112,7 +112,7 @@ if (solanaPayBtn) {
         });
         const result = await res.text();
         alert(result);
-      } catch {
+      } catch (e) {
         alert("❌ Failed to save profile.");
       }
     };
@@ -161,7 +161,7 @@ if (solanaPayBtn) {
         if (walletStatus) walletStatus.innerText = `🔌 Connected: ${connectedWallet.slice(0, 4)}...`;
         connectBtn?.classList.add("hidden");
         disconnectBtn?.classList.remove("hidden");
-      } catch {
+      } catch (e) {
         console.warn("Auto-connect failed.");
       }
     }
@@ -253,7 +253,6 @@ if (solanaPayBtn) {
             document.getElementById("payNowInline")?.addEventListener("click", ()=> document.getElementById("solana-pay-btn")?.click());
             return;
           }
-        }
 
         // If that was the 3rd free Q, add a gentle nudge
         if (!hasPaid && askedLocal >= FREE_LIMIT) {

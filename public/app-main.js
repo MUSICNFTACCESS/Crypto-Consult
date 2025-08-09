@@ -1,4 +1,4 @@
-console.log("🧠 Crimzn Consult v=crimznAug08v5 loaded", new Date().toISOString());
+console.log("🧠 Crimzn Consult v=crimznAug08v6 loaded", new Date().toISOString());
 
 // ✅ Crimzn Consult - app-main.js (Aug 8, 2025)
 // Fixes: PulseIt path, stale price badge, debounce buttons, Enter-to-submit, newer Solana blockhash
@@ -212,10 +212,10 @@ if (solanaPayBtn) {
       console.log("📊 Free Q count (before):", askedLocal, "Paid:", hasPaid);
 
       if (!hasPaid && askedLocal >= FREE_LIMIT) {
-        responseBox.innerHTML = "⚠️ 3 free questions used.";
+          responseBox.innerHTML = "<div style=\"margin-top:8px\"><button id=\"payNowInline\" class=\"solana-button\">🔓 Unlock with 0.025 SOL</button><div style=\"font-size:.9em;opacity:.8;margin-top:6px\">3 free questions used.</div></div>";
           document.getElementById("paywall")?.classList.remove("hidden");
           document.getElementById("solana-pay-btn")?.classList.remove("hidden");
-        showPaywall();
+          document.getElementById("payNowInline")?.addEventListener("click", ()=> document.getElementById("solana-pay-btn")?.click());
         return;
       }
 
@@ -246,9 +246,13 @@ if (solanaPayBtn) {
         responseBox.innerText = answer;
 
         // If backend enforces the limit, show paywall (and stop here)
-        if (!hasPaid && typeof answer === "string" && answer.includes("3 free questions used")) {
-          showPaywall();
-          return;
+          if (!hasPaid && typeof answer === "string" && answer.includes("3 free questions used")) {
+            responseBox.innerHTML = "<div style=\"margin-top:8px\"><button id=\"payNowInline\" class=\"solana-button\">🔓 Unlock with 0.025 SOL</button><div style=\"font-size:.9em;opacity:.8;margin-top:6px\">3 free questions used.</div></div>";
+            document.getElementById("paywall")?.classList.remove("hidden");
+            document.getElementById("solana-pay-btn")?.classList.remove("hidden");
+            document.getElementById("payNowInline")?.addEventListener("click", ()=> document.getElementById("solana-pay-btn")?.click());
+            return;
+          }
         }
 
         // If that was the 3rd free Q, add a gentle nudge

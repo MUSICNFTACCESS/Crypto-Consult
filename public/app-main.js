@@ -211,13 +211,19 @@ if (solanaPayBtn) {
       let askedLocal = parseInt(localStorage.getItem(localKey) || "0", 10);
       console.log("📊 Free Q count (before):", askedLocal, "Paid:", hasPaid);
 
-      if (!hasPaid && askedLocal >= FREE_LIMIT) {
-          responseBox.innerHTML = "<div style=\"margin-top:8px\"><button id=\"payNowInline\" class=\"solana-button\">🔓 Unlock with 0.025 SOL</button><div style=\"font-size:.9em;opacity:.8;margin-top:6px\">3 free questions used.</div></div>";
-          showPaywall();
-          document.getElementById("solana-pay-btn")?.classList.remove("hidden");
-          document.getElementById("payNowInline")?.addEventListener("click", ()=> document.getElementById("solana-pay-btn")?.click());
-        return;
-      }
+if (!hasPaid && askedLocal >= FREE_LIMIT) {
+  responseBox.innerHTML = `
+    <div style="margin-top:8px">
+      <button id="payNowInline" class="solana-button">🔓 Unlock with 0.025 SOL</button>
+    </div>
+  `;
+  showPaywall();
+  document.getElementById("solana-pay-btn")?.classList.remove("hidden");
+  document.getElementById("payNowInline")?.addEventListener("click", () => {
+    document.getElementById("solana-pay-btn")?.click();
+  });
+  return;
+}
 
       // ✅ PRE-INCREMENT (attempt-based) so the 4th click blocks immediately
       if (!hasPaid) {
@@ -245,39 +251,21 @@ if (solanaPayBtn) {
         const answer = await res.text();
         responseBox.innerText = answer;
 
-        // If backend enforces the limit, show paywall (and stop here)
-          if (!hasPaid && typeof answer === "string" && answer.includes("3 free questions used")) {
-            responseBox.innerHTML = "<div style=\"margin-top:8px\"><button id=\"payNowInline\" class=\"solana-button\">🔓 Unlock with 0.025 SOL</button><div style=\"font-size:.9em;opacity:.8;margin-top:6px\">3 free questions used.</div></div>";
-            showPaywall();
-            document.getElementById("solana-pay-btn")?.classList.remove("hidden");
-            document.getElementById("payNowInline")?.addEventListener("click", ()=> document.getElementById("solana-pay-btn")?.click());
-            return;
-          }
+// If backend enforces the limit, show paywall (and stop here)
+if (!hasPaid && typeof answer === "string" && answer.includes("3 free questions used")) {
+  responseBox.innerHTML = `
+    <div style="margin-top:8px">
+      <button id="payNowInline" class="solana-button">🔓 Unlock with 0.025 SOL</button>
+    </div>
+  `;
+  showPaywall();
+  document.getElementById("solana-pay-btn")?.classList.remove("hidden");
+  document.getElementById("payNowInline")?.addEventListener("click", () => {
+    document.getElementById("solana-pay-btn")?.click();
+  });
+  return;
+}
 
-        // If that was the 3rd free Q, add a gentle nudge
-        if (!hasPaid && askedLocal >= FREE_LIMIT) {
-          responseBox.insertAdjacentText("beforeend", "\n(Free tier used — next Q requires unlock)");
-        }
-      } catch (e) {
-        if (e.name === "AbortError") {
-          responseBox.innerText = "⚠️ Request timed out. Try again.";
-        } else {
-          console.error("Ask CrimznBot error:", e);
-          responseBox.innerText = "🧠 CrimznBot: temporary backend hiccup — try again in a moment.";
-        }
-        // 👇 Roll back the pre-increment so errors don't consume a free attempt
-        if (!hasPaid) {
-          const val = Math.max(0, parseInt(localStorage.getItem(localKey) || "1", 10) - 1);
-          localStorage.setItem(localKey, String(val));
-        }
-      } finally {
-        askBtn.disabled = false;
-        userInput.value = "";
-        responseBox.scrollIntoView({ behavior: "smooth" });
-      }
-    }; // UPDATE: end askBtn.onclick — this was missing before
-  }   // UPDATE: end ASK block — this was missing before
-  // ========================= /ASK =========================
 
   // ========================= PULSEIT SENTIMENT (unchanged) =========================
   if (pulseBtn && pulseInput && pulseResult) {

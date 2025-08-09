@@ -115,7 +115,7 @@ async function verifyHeliusPayment(wallet) {
 
 // 🧠 CrimznBot: Token Lookup + GPT-4o Crypto Chat (3 Free Questions)
 app.post("/ask", async (req, res) => {
-  const { prompt, wallet, hasPaid } = req.body;
+    const { prompt, wallet } = req.body;
 
   if (!prompt || !wallet) return res.status(400).send("⚠️ Missing prompt or wallet.");
   if (!process.env.OPENAI_API_KEY) {
@@ -123,13 +123,21 @@ app.post("/ask", async (req, res) => {
     return res.status(500).send("🧠 CrimznBot: temporary backend issue — try again shortly.");
   }
 
-  if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
-  if (walletUsage[wallet].count >= 3 && !walletUsage[wallet].hasPaid && !hasPaid) {
+if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
+
+// Server-enforced limit (ignore any client "hasPaid")
+if (!walletUsage[wallet].hasPaid) {
+  if (walletUsage[wallet].count >= 3) {
     const paid = await verifyHeliusPayment(wallet);
-    if (!paid) return res.send("⚠️ 3 free questions used. Unlock CrimznBot with 0.025 SOL.");
+    if (!paid) {
+      return res.send("⚠️ 3 free questions used. Unlock CrimznBot with 0.025 SOL.");
+    }
+    // First verified payment → mark as paid
     walletUsage[wallet].hasPaid = true;
   }
-  walletUsage[wallet].count++;
+}
+
+walletUsage[wallet].count++;
 
   try {
     const tokenAliases = { bitcoin: "bitcoin", eth: "ethereum", ethereum: "ethereum" /* ... */ };

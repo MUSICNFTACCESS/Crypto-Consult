@@ -21,79 +21,67 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let connectedWallet = null;
 
-// ========================= UNLOCK: CrimznBot (0.025 SOL) — PHANTOM-MOBILE PROVEN =========================
-solanaPayBtn.onclick = async () => {
-  console.log("[UNLOCK] click");
 
-  // Require Phantom and force an 'interactive' connect so the approval sheet will show
-  let resp;
-  try {
-    console.log("[UNLOCK] connecting Phantom…");
-    resp = await window.solana.connect();
-    console.log("[UNLOCK] connected", resp?.publicKey?.toString());
-  } catch (e) {
-    console.error("[UNLOCK] connect failed", e);
-    throw e;
-  }
+// ========================= UNLOCK: CrimznBot (0.025 SOL) — MINIMAL FAST FLOW =========================
+if (solanaPayBtn) {
+  solanaPayBtn.onclick = async () => {
+    try {
+      // Always reconnect to make sure Phantom session is fresh
+      const resp = await window.solana.connect();
+      const pk = resp?.publicKey?.toString();
+      if (!pk) throw new Error("Phantom did not return a public key");
+      connectedWallet = pk;
+      localStorage.setItem("wallet", connectedWallet);
 
-  const pk = resp.publicKey.toString();
-  connectedWallet = pk;
+      // Use public RPC
+      const connection = new solanaWeb3.Connection(
+        solanaWeb3.clusterApiUrl("mainnet-beta"),
+        "confirmed"
+      );
 
-  // Connection (always mainnet for unlock)
-  const connection = new solanaWeb3.Connection(
-    solanaWeb3.clusterApiUrl("mainnet-beta"),
-    { commitment: "confirmed" }
-  );
+      // Build TX
+      const sender   = new solanaWeb3.PublicKey(connectedWallet);
+      const receiver = new solanaWeb3.PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
+      const tx = new solanaWeb3.Transaction().add(
+        solanaWeb3.SystemProgram.transfer({
+          fromPubkey: sender,
+          toPubkey: receiver,
+          lamports: 25_000_000, // 0.025 SOL
+        })
+      );
+      tx.feePayer = sender;
 
-  console.log("[UNLOCK] building tx…");
+      // Get recent blockhash
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+      tx.recentBlockhash = blockhash;
 
-  // Build the 0.025 SOL transfer
-  const sender   = new solanaWeb3.PublicKey(pk);
-  const receiver = new solanaWeb3.PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
-  const tx = new solanaWeb3.Transaction().add(
-    solanaWeb3.SystemProgram.transfer({
-      fromPubkey: sender,
-      toPubkey: receiver,
-      lamports: 25_000_000, // 0.025 SOL
-    })
-  );
-  tx.feePayer = sender;
+      // Send TX via Phantom
+      let signature;
+      if (window.solana.signAndSendTransaction) {
+        const res = await window.solana.signAndSendTransaction(tx, { preflightCommitment: "confirmed" });
+        signature = res.signature;
+      } else {
+        const signed = await window.solana.signTransaction(tx);
+        signature = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
+      }
 
-  console.log("[UNLOCK] fetching blockhash…");
-  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
-  tx.recentBlockhash = blockhash;
-  console.log("[UNLOCK] got blockhash", blockhash.slice(0, 6), "lastValid", lastValidBlockHeight);
+      // Confirm
+      await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
 
-  let signature;
-  console.log("[UNLOCK] signing/sending…");
-  if (window.solana.signAndSendTransaction) {
-    const res = await window.solana.signAndSendTransaction(tx, { preflightCommitment: "confirmed" });
-    signature = res.signature;
-    console.log("[UNLOCK] signature", signature);
-  } else {
-    const signed = await window.solana.signTransaction(tx);
-    signature = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
-    console.log("[UNLOCK] signature", signature);
-  }
-
-  console.log("[UNLOCK] confirming…");
-  await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
-  console.log("[UNLOCK] confirmed!");
-
-  // UI + state
-  const unlockStatusEl = document.getElementById("unlockStatus");
-  if (unlockStatusEl) {
-    unlockStatusEl.style.display = "block";
-    unlockStatusEl.style.color = "lime";
-    unlockStatusEl.textContent = "✅ CrimznBot Unlocked!";
-  }
-  localStorage.setItem("hasPaid", "true");
-  localStorage.removeItem("askedLocal");
-  document.getElementById("paywall")?.classList.add("hidden");
-  solanaPayBtn.classList.add("hidden");
-  document.getElementById("solana-pay-btn")?.classList.add("hidden");
-  alert("✅ CrimznBot unlocked!");
-};
+      // Mark unlocked
+      localStorage.setItem("hasPaid", "true");
+      localStorage.removeItem("askedLocal");
+      document.getElementById("paywall")?.classList.add("hidden");
+      solanaPayBtn.classList.add("hidden");
+      document.getElementById("solana-pay-btn")?.classList.add("hidden");
+      document.getElementById("unlockStatus").style.display = "block";
+      document.getElementById("unlockStatus").style.color = "lime";
+      document.getElementById("unlockStatus").textContent = "✅ CrimznBot Unlocked!";
+    } catch (err) {
+      alert(`Unlock failed — ${(err && err.message) || err}`);
+    }
+  };
+}
 // ========================= /UNLOCK =========================
 
   // ========================= SAVE PROFILE (unchanged) =========================

@@ -213,7 +213,7 @@ if (solanaPayBtn) {
 
       if (!hasPaid && askedLocal >= FREE_LIMIT) {
           responseBox.innerHTML = "<div style=\"margin-top:8px\"><button id=\"payNowInline\" class=\"solana-button\">🔓 Unlock with 0.025 SOL</button><div style=\"font-size:.9em;opacity:.8;margin-top:6px\">3 free questions used.</div></div>";
-          document.getElementById("paywall")?.classList.remove("hidden");
+          showPaywall();
           document.getElementById("solana-pay-btn")?.classList.remove("hidden");
           document.getElementById("payNowInline")?.addEventListener("click", ()=> document.getElementById("solana-pay-btn")?.click());
         return;
@@ -248,7 +248,7 @@ if (solanaPayBtn) {
         // If backend enforces the limit, show paywall (and stop here)
           if (!hasPaid && typeof answer === "string" && answer.includes("3 free questions used")) {
             responseBox.innerHTML = "<div style=\"margin-top:8px\"><button id=\"payNowInline\" class=\"solana-button\">🔓 Unlock with 0.025 SOL</button><div style=\"font-size:.9em;opacity:.8;margin-top:6px\">3 free questions used.</div></div>";
-            document.getElementById("paywall")?.classList.remove("hidden");
+            showPaywall();
             document.getElementById("solana-pay-btn")?.classList.remove("hidden");
             document.getElementById("payNowInline")?.addEventListener("click", ()=> document.getElementById("solana-pay-btn")?.click());
             return;

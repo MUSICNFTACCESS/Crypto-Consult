@@ -212,7 +212,9 @@ if (solanaPayBtn) {
       console.log("📊 Free Q count (before):", askedLocal, "Paid:", hasPaid);
 
       if (!hasPaid && askedLocal >= FREE_LIMIT) {
-        responseBox.innerText = "⚠️ 3 free questions used. Unlock CrimznBot with 0.025 SOL.";
+        responseBox.innerHTML = "⚠️ 3 free questions used.";
+          document.getElementById("paywall")?.classList.remove("hidden");
+          document.getElementById("solana-pay-btn")?.classList.remove("hidden");
         showPaywall();
         return;
       }

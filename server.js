@@ -113,9 +113,116 @@ async function verifyHeliusPayment(wallet) {
   }
 }
 
+// ====== Price helpers: static aliases + dynamic CoinGecko resolver + in-memory cache ======
+const tokenMap = {
+  // Tier 1
+  bitcoin: "bitcoin", btc: "bitcoin",
+  ethereum: "ethereum", eth: "ethereum",
+  solana: "solana", sol: "solana",
+  tether: "tether", usdt: "tether",
+  "usd-coin": "usd-coin", usdc: "usd-coin",
+  bnb: "binancecoin", "binance coin": "binancecoin",
+  xrp: "ripple", ripple: "ripple",
+  cardano: "cardano", ada: "cardano",
+  dogecoin: "dogecoin", doge: "dogecoin",
+  tron: "tron", trx: "tron",
+  "the open network": "the-open-network", ton: "the-open-network",
+
+  // Tier 2
+  polkadot: "polkadot", dot: "polkadot",
+  avalanche: "avalanche-2", avax: "avalanche-2",
+  shib: "shiba-inu", shiba: "shiba-inu", "shiba inu": "shiba-inu",
+  chainlink: "chainlink", link: "chainlink",
+  litecoin: "litecoin", ltc: "litecoin",
+  "bitcoin cash": "bitcoin-cash", bch: "bitcoin-cash",
+  matic: "polygon-pos", polygon: "polygon-pos", maticnetwork: "polygon-pos",
+  optimism: "optimism", op: "optimism",
+  arbitrum: "arbitrum", arb: "arbitrum",
+  aptos: "aptos", apt: "aptos",
+  sui: "sui", sui_: "sui",
+  injective: "injective", inj: "injective",
+  near: "near", "near protocol": "near",
+  cosmos: "cosmos", atom: "cosmos",
+  stellar: "stellar", xlm: "stellar",
+  monero: "monero", xmr: "monero",
+  "ethereum classic": "ethereum-classic", etc: "ethereum-classic",
+  filecoin: "filecoin", fil: "filecoin",
+
+  // DeFi / infra
+  aave: "aave",
+  maker: "maker", mkr: "maker",
+  curve: "curve-dao-token", crv: "curve-dao-token",
+  uniswap: "uniswap", uni: "uniswap",
+  lido: "lido-dao", ldo: "lido-dao",
+  dydx: "dydx-chain", "dydx chain": "dydx-chain",
+
+  // Infra / L2 / data
+  starknet: "starknet", strk: "starknet",
+  "the graph": "the-graph", grt: "the-graph",
+  immutable: "immutable", imx: "immutable",
+  arweave: "arweave", ar: "arweave",
+  render: "render", rndr: "render",
+
+  // New/Popular
+  pepe: "pepe",
+  dogwifhat: "dogwifcoin", wif: "dogwifcoin",
+  bonk: "bonk",
+  pyth: "pyth-network",
+  jto: "jito-governance-token",
+  ondo: "ondo-finance",
+  rune: "thorchain",
+  stx: "stacks",
+  sei: "sei-network",
+  tia: "celestia",
+  ftm: "fantom",
+  sand: "the-sandbox",
+  axs: "axie-infinity",
+  ens: "ethereum-name-service",
+};
+
+const tokenIdCache = new Map(); // input -> coingecko id
+
+function normalizeTokenInput(s = "") {
+  return s.toLowerCase().trim().replace(/^[\s$#@]+/, "").replace(/\s+/g, " ");
+}
+
+async function resolveTokenId(inputRaw) {
+  const input = normalizeTokenInput(inputRaw);
+
+  // 1) fast path: static alias
+  if (tokenMap[input]) return tokenMap[input];
+
+  // 2) cache
+  if (tokenIdCache.has(input)) return tokenIdCache.get(input);
+
+  // 3) dynamic lookup via CoinGecko search
+  try {
+    const resp = await fetch(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(input)}`);
+    if (!resp.ok) throw new Error(`CG search ${resp.status}`);
+    const data = await resp.json();
+
+    const coins = Array.isArray(data?.coins) ? data.coins : [];
+    if (!coins.length) return null;
+
+    // Heuristics: exact symbol match > name contains > first
+    const bySymbolExact = coins.find(c => (c.symbol || "").toLowerCase() === input);
+    const byNameContains = coins.find(c => (c.name || "").toLowerCase().includes(input));
+    const pick = bySymbolExact || byNameContains || coins[0];
+
+    if (pick?.id) {
+      tokenIdCache.set(input, pick.id);
+      return pick.id;
+    }
+  } catch (_) {
+    // ignore, fallthrough
+  }
+
+  return null;
+}
+
 // 🧠 CrimznBot: Token Lookup + GPT-4o Crypto Chat (3 Free Questions)
 app.post("/ask", async (req, res) => {
-  const { prompt, wallet, hasPaid } = req.body;
+  const { prompt, wallet } = req.body;
 
   if (!prompt || !wallet) return res.status(400).send("⚠️ Missing prompt or wallet.");
   if (!process.env.OPENAI_API_KEY) {
@@ -123,71 +230,104 @@ app.post("/ask", async (req, res) => {
     return res.status(500).send("🧠 CrimznBot: temporary backend issue — try again shortly.");
   }
 
-  if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
-  if (walletUsage[wallet].count >= 3 && !walletUsage[wallet].hasPaid && !hasPaid) {
+if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
+
+// If not marked paid yet, enforce the 3-free limit server-side only
+if (!walletUsage[wallet].hasPaid) {
+  if (walletUsage[wallet].count >= 3) {
     const paid = await verifyHeliusPayment(wallet);
-    if (!paid) return res.send("⚠️ 3 free questions used. Unlock CrimznBot with 0.025 SOL.");
+    if (!paid) {
+      return res.send("⚠️ 3 free questions used. Unlock CrimznBot with 0.025 SOL.");
+    }
+    // First verified payment → unlock
     walletUsage[wallet].hasPaid = true;
   }
-  walletUsage[wallet].count++;
+}
 
-  try {
-    const tokenAliases = { bitcoin: "bitcoin", eth: "ethereum", ethereum: "ethereum" /* ... */ };
-    const lowerPrompt = prompt.toLowerCase();
-    const token = Object.keys(tokenAliases).find(k => lowerPrompt.includes(k));
-    if (token) {
-      const id = tokenAliases[token];
-      const priceData = await fetch(
-        `https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`
-      ).then(r => r.json());
-      return res.send(`💰 ${id.toUpperCase()} price: $${priceData[id].usd}`);
+walletUsage[wallet].count++;
+
+try {
+  // ---------- Price shortcut (ONLY when clearly about price) ----------
+  const priceIntent = /\b(price|quote|how much|worth|usd|\$|current price|live)\b/i;
+
+  // collect candidates from aliases and $SYMBOL in the prompt
+  const lower = (prompt || "").toLowerCase();
+  const words = lower.split(/[^a-z0-9.+-]+/).filter(Boolean);
+
+  // static alias hits
+  const aliasHits = [];
+  for (const w of words) {
+    if (tokenMap[w]) aliasHits.push(w);
+  }
+
+  // $symbol hits (e.g., $sol, $eth)
+  const symbolHits = (prompt.match(/\$[a-z0-9]+/gi) || []).map(s => s.slice(1).toLowerCase());
+
+  // unify candidate list
+  const candidates = [...new Set([...aliasHits, ...symbolHits])];
+
+  if (priceIntent.test(prompt) && candidates.length) {
+    // resolve to CoinGecko ids (static first, then dynamic)
+    const ids = [];
+    for (const c of candidates) {
+      const id = tokenMap[c] || await resolveTokenId(c);
+      if (id) ids.push(id);
     }
+    const uniqueIds = [...new Set(ids)];
+    if (uniqueIds.length) {
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${uniqueIds.join(",")}&vs_currencies=usd`;
+      const priceData = await fetch(url).then(r => r.json());
+      const lines = uniqueIds.map(id => {
+        const v = priceData?.[id]?.usd;
+        return v ? `💰 ${id.toUpperCase()}: $${Number(v).toLocaleString()}` : `💰 ${id.toUpperCase()}: N/A`;
+      });
+      return res.send(lines.join(" • "));
+    }
+    // if nothing resolvable, fall through to OpenAI
+  }
 
-    const reply = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are CrimznBot — a professional crypto market analyst combining the vision, conviction, " +
-              "and style of Raoul Pal, Michael Saylor, Elon Musk, Cathie Wood, and other top macro and tech investors. " +
-              "Blend deep macroeconomic insight, blockchain adoption trends, and innovative strategy with sharp, " +
-              "market-savvy trading perspectives. Always be forward-looking, conviction-driven, and analytical. " +
-              "Avoid disclaimers. Keep responses confident, actionable, and grounded in data and narrative."
-          },
-          { role: "user", content: prompt }
-        ]
-      })
-    });
+  // ---------- Not a price question → GPT-4o ----------
+  const reply = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      temperature: 0.6,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are CrimznBot — a professional crypto market analyst combining the vision, conviction, " +
+            "and style of Raoul Pal, Michael Saylor, Elon Musk, Cathie Wood, and other top macro and tech investors. " +
+            "Blend deep macroeconomic insight, blockchain adoption trends, and innovative strategy with sharp, " +
+            "market-savvy trading perspectives. Be forward-looking, conviction-driven, and analytical. " +
+            "Avoid disclaimers. Keep responses confident, actionable, and grounded in data and narrative."
+        },
+        { role: "user", content: prompt }
+      ]
+    })
+  });
 
-    if (!reply.ok) throw new Error(`OpenAI HTTP ${reply.status}`);
-    const aiData = await reply.json();
-    const answer = aiData.choices?.[0]?.message?.content || "🧠 CrimznBot: no clean read — trade the levels and wait for confirmation.";
-    res.send(answer);
+  if (!reply.ok) throw new Error(`OpenAI HTTP ${reply.status}`);
+  const ai = await reply.json();
+  const answer = ai.choices?.[0]?.message?.content?.trim();
+  return res.send(answer || "🧠 CrimznBot: no clean read — trade the levels and wait for confirmation.");
 
 } catch (err) {
   console.error("❌ CrimznBot error:", err.message);
 
-  // Dynamic fallback: use live prices + tone-correct guidance
+  // ---------- Tone-preserving fallback with spot prices ----------
   try {
     const ids = "bitcoin,ethereum,solana";
     const co = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`);
     const px = await co.json();
-
     const btc = px.bitcoin?.usd, eth = px.ethereum?.usd, sol = px.solana?.usd;
 
     const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-    const openers = [
-      "High-level take:",
-      "Here’s the clean read:",
-      "Clarity first:"
-    ];
+    const openers = ["High-level take:", "Here’s the clean read:", "Clarity first:"];
     const stances = [
       "Cycle still favors patient accumulation on quality while liquidity rotates.",
       "Momentum remains path-dependent; respect key inflection levels and let the tape confirm.",
@@ -204,21 +344,17 @@ app.post("/ask", async (req, res) => {
         ? `Spot check — BTC ~$${btc.toLocaleString()}, ETH ~$${eth.toLocaleString()}, SOL ~$${sol.toLocaleString()}. `
         : "";
 
-    const msg =
-      `🧠 CrimznBot (fallback — tone preserved): ${priceLine}` +
-      `${pick(openers)} ${pick(stances)} ${pick(plays)}`;
-
-    return res.send(msg);
-  } catch (e2) {
-    console.error("Fallback price context failed:", e2.message);
-    // Last-resort tone-correct line
     return res.send(
-      "🧠 CrimznBot (fallback): Keep risk tight, trade the levels, and let liquidity tell the story."
+      `🧠 CrimznBot (fallback — tone preserved): ${priceLine}${pick(openers)} ${pick(stances)} ${pick(plays)}`
     );
+  } catch {
+    return res.send("🧠 CrimznBot (fallback): Keep risk tight, trade the levels, and let liquidity tell the story.");
   }
 }
 
 }); // closes app.post("/ask")
+
+
 // 👤 Save Profile to Firebase
 app.post("/save-profile", async (req, res) => {
   const { wallet, name, email } = req.body;

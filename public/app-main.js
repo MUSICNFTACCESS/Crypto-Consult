@@ -192,7 +192,8 @@ if (solanaPayBtn) {
       }
 
       // Local free-question limiter (defense-in-depth vs server restarts)
-      let askedLocal = parseInt(localStorage.getItem("askedLocal") || "0", 10);
+      const localKey = `askedLocal:${connectedWallet}`;
+      let askedLocal = parseInt(localStorage.getItem(localKey) || "0", 10);
       console.log("📊 Free Q count (before):", askedLocal, "Paid:", hasPaid);
 
       if (!hasPaid && askedLocal >= FREE_LIMIT) {
@@ -204,7 +205,7 @@ if (solanaPayBtn) {
       // ✅ PRE-INCREMENT (attempt-based) so the 4th click blocks immediately
       if (!hasPaid) {
         askedLocal = Math.min(FREE_LIMIT, askedLocal + 1);
-        localStorage.setItem("askedLocal", String(askedLocal));
+      localStorage.setItem(localKey, String(askedLocal));
         console.log("➕ askedLocal (pre-send) →", askedLocal);
       }
 
@@ -219,7 +220,7 @@ if (solanaPayBtn) {
         const res = await fetch("/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, wallet: connectedWallet, hasPaid }),
+        body: JSON.stringify({ prompt, wallet: connectedWallet }),
           signal: ac.signal
         });
         clearTimeout(timeout);
@@ -247,7 +248,7 @@ if (solanaPayBtn) {
         // 👇 Roll back the pre-increment so errors don't consume a free attempt
         if (!hasPaid) {
           const val = Math.max(0, parseInt(localStorage.getItem("askedLocal") || "1", 10) - 1);
-          localStorage.setItem("askedLocal", String(val));
+        localStorage.setItem(localKey, String(val));
         }
       } finally {
         askBtn.disabled = false;

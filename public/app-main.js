@@ -177,27 +177,23 @@ if (solanaPayBtn) {
 
     const FREE_LIMIT = 3;
 
-function showPaywall() {
-  const pay = document.getElementById("paywall");
-  const btn = document.getElementById("solana-pay-btn");
+    function showPaywall() {
+    const paywall = document.getElementById("paywall");
+    const btn = document.getElementById("solana-pay-btn");
 
-  console.log("showPaywall()", {
-    pay: !!pay,
-    btn: !!btn,
-    btnHidden: btn?.classList.contains("hidden")
-  });
+    console.log("showPaywall() triggered");
 
-  // unhide container + button
-  pay?.classList.remove("hidden");
+  // Always show container + button
+  paywall?.classList.remove("hidden");
   btn?.classList.remove("hidden");
 
-  // safety: force it to render even if some CSS keeps it hidden
+  // Safety: force visible even if CSS tries to hide it
   if (btn) {
     btn.style.display = "inline-block";
     btn.removeAttribute("disabled");
   }
 
-  // bring it into view
+  // Scroll into view
   btn?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 

@@ -1,4 +1,4 @@
-console.log("🧠 Crimzn Consult v=crimznAug08v4 loaded", new Date().toISOString());
+console.log("🧠 Crimzn Consult v=crimznAug08v5 loaded", new Date().toISOString());
 
 // ✅ Crimzn Consult - app-main.js (Aug 8, 2025)
 // Fixes: PulseIt path, stale price badge, debounce buttons, Enter-to-submit, newer Solana blockhash
@@ -21,110 +21,77 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let connectedWallet = null;
 
-// ========================= UNLOCK: CrimznBot (0.025 SOL) — FIXED: provider shim + RPC fallback + explicit confirmed =========================
+// ================= UNLOCK via Phantom deeplink + server verify =================
 if (solanaPayBtn) {
   solanaPayBtn.onclick = async () => {
-    // Disable so folks can’t spam click while Phantom opens
-    solanaPayBtn.disabled = true;
-    const originalLabel = solanaPayBtn.textContent;
-    solanaPayBtn.textContent = "Opening Phantom…";
-
     try {
-      // [FIX] Provider shim: prefer Phantom’s injected provider
-      const provider = (window.phantom && window.phantom.solana)
-        ? window.phantom.solana
-        : window.solana;
+      // 1) open Phantom send UI
+      const receiver = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
+      const amountSol = 0.025;
 
-      if (!provider) {
-        alert("Phantom Wallet not found. Please install it.");
-        return;
+      // we’ll verify against this sender, so make sure we have it
+      if (!connectedWallet) {
+        try {
+          const resp = await (window.phantom?.solana ?? window.solana)?.connect();
+          connectedWallet = resp?.publicKey?.toString();
+        } catch {
+          return alert("Connect your wallet first.");
+        }
       }
 
-      // [FIX] Always connect here so approval sheet shows up on mobile
-      const resp = await provider.connect();
-      const pk = resp?.publicKey?.toString();
-      if (!pk) throw new Error("Wallet connect returned no public key");
-      connectedWallet = pk;
-      localStorage.setItem("wallet", connectedWallet);
+      const url = new URL(`solana:${receiver}`);
+      url.searchParams.set("amount", amountSol.toString());
+      url.searchParams.set("label", "CrimznBot Unlock");
+      url.searchParams.set("message", "Unlock CrimznBot access");
+      window.location.href = url.toString(); // opens Phantom
 
-      // [FIX] RPC fallback to avoid 403s on blockhash fetch
-      const PRIMARY_RPC  = "https://rpc.ankr.com/solana";
-      const FALLBACK_RPC = "https://api.mainnet-beta.solana.com";
+      // 2) poll backend for confirmation for up to ~90s
+      const started = Date.now();
+      const poll = async () => {
+        const qs = new URLSearchParams({
+          sender: connectedWallet,
+          receiver,
+          amount: (amountSol).toString(),
+        });
+        const r = await fetch(`/verify-unlock?${qs}`, { cache: "no-store" });
+        if (r.ok) {
+          const j = await r.json();
+          if (j?.confirmed === true) return true;
+        }
+        return false;
+      };
 
-      let connection = new solanaWeb3.Connection(PRIMARY_RPC, "confirmed");
-      try {
-        // probe so we fail fast if provider blocks us
-        await connection.getLatestBlockhash("confirmed");
-      } catch (e) {
-        console.warn("[UNLOCK] Primary RPC blocked, falling back:", e?.message || e);
-        connection = new solanaWeb3.Connection(FALLBACK_RPC, "confirmed");
-        // sanity probe fallback too
-        await connection.getLatestBlockhash("confirmed");
+      const timeoutMs = 90_000, intervalMs = 3000;
+      while (Date.now() - started < timeoutMs) {
+        // small delay so user can approve in Phantom
+        await new Promise(r => setTimeout(r, intervalMs));
+        if (await poll()) break;
       }
 
-      // Build 0.025 SOL transfer
-      const sender   = new solanaWeb3.PublicKey(connectedWallet);
-      const receiver = new solanaWeb3.PublicKey("Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF");
+      // 3) flip UI if confirmed, otherwise nudge
+      const ok = await (async () => {
+        const qs = new URLSearchParams({
+          sender: connectedWallet, receiver, amount: amountSol.toString()
+        });
+        const r = await fetch(`/verify-unlock?${qs}`, { cache: "no-store" });
+        return r.ok && (await r.json())?.confirmed === true;
+      })();
 
-      const tx = new solanaWeb3.Transaction().add(
-        solanaWeb3.SystemProgram.transfer({
-          fromPubkey: sender,
-          toPubkey: receiver,
-          lamports: 25_000_000, // 0.025 SOL
-        })
-      );
-      tx.feePayer = sender;
+      if (!ok) return alert("Still waiting for payment… if you sent it, give it a moment and try again.");
 
-      // Fetch fresh blockhash (confirmed commitment) for the final tx
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
-      tx.recentBlockhash = blockhash;
-
-      // Sign & send (prefer Phantom’s one-shot API on mobile)
-      let signature;
-      if (provider.signAndSendTransaction) {
-        const res = await provider.signAndSendTransaction(tx, { preflightCommitment: "confirmed" });
-        signature = res.signature;
-      } else {
-        const signed = await provider.signTransaction(tx);
-        signature = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
-      }
-
-      // Explicit confirmation at "confirmed"
-      await connection.confirmTransaction(
-        { signature, blockhash, lastValidBlockHeight },
-        "confirmed"
-      );
-
-      // Flip UI on success
-      const unlockStatusEl = document.getElementById("unlockStatus");
-      if (unlockStatusEl) {
-        unlockStatusEl.style.display = "block";
-        unlockStatusEl.style.color = "lime";
-        unlockStatusEl.textContent = "✅ CrimznBot Unlocked!";
-      }
-
+      // success UI
       localStorage.setItem("hasPaid", "true");
-      localStorage.removeItem("askedLocal");
-
       document.getElementById("paywall")?.classList.add("hidden");
-      solanaPayBtn.classList.add("hidden");
       document.getElementById("solana-pay-btn")?.classList.add("hidden");
-
+      const s = document.getElementById("unlockStatus");
+      if (s) { s.style.display = "block"; s.style.color = "lime"; s.textContent = "✅ CrimznBot Unlocked!"; }
       alert("✅ CrimznBot unlocked!");
-    } catch (err) {
-      console.error("❌ Unlock failed:", err);
-      const msg = (err && (err.message || err.toString())) || "Unknown error";
-      alert(`Unlock failed — ${msg}. Retry or check Phantom.`);
-    } finally {
-      // Re-enable if the button remains visible
-      if (!solanaPayBtn.classList.contains("hidden")) {
-        solanaPayBtn.disabled = false;
-        solanaPayBtn.textContent = originalLabel || "🔓 Unlock with 0.025 SOL";
-      }
+    } catch (e) {
+      alert(`Unlock failed — ${e?.message || e}`);
     }
   };
 }
-// ========================= /UNLOCK =========================
+// ================= /UNLOCK =================
 
   // ========================= SAVE PROFILE (unchanged) =========================
   if (saveBtn) {

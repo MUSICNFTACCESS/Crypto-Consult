@@ -364,6 +364,20 @@ model: "fallback-last"
   }
 });
 
+// ====================== VERIFY UNLOCK ENDPOINT ======================
+app.get("/verify-unlock", async (req, res) => {
+  try {
+    const { sender } = req.query;
+    if (!sender) return res.status(400).json({ error: "Missing sender wallet" });
+
+    const paid = await verifyHeliusPayment(sender);
+    res.json({ confirmed: paid });
+  } catch (err) {
+    console.error("❌ Verify-unlock error:", err.message);
+    res.status(500).json({ error: "Verification failed" });
+  }
+});
+
 // Wildcard route to serve frontend for unmatched paths
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));

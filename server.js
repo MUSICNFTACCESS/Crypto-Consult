@@ -1,4 +1,4 @@
-console.log("🚀 CryptoConsult server v=crimznAug10v3 loaded", new Date().toISOString());
+console.log("🚀 CryptoConsult server v=crimznAug10v5 loaded", new Date().toISOString());
 require("dotenv").config();
 
 const express = require("express");

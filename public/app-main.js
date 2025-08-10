@@ -1,7 +1,7 @@
-console.log("🧠 Crimzn Consult v=crimznAug10v3 loaded", new Date().toString());
+console.log("🧠 Crimzn Consult v=crimznAug10v4 loaded", new Date().toString());
 
-// ✅ Crimzn Consult - app-main.js (Aug 8, 2025)
-// Fixes: PulseIt path, stale price badge, debounce buttons, Enter-to-submit, newer Solana blockhash
+// ✅ Crimzn Consult - app-main.js (Aug 10, 2025)
+// Fixes: PulseIt path, stale price badge, debounce buttons, Enter-to-submit, newer Solana blockhash, improved paywall handling
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
@@ -276,6 +276,22 @@ if (!hasPaid && askedLocal >= FREE_LIMIT) {
   injectInlineUnlock();
   return;
 }
+
+} catch (e) {
+  console.error("Ask error:", e);
+  responseBox.innerText = "❌ Error getting answer.";
+  // roll back pre-increment on error so user doesn't lose a free attempt
+  if (!hasPaid) {
+    const val = Math.max(0, parseInt(localStorage.getItem(localKey) || "1", 10) - 1);
+    localStorage.setItem(localKey, String(val));
+  }
+} finally {
+  askBtn.disabled = false;
+  userInput.value = "";
+  responseBox.scrollIntoView({ behavior: "smooth" });
+}
+}; // <-- end askBtn.onclick
+} // <-- end if (askBtn && userInput && responseBox)
 
 
     // ========================= PULSEIT SENTIMENT (unchanged) =========================

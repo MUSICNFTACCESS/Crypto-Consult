@@ -13,3 +13,6 @@ firebase-*.json
 *.txt
 test.json
 firebase-key.json
+*.bak
+opens.txt
+closes.txt

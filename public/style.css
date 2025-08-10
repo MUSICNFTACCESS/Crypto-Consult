@@ -1,4 +1,4 @@
-/* 🎨 Crimzn Styles — v=crimznAug10v3 */
+/* 🎨 Crimzn Styles — v=crimznAug10v4 */
 
 /* 🌐 Global Styles */
 body {
@@ -91,7 +91,7 @@ body {
   white-space: pre-wrap;
 }
 
-/* 🔓 Paywall */
+/* 🔓 Paywall (merged + safe) */
 #paywall {
   text-align: center;
   background-color: #220000;
@@ -100,6 +100,32 @@ body {
   border: 2px dashed #ffcc00;
   max-width: 600px;
   margin: 20px auto;
+}
+
+/* Unlock button look within the paywall */
+#paywall button {
+  color: #fff;
+  background-color: #512da8;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-family: monospace;
+  box-shadow: 0 0 12px rgba(81, 42, 168, 0.6);
+  transition: background-color 0.2s ease;
+}
+#paywall button:hover {
+  background-color: #6757c2;
+}
+
+/* ✅ Safety override: if the container is visible, force-show the button
+   even if it accidentally still has .hidden */
+#paywall:not(.hidden) #solana-pay-btn.hidden {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 /* 🧠 PulseIt Result */

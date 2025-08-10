@@ -1,4 +1,4 @@
-console.log("🧠 Crimzn Consult v=crimznAug10v2 loaded", new Date().toString());
+console.log("🧠 Crimzn Consult v=crimznAug10v3 loaded", new Date().toString());
 
 // ✅ Crimzn Consult - app-main.js (Aug 8, 2025)
 // Fixes: PulseIt path, stale price badge, debounce buttons, Enter-to-submit, newer Solana blockhash
@@ -242,38 +242,40 @@ document.addEventListener("DOMContentLoaded", async () => {
           });
           clearTimeout(timeout);
 
-          const answer = await res.text();
-            console.log("[ASK] raw server answer:", answer);
-
-          // FIX 2: If server replies with the “3 free questions used” message, replace with button
-          if (!hasPaid && typeof answer === "string" && /3[[:space:]]*free[[:space:]]*questions?[[:space:]]*used|3[[:space:]]*free[[:space:]]*.*unlock/i.test(answer)) {
-            injectInlineUnlock();
-            return;
-          }
-
-          responseBox.innerText = answer;
-
-          // If this click *used up* the last free question, show unlock now
-          if (!hasPaid && askedLocal >= FREE_LIMIT) {
-            injectInlineUnlock();
-            return;
-          }
-        } catch (e) {
-          console.error("Ask error:", e);
-          responseBox.innerText = "❌ Error getting answer.";
-          // roll back pre-increment on error so user doesn't lose a free attempt
-          if (!hasPaid) {
-            const val = Math.max(0, parseInt(localStorage.getItem(localKey) || "1", 10) - 1);
-            localStorage.setItem(localKey, String(val));
-          }
-        } finally {
-          askBtn.disabled = false;
-          userInput.value = "";
-          responseBox.scrollIntoView({ behavior: "smooth" });
-        }
-      };
+// ✅ Safer server + client paywall handling
+if (res.status === 429) {
+  try {
+    const json = await res.json();
+    if (json.code === "FREE_LIMIT_REACHED") {
+      injectInlineUnlock();
+      return;
     }
-    // ========================= /ASK =========================
+  } catch {
+    injectInlineUnlock();
+    return;
+  }
+}
+
+const answer = await res.text();
+console.log("[ASK] raw server answer:", answer);
+
+// ✅ Also catch any accidental text mentioning limit
+if (
+  !hasPaid &&
+  typeof answer === "string" &&
+  /\b3\s*free\s*questions?\s*used\b/i.test(answer)
+) {
+  injectInlineUnlock();
+  return;
+}
+
+responseBox.innerText = answer;
+
+// If this click *used up* the last free question, show unlock now
+if (!hasPaid && askedLocal >= FREE_LIMIT) {
+  injectInlineUnlock();
+  return;
+}
 
 
     // ========================= PULSEIT SENTIMENT (unchanged) =========================

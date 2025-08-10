@@ -1,4 +1,4 @@
-console.log("🧠 Crimzn Consult v=crimznAug07v2 loaded", new Date().toISOString());
+console.log("🧠 Crimzn Consult v=crimznAug10v3 loaded", new Date().toISOString());
 
 // ✅ Crimzn Consult app-main.js vAug07
 // 🔒 Verified Clean: No syntax or logic-breaking issues

@@ -1,4 +1,4 @@
-console.log("🧠 Crimzn Consult v=crimznAug10v1 loaded", new Date().toString());
+console.log("🧠 Crimzn Consult v=crimznAug10v2 loaded", new Date().toString());
 
 // ✅ Crimzn Consult - app-main.js (Aug 8, 2025)
 // Fixes: PulseIt path, stale price badge, debounce buttons, Enter-to-submit, newer Solana blockhash
@@ -243,9 +243,10 @@ document.addEventListener("DOMContentLoaded", async () => {
           clearTimeout(timeout);
 
           const answer = await res.text();
+            console.log("[ASK] raw server answer:", answer);
 
           // FIX 2: If server replies with the “3 free questions used” message, replace with button
-          if (!hasPaid && typeof answer === "string" && /3 free questions used/i.test(answer)) {
+          if (!hasPaid && typeof answer === "string" && /3[[:space:]]*free[[:space:]]*questions?[[:space:]]*used|3[[:space:]]*free[[:space:]]*.*unlock/i.test(answer)) {
             injectInlineUnlock();
             return;
           }

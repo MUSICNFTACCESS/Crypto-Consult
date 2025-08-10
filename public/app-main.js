@@ -91,6 +91,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     // ================= /UNLOCK =================
 
+
     // ========================= SAVE PROFILE (unchanged) =========================
     if (saveBtn) {
       saveBtn.onclick = async () => {
@@ -169,102 +170,109 @@ document.addEventListener("DOMContentLoaded", async () => {
     // ========================= /WALLET =========================
 
 
-// ========================= ASK: CrimznBot (3-free local limiter + faster UX) =========================
-if (askBtn && userInput && responseBox) {
-  // Enter to submit
-  userInput.addEventListener("keydown", e => { if (e.key === "Enter") askBtn.click(); });
+    // ========================= ASK: CrimznBot (3-free local limiter + faster UX) =========================
+    if (askBtn && userInput && responseBox) {
+      // Enter to submit
+      userInput.addEventListener("keydown", e => { if (e.key === "Enter") askBtn.click(); });
 
-  const FREE_LIMIT = 3;
+      const FREE_LIMIT = 3;
 
-  function showPaywall() {
-    const paywall = document.getElementById("paywall");
-    const btn = document.getElementById("solana-pay-btn");
-    paywall?.classList.remove("hidden");
-    btn?.classList.remove("hidden");
-    if (btn) {
-      btn.style.display = "inline-block";
-      btn.removeAttribute("disabled");
-      btn.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }
-
-  function injectInlineUnlock() {
-    responseBox.innerHTML = `
-      <div style="margin-top:8px">
-        <button id="payNowInline" class="solana-button">🔓 Unlock with 0.025 SOL</button>
-      </div>
-    `;
-    showPaywall();
-    document.getElementById("solana-pay-btn")?.classList.remove("hidden");
-    document.getElementById("payNowInline")?.addEventListener("click", () => {
-      document.getElementById("solana-pay-btn")?.click();
-    });
-  }
-
-  askBtn.onclick = async () => {
-    const prompt   = userInput.value.trim();
-    const hasPaid  = localStorage.getItem("hasPaid") === "true";
-    const localKey = `askedLocal:${connectedWallet}`;
-
-    if (!prompt || !connectedWallet) {
-      responseBox.innerText = "⚠️ Enter a question and connect wallet.";
-      return;
-    }
-
-    // Read local count
-    let askedLocal = parseInt(localStorage.getItem(localKey) || "0", 10);
-
-    // Hard block if already at limit
-    if (!hasPaid && askedLocal >= FREE_LIMIT) {
-      injectInlineUnlock();
-      return;
-    }
-
-    // Pre-increment so the 4th click blocks immediately
-    if (!hasPaid) {
-      askedLocal = Math.min(FREE_LIMIT, askedLocal + 1);
-      localStorage.setItem(localKey, String(askedLocal));
-    }
-
-    askBtn.disabled = true;
-    responseBox.innerText = "🧠 Thinking…";
-
-    const ac = new AbortController();
-    const timeout = setTimeout(() => ac.abort(), 25_000);
-
-    try {
-      const res = await fetch("/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, wallet: connectedWallet }),
-        signal: ac.signal
-      });
-      clearTimeout(timeout);
-
-      const answer = await res.text();
-      responseBox.innerText = answer;
-
-      // If that click *used up* the last free question, show unlock now
-      if (!hasPaid && askedLocal >= FREE_LIMIT) {
-        injectInlineUnlock();
-        return;
+      function showPaywall() {
+        const paywall = document.getElementById("paywall");
+        const btn = document.getElementById("solana-pay-btn");
+        paywall?.classList.remove("hidden");
+        btn?.classList.remove("hidden");
+        if (btn) {
+          btn.style.display = "inline-block";
+          btn.removeAttribute("disabled");
+          btn.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
       }
-    } catch (e) {
-      console.error("Ask error:", e);
-      responseBox.innerText = "❌ Error getting answer.";
-      // roll back pre-increment on error so user doesn't lose a free attempt
-      if (!hasPaid) {
-        const val = Math.max(0, parseInt(localStorage.getItem(localKey) || "1", 10) - 1);
-        localStorage.setItem(localKey, String(val));
+
+      function injectInlineUnlock() {
+        responseBox.innerHTML = `
+          <div style="margin-top:8px">
+            <button id="payNowInline" class="solana-button">🔓 Unlock with 0.025 SOL</button>
+          </div>
+        `;
+        showPaywall();
+        document.getElementById("solana-pay-btn")?.classList.remove("hidden");
+        document.getElementById("payNowInline")?.addEventListener("click", () => {
+          document.getElementById("solana-pay-btn")?.click();
+        });
       }
-    } finally {
-      askBtn.disabled = false;
-      userInput.value = "";
-      responseBox.scrollIntoView({ behavior: "smooth" });
+
+      askBtn.onclick = async () => {
+        const prompt   = userInput.value.trim();
+        const hasPaid  = localStorage.getItem("hasPaid") === "true";
+        const localKey = `askedLocal:${connectedWallet}`;
+
+        if (!prompt || !connectedWallet) {
+          responseBox.innerText = "⚠️ Enter a question and connect wallet.";
+          return;
+        }
+
+        // Read local count
+        let askedLocal = parseInt(localStorage.getItem(localKey) || "0", 10);
+
+        // FIX 1: Hard block immediately at local limit — show only unlock button (no words)
+        if (!hasPaid && askedLocal >= FREE_LIMIT) {
+          injectInlineUnlock();
+          return;
+        }
+
+        // Pre-increment so the 4th click blocks immediately
+        if (!hasPaid) {
+          askedLocal = Math.min(FREE_LIMIT, askedLocal + 1);
+          localStorage.setItem(localKey, String(askedLocal));
+        }
+
+        askBtn.disabled = true;
+        responseBox.innerText = "🧠 Thinking…";
+
+        const ac = new AbortController();
+        const timeout = setTimeout(() => ac.abort(), 25_000);
+
+        try {
+          const res = await fetch("/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt, wallet: connectedWallet }),
+            signal: ac.signal
+          });
+          clearTimeout(timeout);
+
+          const answer = await res.text();
+
+          // FIX 2: If server replies with the “3 free questions used” message, replace with button
+          if (!hasPaid && typeof answer === "string" && /3 free questions used/i.test(answer)) {
+            injectInlineUnlock();
+            return;
+          }
+
+          responseBox.innerText = answer;
+
+          // If this click *used up* the last free question, show unlock now
+          if (!hasPaid && askedLocal >= FREE_LIMIT) {
+            injectInlineUnlock();
+            return;
+          }
+        } catch (e) {
+          console.error("Ask error:", e);
+          responseBox.innerText = "❌ Error getting answer.";
+          // roll back pre-increment on error so user doesn't lose a free attempt
+          if (!hasPaid) {
+            const val = Math.max(0, parseInt(localStorage.getItem(localKey) || "1", 10) - 1);
+            localStorage.setItem(localKey, String(val));
+          }
+        } finally {
+          askBtn.disabled = false;
+          userInput.value = "";
+          responseBox.scrollIntoView({ behavior: "smooth" });
+        }
+      };
     }
-  };
-}
-// ========================= /ASK =========================
+    // ========================= /ASK =========================
 
 
     // ========================= PULSEIT SENTIMENT (unchanged) =========================

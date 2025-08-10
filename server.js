@@ -1,4 +1,4 @@
-// 🔥 Crimzn Consult Backend - Final Merge: gpt-4o + Firebase + CrimznBot + PulseIt
+console.log("🚀 CryptoConsult server v=crimznAug10v3 loaded", new Date().toISOString());
 require("dotenv").config();
 
 const express = require("express");
@@ -130,10 +130,9 @@ if (!walletUsage[wallet].hasPaid) {
   if (walletUsage[wallet].count >= 3) {
     const paid = await verifyHeliusPayment(wallet);
     if (!paid) {
-      return res.send("⚠️ 3 free questions used. Unlock CrimznBot with 0.025 SOL.");
+      return res.status(429).json({ code: "FREE_LIMIT_REACHED" }); // ✅ send code, not words
     }
-    // First verified payment → mark as paid
-    walletUsage[wallet].hasPaid = true;
+    walletUsage[wallet].hasPaid = true; // first verified payment → mark as paid
   }
 }
 

@@ -22,74 +22,64 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let connectedWallet = null;
 
-    // ================= UNLOCK via Phantom deeplink + server verify =================
-    if (solanaPayBtn) {
-      solanaPayBtn.onclick = async () => {
-        try {
-          // 1) open Phantom send UI
-          const receiver = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
-          const amountSol = 0.025;
 
-          // we’ll verify against this sender, so make sure we have it
-          if (!connectedWallet) {
-            try {
-              const resp = await (window.phantom?.solana ?? window.solana)?.connect();
-              connectedWallet = resp?.publicKey?.toString();
-            } catch (e) {
-              return alert("Connect your wallet first.");
-            }
-          }
+// ================= UNLOCK via Phantom deeplink + server verify =================
+const startUnlock = async () => {
+  try {
+    const receiver = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
+    const amountSol = 0.025;
 
-          const url = new URL(`solana:${receiver}`);
-          url.searchParams.set("amount", amountSol.toString());
-          url.searchParams.set("label", "CrimznBot Unlock");
-          url.searchParams.set("message", "Unlock CrimznBot access");
-          window.location.href = url.toString(); // opens Phantom
-
-          // 2) poll backend for confirmation for up to ~90s
-          const started = Date.now();
-          const poll = async () => {
-            const qs = new URLSearchParams({
-              sender: connectedWallet,
-              receiver,
-              amount: (amountSol).toString(),
-            });
-            const r = await fetch(`/verify-unlock?${qs}`, { cache: "no-store" });
-            if (r.ok) {
-              const j = await r.json();
-              if (j?.confirmed === true) return true;
-            }
-            return false;
-          };
-
-          const timeoutMs = 90_000, intervalMs = 3000;
-          while (Date.now() - started < timeoutMs) {
-            await new Promise(r => setTimeout(r, intervalMs));
-            if (await poll()) break;
-          }
-
-          const ok = await (async () => {
-            const qs = new URLSearchParams({
-              sender: connectedWallet, receiver, amount: amountSol.toString()
-            });
-            const r = await fetch(`/verify-unlock?${qs}`, { cache: "no-store" });
-            return r.ok && (await r.json())?.confirmed === true;
-          })();
-
-          if (!ok) return alert("Still waiting for payment… if you sent it, give it a moment and try again.");
-
-          localStorage.setItem("hasPaid", "true");
-          document.getElementById("paywall")?.classList.add("hidden");
-          document.getElementById("solana-pay-btn")?.classList.add("hidden");
-          const s = document.getElementById("unlockStatus");
-          if (s) { s.style.display = "block"; s.style.color = "lime"; s.textContent = "✅ CrimznBot Unlocked!"; }
-          alert("✅ CrimznBot unlocked!");
-        } catch (e) {
-          alert(`Unlock failed — ${e?.message || e}`);
-        }
-      };
+    if (!connectedWallet) {
+      try {
+        const resp = await (window.phantom?.solana ?? window.solana)?.connect();
+        connectedWallet = resp?.publicKey?.toString();
+      } catch (e) {
+        return alert("Connect your wallet first.");
+      }
     }
-    // ================= /UNLOCK =================
+
+    const url = new URL(`solana:${receiver}`);
+    url.searchParams.set("amount", amountSol.toString());
+    url.searchParams.set("label", "CrimznBot Unlock");
+    url.searchParams.set("message", "Unlock CrimznBot access");
+    window.location.href = url.toString();
+
+    const started = Date.now();
+    const poll = async () => {
+      const qs = new URLSearchParams({
+        sender: connectedWallet,
+        receiver,
+        amount: amountSol.toString(),
+      });
+      const r = await fetch(`/verify-unlock?${qs}`, { cache: "no-store" });
+      if (r.ok) {
+        const j = await r.json();
+        if (j?.confirmed === true) return true;
+      }
+      return false;
+    };
+
+    const timeoutMs = 90_000, intervalMs = 3000;
+    while (Date.now() - started < timeoutMs) {
+      await new Promise(r => setTimeout(r, intervalMs));
+      if (await poll()) break;
+    }
+
+    const ok = await poll();
+    if (!ok) return alert("Still waiting for payment… if you sent it, give it a moment and try again.");
+
+    localStorage.setItem("hasPaid", "true");
+    const s = document.getElementById("unlockStatus");
+    if (s) { s.style.display = "block"; s.style.color = "lime"; s.textContent = "✅ CrimznBot Unlocked!"; }
+    alert("✅ CrimznBot unlocked!");
+  } catch (e) {
+    alert(`Unlock failed — ${e?.message || e}`);
+  }
+};
+
+solanaPayBtn?.addEventListener("click", startUnlock);
+// ================= /UNLOCK =================
+
 
 
     // ========================= SAVE PROFILE (unchanged) =========================
@@ -189,71 +179,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       }
 
-      function injectInlineUnlock() {
-        responseBox.innerHTML = `
-          <div style="margin-top:8px">
-            <button id="payNowInline" class="solana-button">🔓 Unlock with 0.025 SOL</button>
-          </div>
-        `;
-        showPaywall();
-        document.getElementById("solana-pay-btn")?.classList.remove("hidden");
-        document.getElementById("payNowInline")?.addEventListener("click", () => {
-          document.getElementById("solana-pay-btn")?.click();
-        });
-      }
-
-      askBtn.onclick = async () => {
-        const prompt   = userInput.value.trim();
-        const hasPaid  = localStorage.getItem("hasPaid") === "true";
-        const localKey = `askedLocal:${connectedWallet}`;
-
-        if (!prompt || !connectedWallet) {
-          responseBox.innerText = "⚠️ Enter a question and connect wallet.";
-          return;
-        }
-
-        // Read local count
-        let askedLocal = parseInt(localStorage.getItem(localKey) || "0", 10);
-
-        // FIX 1: Hard block immediately at local limit — show only unlock button (no words)
-        if (!hasPaid && askedLocal >= FREE_LIMIT) {
-          injectInlineUnlock();
-          return;
-        }
-
-        // Pre-increment so the 4th click blocks immediately
-        if (!hasPaid) {
-          askedLocal = Math.min(FREE_LIMIT, askedLocal + 1);
-          localStorage.setItem(localKey, String(askedLocal));
-        }
-
-        askBtn.disabled = true;
-        responseBox.innerText = "🧠 Thinking…";
-
-        const ac = new AbortController();
-        const timeout = setTimeout(() => ac.abort(), 25_000);
-
-        try {
-          const res = await fetch("/ask", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt, wallet: connectedWallet }),
-            signal: ac.signal
-          });
-          clearTimeout(timeout);
-
-// ✅ Safer server + client paywall handling
-if (res.status === 429) {
-  try {
-    const json = await res.json();
-    if (json.code === "FREE_LIMIT_REACHED") {
-      injectInlineUnlock();
-      return;
-    }
-  } catch {
-    injectInlineUnlock();
-    return;
-  }
+function injectInlineUnlock() {
+  responseBox.innerHTML = `
+    <div style="margin-top:8px">
+      <button id="payNowInline" class="solana-button">🔓 Unlock with 0.025 SOL</button>
+    </div>
+  `;
+  document.getElementById("payNowInline")?.addEventListener("click", startUnlock);
 }
 
 const answer = await res.text();

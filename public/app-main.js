@@ -44,6 +44,7 @@ const startUnlock = async () => {
     const receiver = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
     const amountSol = 0.025;
 
+    // Ensure wallet is connected (inner try/catch only here)
     if (!connectedWallet) {
       try {
         const resp = await (window.phantom?.solana ?? window.solana)?.connect();
@@ -53,89 +54,61 @@ const startUnlock = async () => {
       }
     }
 
+    // Open Phantom deep link
     const url = new URL(`solana:${receiver}`);
     url.searchParams.set("amount", amountSol.toString());
     url.searchParams.set("label", "CrimznBot Unlock");
     url.searchParams.set("message", "Unlock CrimznBot access");
     window.location.href = url.toString();
 
-    const started = Date.now();
-    const poll = async () => {
-      const qs = new URLSearchParams({
-        sender: connectedWallet,
-        receiver,
-        amount: amountSol.toString(),
-      });
-      const r = await fetch(`/verify-unlock?${qs}`, { cache: "no-store" });
-      if (r.ok) {
-        const j = await r.json();
-        if (j?.confirmed === true) return true;
-      }
-      return false;
-    };
+    // UI: start verifying
+    if (typeof responseBox !== "undefined" && responseBox) {
+      responseBox.innerText = "🔄 Verifying unlock on-chain…";
+    }
 
-// --- verify paid: poll backend quietly for up to 20s (scoped to this function) ---
-const verifyPaidLoop = async (wallet) => {
-  const start = Date.now();
-  while (Date.now() - start < 20000) { // 20s
+    // Poll backend for paid status
+    const ok = await verifyPaidLoop(connectedWallet);
+    if (ok) {
+      localStorage.setItem("hasPaid", "true");
+      const s = document.getElementById("unlockStatus");
+      if (s) {
+        s.style.display = "block";
+        s.style.color = "lime";
+        s.textContent = "✅ CrimznBot Unlocked!";
+      }
+      if (typeof responseBox !== "undefined" && responseBox) {
+        responseBox.innerText = "✅ Unlocked! Ask away.";
+      }
+    } else {
+      if (typeof responseBox !== "undefined" && responseBox) {
+        responseBox.innerText = "⚠️ Unlock pending. If it doesn’t clear in a minute, try again.";
+      }
+    }
+
+  } catch (err) {
+    // Outer catch: network/transient issues after deeplink
+    console.warn("Unlock flow transient error:", err);
+    if (typeof responseBox !== "undefined" && responseBox) {
+      responseBox.innerText = "⚠️ Network hiccup during unlock. I’ll keep checking…";
+    }
     try {
-      const r = await fetch(`/verify-paid?wallet=${encodeURIComponent(wallet)}`);
-      if (r.ok) {
-        const j = await r.json();
-        if (j?.hasPaid === true) return true;
+      const ok2 = await verifyPaidLoop(connectedWallet);
+      if (ok2) {
+        localStorage.setItem("hasPaid", "true");
+        const s = document.getElementById("unlockStatus");
+        if (s) {
+          s.style.display = "block";
+          s.style.color = "lime";
+          s.textContent = "✅ CrimznBot Unlocked!";
+        }
+        if (typeof responseBox !== "undefined" && responseBox) {
+          responseBox.innerText = "✅ Unlocked! Ask away.";
+        }
       }
-    } catch {}
-    await new Promise(r => setTimeout(r, 1500));
-  }
-  return false;
-};
-
-// ====== new finisher: no alerts, auto-verify, no button changes ======
-if (typeof responseBox !== "undefined" && responseBox) {
-  responseBox.innerText = "🔄 Verifying unlock on-chain…";
-}
-
-try {
-  const ok = await verifyPaidLoop(connectedWallet);
-  if (ok) {
-    localStorage.setItem("hasPaid", "true");
-
-    // Optional status badge if present
-    const s = document.getElementById("unlockStatus");
-    if (s) {
-      s.style.display = "block";
-      s.style.color = "lime";
-      s.textContent = "✅ CrimznBot Unlocked!";
-    }
-
-    if (typeof responseBox !== "undefined" && responseBox) {
-      responseBox.innerText = "✅ Unlocked! Ask away.";
-    }
-  } else {
-    if (typeof responseBox !== "undefined" && responseBox) {
-      responseBox.innerText = "⚠️ Unlock pending. If it doesn’t clear in a minute, try again.";
+    } catch (innerErr) {
+      console.error("Verification retry failed:", innerErr);
     }
   }
-} catch (e) {
-  console.warn("Unlock flow transient error:", e);
-  if (typeof responseBox !== "undefined" && responseBox) {
-    responseBox.innerText = "⚠️ Network hiccup during unlock. I’ll keep checking…";
-  }
-  const ok2 = await verifyPaidLoop(connectedWallet);
-  if (ok2) {
-    localStorage.setItem("hasPaid", "true");
-    const s = document.getElementById("unlockStatus");
-    if (s) {
-      s.style.display = "block";
-      s.style.color = "lime";
-      s.textContent = "✅ CrimznBot Unlocked!";
-    }
-    if (typeof responseBox !== "undefined" && responseBox) {
-      responseBox.innerText = "✅ Unlocked! Ask away.";
-    }
-  }
-}
-// ====== /finisher ======
 }; // <-- closes async function startUnlock
 
 // keep the original wiring so the button still triggers startUnlock
@@ -143,8 +116,7 @@ solanaPayBtn?.addEventListener("click", startUnlock);
 // ================= /UNLOCK =================
 
 
-
-    // ========================= SAVE PROFILE (unchanged) =========================
+ // ========================= SAVE PROFILE (unchanged) =========================
     if (saveBtn) {
       saveBtn.onclick = async () => {
         if (!connectedWallet) return alert("⚠️ Connect your wallet first.");

@@ -1,4 +1,4 @@
-console.log("🧠 Crimzn Consult v=crimznAug10v7 loaded", new Date().toString());
+console.log("🧠 Crimzn Consult v=crimznAug11v1 loaded", new Date().toString());
 
 // ✅ Crimzn Consult - app-main.js (Aug 10, 2025)
 // Fixes: PulseIt path, stale price badge, debounce buttons, Enter-to-submit, newer Solana blockhash, improved paywall handling
@@ -22,6 +22,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let connectedWallet = null;
 
+// --- verify paid: poll backend quietly for up to 20s ---
+async function verifyPaidLoop(wallet) {
+  const start = Date.now();
+  while (Date.now() - start < 20000) { // 20s
+    try {
+      const r = await fetch(`/verify-paid?wallet=${encodeURIComponent(wallet)}`);
+      if (r.ok) {
+        const j = await r.json();
+        if (j?.hasPaid === true) return true;
+      }
+    } catch {}
+    await new Promise(r => setTimeout(r, 1500));
+  }
+  return false;
+}
 
 // ================= UNLOCK via Phantom deeplink + server verify =================
 const startUnlock = async () => {
@@ -59,24 +74,71 @@ const startUnlock = async () => {
       return false;
     };
 
-    const timeoutMs = 90_000, intervalMs = 3000;
-    while (Date.now() - started < timeoutMs) {
-      await new Promise(r => setTimeout(r, intervalMs));
-      if (await poll()) break;
-    }
-
-    const ok = await poll();
-    if (!ok) return alert("Still waiting for payment… if you sent it, give it a moment and try again.");
-
-    localStorage.setItem("hasPaid", "true");
-    const s = document.getElementById("unlockStatus");
-    if (s) { s.style.display = "block"; s.style.color = "lime"; s.textContent = "✅ CrimznBot Unlocked!"; }
-    alert("✅ CrimznBot unlocked!");
-  } catch (e) {
-    alert(`Unlock failed — ${e?.message || e}`);
+// --- verify paid: poll backend quietly for up to 20s (scoped to this function) ---
+const verifyPaidLoop = async (wallet) => {
+  const start = Date.now();
+  while (Date.now() - start < 20000) { // 20s
+    try {
+      const r = await fetch(`/verify-paid?wallet=${encodeURIComponent(wallet)}`);
+      if (r.ok) {
+        const j = await r.json();
+        if (j?.hasPaid === true) return true;
+      }
+    } catch {}
+    await new Promise(r => setTimeout(r, 1500));
   }
+  return false;
 };
 
+// ====== new finisher: no alerts, auto-verify, no button changes ======
+if (typeof responseBox !== "undefined" && responseBox) {
+  responseBox.innerText = "🔄 Verifying unlock on-chain…";
+}
+
+try {
+  const ok = await verifyPaidLoop(connectedWallet);
+  if (ok) {
+    localStorage.setItem("hasPaid", "true");
+
+    // Optional status badge if present
+    const s = document.getElementById("unlockStatus");
+    if (s) {
+      s.style.display = "block";
+      s.style.color = "lime";
+      s.textContent = "✅ CrimznBot Unlocked!";
+    }
+
+    if (typeof responseBox !== "undefined" && responseBox) {
+      responseBox.innerText = "✅ Unlocked! Ask away.";
+    }
+  } else {
+    if (typeof responseBox !== "undefined" && responseBox) {
+      responseBox.innerText = "⚠️ Unlock pending. If it doesn’t clear in a minute, try again.";
+    }
+  }
+} catch (e) {
+  console.warn("Unlock flow transient error:", e);
+  if (typeof responseBox !== "undefined" && responseBox) {
+    responseBox.innerText = "⚠️ Network hiccup during unlock. I’ll keep checking…";
+  }
+  const ok2 = await verifyPaidLoop(connectedWallet);
+  if (ok2) {
+    localStorage.setItem("hasPaid", "true");
+    const s = document.getElementById("unlockStatus");
+    if (s) {
+      s.style.display = "block";
+      s.style.color = "lime";
+      s.textContent = "✅ CrimznBot Unlocked!";
+    }
+    if (typeof responseBox !== "undefined" && responseBox) {
+      responseBox.innerText = "✅ Unlocked! Ask away.";
+    }
+  }
+}
+// ====== /finisher ======
+}; // <-- closes async function startUnlock
+
+// keep the original wiring so the button still triggers startUnlock
 solanaPayBtn?.addEventListener("click", startUnlock);
 // ================= /UNLOCK =================
 

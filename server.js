@@ -1,4 +1,4 @@
-console.log("🚀 CryptoConsult server v=crimznAug11v1 loaded", new Date().toISOString());
+console.log("🚀 Crimzn Consult Backend v=crimznAug11v2", new Date().toString());
 require("dotenv").config();
 
 const express = require("express");

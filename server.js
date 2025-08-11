@@ -52,6 +52,34 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 const PORT = process.env.PORT || 3000;
 
+// ===== Load top 100 tokens on startup =====
+let topTokens = {};
+
+const loadTopTokens = async () => {
+  try {
+    const r = await fetch(
+      "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false"
+    );
+    if (!r.ok) throw new Error(`CG top tokens HTTP ${r.status}`);
+    const data = await r.json();
+
+    // Store both ticker and name in uppercase for detection
+    topTokens = {};
+    data.forEach((coin) => {
+      topTokens[coin.symbol.toUpperCase()] = coin.id;
+      topTokens[coin.name.toUpperCase()] = coin.id;
+    });
+
+    console.log(`✅ Loaded ${Object.keys(topTokens).length} token entries for detection.`);
+  } catch (err) {
+    console.error("❌ Failed to load top tokens:", err.message);
+  }
+};
+
+// Load immediately and refresh every 12 hours
+loadTopTokens();
+setInterval(loadTopTokens, 12 * 60 * 60 * 1000);
+
 // 🧱 Middleware
 app.use(helmet());
 app.use(rateLimit({
@@ -136,96 +164,109 @@ if (!walletUsage[wallet].hasPaid) {
   }
 }
 
+
 walletUsage[wallet].count++;
 
-  try {
-    const tokenAliases = { bitcoin: "bitcoin", eth: "ethereum", ethereum: "ethereum" /* ... */ };
-    const lowerPrompt = prompt.toLowerCase();
-    const token = Object.keys(tokenAliases).find(k => lowerPrompt.includes(k));
-    if (token) {
-      const id = tokenAliases[token];
-      const priceData = await fetch(
-        `https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`
-      ).then(r => r.json());
-      return res.send(`💰 ${id.toUpperCase()} price: $${priceData[id].usd}`);
+// === Price detection using cached top 100 (no paywall changes) ===
+const wantsPrice = (txt) => {
+  const t = txt.toLowerCase();
+  return /\b(price|quote|worth|trading at|usd|usdt)\b/.test(t)
+      || /\bwhat'?s\s+the\s+price\b/.test(t)
+      || /^\$?[A-Za-z]{2,10}\s*\/\s*(USD|USDT)\b/i.test(txt);
+};
+
+const extractTickerOrName = (txt) => {
+  const dollar = txt.match(/\$([A-Za-z]{2,10})\b/);
+  if (dollar) return dollar[1].toUpperCase();
+
+  const ofMatch = txt.match(/\bprice\s+of\s+([A-Za-z0-9 .-]{2,30})/i);
+  if (ofMatch) return ofMatch[1].trim().toUpperCase();
+
+  const slash = txt.match(/\b([A-Za-z]{2,10})\s*\/\s*(USD|USDT)\b/i);
+  if (slash) return slash[1].toUpperCase();
+
+  const caps = txt.match(/\b[A-Z]{2,10}\b/g);
+  if (caps && caps.length) return caps[caps.length - 1].toUpperCase();
+
+  return null;
+};
+
+try {
+  if (wantsPrice(prompt)) {
+    const query = extractTickerOrName(prompt);
+    const cgId = query ? topTokens[query] : null;
+
+    if (cgId) {
+      const r = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(cgId)}&vs_currencies=usd`
+      );
+      if (r.ok) {
+        const data = await r.json();
+        const price = data?.[cgId]?.usd;
+        if (typeof price === "number") {
+          return res.send(`💰 ${query}/USD: $${Number(price).toLocaleString()}`);
+        }
+      }
     }
+    // unresolved → fall through to GPT
+  }
+} catch (pxErr) {
+  console.warn("Price detection failed (falling back to GPT):", pxErr.message);
+}
 
-    const reply = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are CrimznBot — a professional crypto market analyst combining the vision, conviction, " +
-              "and style of Raoul Pal, Michael Saylor, Elon Musk, Cathie Wood, and other top macro and tech investors. " +
-              "Blend deep macroeconomic insight, blockchain adoption trends, and innovative strategy with sharp, " +
-              "market-savvy trading perspectives. Always be forward-looking, conviction-driven, and analytical. " +
-              "Avoid disclaimers. Keep responses confident, actionable, and grounded in data and narrative."
-          },
-          { role: "user", content: prompt }
-        ]
-      })
-    });
+// === GPT-4o tone-locked answer for everything else ===
+try {
+  const systemStyle = [
+    "You are CrimznBot — a pro crypto analyst with conviction.",
+    "Tone: concise, confident, strategic, slight degen edge; no fluff.",
+    "Hard rules:",
+    "- Never say 'as of my last update' or mention knowledge cutoffs.",
+    "- Never apologize for not having real-time data.",
+    "- Start with 'Quick take:' then 3–6 tight bullets.",
+    "- Focus on levels, catalysts, flows, risk, invalidation.",
+    "- Keep it under ~180 words unless asked for a deep dive.",
+    "- Use tickers (BTC, ETH, SOL, etc.) and plain Markdown."
+  ].join("\n");
 
-    if (!reply.ok) throw new Error(`OpenAI HTTP ${reply.status}`);
-    const aiData = await reply.json();
-    const answer = aiData.choices?.[0]?.message?.content || "🧠 CrimznBot: no clean read — trade the levels and wait for confirmation.";
-    res.send(answer);
+  const reply = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      temperature: 0.6,
+      max_tokens: 700,
+      messages: [
+        { role: "system", content: systemStyle },
+        { role: "user", content: prompt }
+      ]
+    })
+  });
 
+  if (!reply.ok) throw new Error(`OpenAI HTTP ${reply.status}`);
+  const aiData = await reply.json();
+  let answer = aiData.choices?.[0]?.message?.content || "";
+
+  // scrub any stray disclaimers
+  answer = answer
+    .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
+    .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
+    .trim();
+
+  if (answer && !/^quick take:/i.test(answer)) {
+    answer = answer.replace(/^\s*/, "Quick take: ").trim();
+  }
+
+  return res.send(answer || "Quick take: Trade the levels; keep risk tight and let liquidity lead.");
 } catch (err) {
   console.error("❌ CrimznBot error:", err.message);
-
-  // Dynamic fallback: use live prices + tone-correct guidance
-  try {
-    const ids = "bitcoin,ethereum,solana";
-    const co = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`);
-    const px = await co.json();
-
-    const btc = px.bitcoin?.usd, eth = px.ethereum?.usd, sol = px.solana?.usd;
-
-    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-    const openers = [
-      "High-level take:",
-      "Here’s the clean read:",
-      "Clarity first:"
-    ];
-    const stances = [
-      "Cycle still favors patient accumulation on quality while liquidity rotates.",
-      "Momentum remains path-dependent; respect key inflection levels and let the tape confirm.",
-      "Macro liquidity and tech adoption remain the north star; avoid emotional rotation."
-    ];
-    const plays = [
-      "Define invalidation, size sanely, and let trend do the heavy lifting.",
-      "Focus on asymmetric entries; don’t chase strength into resistance.",
-      "Trim into euphoria, buy fear with a plan, and keep dry powder."
-    ];
-
-    const priceLine =
-      (btc && eth && sol)
-        ? `Spot check — BTC ~$${btc.toLocaleString()}, ETH ~$${eth.toLocaleString()}, SOL ~$${sol.toLocaleString()}. `
-        : "";
-
-    const msg =
-      `🧠 CrimznBot (fallback — tone preserved): ${priceLine}` +
-      `${pick(openers)} ${pick(stances)} ${pick(plays)}`;
-
-    return res.send(msg);
-  } catch (e2) {
-    console.error("Fallback price context failed:", e2.message);
-    // Last-resort tone-correct line
-    return res.send(
-      "🧠 CrimznBot (fallback): Keep risk tight, trade the levels, and let liquidity tell the story."
-    );
-  }
+  return res.send("🧠 CrimznBot (fallback): Keep risk tight and let liquidity tell the story.");
 }
 
 }); // closes app.post("/ask")
+
 // 👤 Save Profile to Firebase
 app.post("/save-profile", async (req, res) => {
   const { wallet, name, email } = req.body;

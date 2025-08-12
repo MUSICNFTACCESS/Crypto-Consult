@@ -1,4 +1,4 @@
-console.log("🚀 Crimzn Consult Backend v=crimznAug11v2", new Date().toString());
+	console.log("🚀 Crimzn Consult Backend v=crimznAug11v2", new Date().toString());
 require("dotenv").config();
 
 const express = require("express");
@@ -214,21 +214,15 @@ try {
   console.warn("Price detection failed (falling back to GPT):", pxErr.message);
 }
 
-// === GPT-4o tone-locked answer for everything else ===
+// === GPT-4o natural persona answer for everything else ===
 try {
-const systemStyle = [
-  "You are CrimznBot — a crypto and market strategist with the combined IQ, insight, and abilities of Raoul Pal, Michael Saylor, Cathie Wood, and Elon Musk.",
-  "Deliver forward-looking crypto insights, tokenomics breakdowns, macro context, and high-level trading strategy with institutional precision and tech-vision creativity.",
-  "Tone: confident, strategic, slightly degen when appropriate, deeply analytical, conviction-driven.",
-
-  // Output guardrails (keep the UX crisp)
-  "Format:",
-  "- Start with: Quick take:",
-  "- Then 3–6 bullets, each ≤ 14 words.",
-  "- Focus on catalysts, levels, flows, risk, invalidation, positioning.",
-  "- No bold/markdown formatting; no headings beyond 'Quick take:'.",
-  "- Never mention knowledge cutoffs or 'as of my last update'.",
-].join("\n");
+  const systemStyle = [
+    "You are CrimznBot — a crypto and market strategist with the combined IQ, insight, and abilities of Raoul Pal, Michael Saylor, Cathie Wood, and Elon Musk.",
+    "Deliver forward-looking crypto insights, tokenomics breakdowns, macro context, and high-level trading strategies.",
+    "Tone: confident, strategic, slightly degen when appropriate, deeply analytical, conviction-driven.",
+    "Avoid generic disclaimers and knowledge cutoff references.",
+    "Always provide the most relevant and actionable insight available."
+  ].join("\n");
 
   const reply = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -238,8 +232,8 @@ const systemStyle = [
     },
     body: JSON.stringify({
       model: "gpt-4o",
-      temperature: 0.6,
-      max_tokens: 240,
+      temperature: 0.4,      // ← looser than 0.35, tighter than 0.6
+      max_tokens: 700,       // ← give it room to answer naturally
       messages: [
         { role: "system", content: systemStyle },
         { role: "user", content: prompt }
@@ -247,7 +241,13 @@ const systemStyle = [
     })
   });
 
-  if (!reply.ok) throw new Error(`OpenAI HTTP ${reply.status}`);
+  console.log("[ASK] OpenAI status:", reply.status);
+  if (!reply.ok) {
+    const errTxt = await reply.text().catch(() => "");
+    console.error("[ASK] OpenAI error body:", errTxt.slice(0, 300));
+    throw new Error(`OpenAI HTTP ${reply.status}`);
+  }
+
   const aiData = await reply.json();
   let answer = aiData.choices?.[0]?.message?.content || "";
 
@@ -257,11 +257,7 @@ const systemStyle = [
     .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
     .trim();
 
-  if (answer && !/^quick take:/i.test(answer)) {
-    answer = answer.replace(/^\s*/, "Quick take: ").trim();
-  }
-
-  return res.send(answer || "Quick take: Trade the levels; keep risk tight and let liquidity lead.");
+  return res.send(answer || "Trade the levels; keep risk tight and let liquidity lead.");
 } catch (err) {
   console.error("❌ CrimznBot error:", err.message);
   return res.send("🧠 CrimznBot (fallback): Keep risk tight and let liquidity tell the story.");

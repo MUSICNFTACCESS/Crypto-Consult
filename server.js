@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Crimzn Consult Backend
 // ─────────────────────────────────────────────────────────────────────────────
-console.log("🚀 Crimzn Consult Backend v=crimznAug15v2", new Date().toString());
+console.log("🚀 Crimzn Consult Backend v=crimznAug15v3", new Date().toString());
 require("dotenv").config();
 
 const express   = require("express");
@@ -58,7 +58,7 @@ app.use(express.static(path.join(__dirname, "public")));
 const PORT = process.env.PORT || 3000;
 
 // ===== Load top 100 tokens on startup =====
-// 🆕 UPDATED: track both symbol/name → cgId, and cgId → symbol for reverse lookup
+// 🆙 UPDATED: track both symbol/name → cgId, and cgId → symbol for reverse lookup
 let topTokens = {};          // { SYMBOL_UPPER: cgId, NAME_UPPER: cgId }
 let cgIdToSymbol = {};       // { cgId: SYMBOL_UPPER }
 
@@ -149,7 +149,7 @@ async function verifyHeliusPayment(wallet) {
   }
 }
 
-// 🆕 NEW: flexible token alias map + robust finder (handles caps/lower/title + names + typos)
+// 🆕 NEW: flexible token alias map + robust finder (handles caps/lower/title + names + minor typos)
 const TOKEN_ALIASES = {
   "bitcoin": "BTC", "bit coin": "BTC", "btc": "BTC",
   "ethereum": "ETH", "ether": "ETH", "eth": "ETH",
@@ -181,7 +181,7 @@ function findTokenSymbol(text) {
     if (lower.includes(key)) return TOKEN_ALIASES[key];
   }
 
-  // try any alphanumeric chunk against our CoinGecko name/symbol index (top 100 cache)
+  // try any alphanumeric chunk against CoinGecko name/symbol index (top 100 cache)
   const parts = (text.match(/[A-Za-z0-9.-]{2,30}/g) || []);
   for (const p of parts) {
     const up = p.toUpperCase();
@@ -192,7 +192,7 @@ function findTokenSymbol(text) {
     }
   }
 
-  // last resort: scan for ALL-CAPS token-like words present in our index
+  // last resort: scan ALL-CAPS token-like words present in our index
   const caps = text.match(/\b[A-Z0-9]{2,10}\b/g);
   if (caps) {
     for (const c of caps) if (topTokens[c]) return c;
@@ -201,7 +201,7 @@ function findTokenSymbol(text) {
   return null;
 }
 
-// 🆕 NEW: extract ALL token symbols from arbitrary text (names/case/$TICKER/typos)
+// 🆕 NEW: extract ALL token symbols from arbitrary text (names/case/$TICKER/aliases)
 function findAllTokenSymbols(text) {
   if (!text) return [];
   const out = [];

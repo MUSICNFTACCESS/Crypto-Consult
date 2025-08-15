@@ -439,14 +439,12 @@ app.get("/verify-unlock", async (req, res) => {
 
 // ===== Verify-paid helper with logging (does NOT alter limiter logic) =====
 app.get("/verify-paid", async (req, res) => {
-  // FIX 1: template literals now wrapped in backticks
   const mask = (w) => (w && w.length >= 8 ? `${w.slice(0,4)}…${w.slice(-4)}` : (w || "(none)"));
   const wallet = String(req.query.wallet || "");
   const ip = req.ip || req.headers["x-forwarded-for"] || "unknown";
   const t0 = Date.now();
 
   try {
-    // FIX 2: console.log string wrapped in backticks
     console.log(`🔎 [/verify-paid] start wallet=${mask(wallet)} ip=${ip}`);
 
     if (!wallet) {
@@ -454,16 +452,15 @@ app.get("/verify-paid", async (req, res) => {
       return res.json({ hasPaid: false });
     }
 
-    // ensure record exists
     if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
 
-    // already paid? quick yes
+    // RAM fast path
     if (walletUsage[wallet].hasPaid) {
       console.log(`✅ [/verify-paid] already paid wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
       return res.json({ hasPaid: true });
     }
 
-    // on-chain verification
+    // On-chain verification (with local try to avoid blowing up route)
     let paid = false;
     try {
       paid = await verifyHeliusPayment(wallet);
@@ -472,19 +469,15 @@ app.get("/verify-paid", async (req, res) => {
     }
 
     if (paid) {
-    console.log(`✅ Payment verified for wallet=${mask(wallet)} at ${new Date().toISOString()}`);
-    walletUsage[wallet].hasPaid = true;
-    console.log(`💰 /verify-paid marked PAID wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
-}
-      walletUsage[wallet].hasPaid = true;
+      console.log(`✅ Payment verified for wallet=${mask(wallet)} at ${new Date().toISOString()}`);
+      walletUsage[wallet].hasPaid = true; // cache for this runtime
       console.log(`🎉 [/verify-paid] now marked PAID wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
+      return res.json({ hasPaid: true });
     } else {
       console.log(`⏳ [/verify-paid] not paid yet wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
+      return res.json({ hasPaid: false });
     }
-
-    return res.json({ hasPaid: walletUsage[wallet].hasPaid === true });
   } catch (e) {
-    // FIX 2: console.error string wrapped in backticks
     console.error(`💥 [/verify-paid] unexpected error wallet=${mask(wallet)}:`, e?.message || e);
     return res.json({ hasPaid: false });
   }

@@ -141,6 +141,8 @@ async function verifyHeliusPayment(wallet) {
   }
 }
 
+
+
 // 🧠 CrimznBot: Token Lookup + GPT-4o Crypto Chat (3 Free Questions)
 app.post("/ask", async (req, res) => {
     const { prompt, wallet } = req.body;
@@ -473,6 +475,25 @@ app.get("/verify-paid", async (req, res) => {
   }
 });
 // ===== /Verify-paid helper =====
+
+// 🧪 TEMP: Firebase + Helius debug endpoint
+app.get("/test-hel-fire", async (req, res) => {
+  try {
+    const keyJson = Buffer.from(
+      process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64,
+      "base64"
+    ).toString("utf8");
+
+    const serviceAccount = JSON.parse(keyJson);
+    res.json({
+      project_id: serviceAccount.project_id,
+      client_email: serviceAccount.client_email,
+      heliusKey: process.env.HELIUS_API_KEY ? "Found" : "Missing"
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Wildcard route to serve frontend for unmatched paths (keep this LAST)
 app.get("*", (req, res) => {

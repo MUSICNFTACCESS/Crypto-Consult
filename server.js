@@ -240,6 +240,27 @@ function findAllTokenSymbols(text) {
   return out.slice(0, 6); // sane limit
 }
 
+// 🆕 NEW: fallback CoinGecko search for obscure tokens (beyond top 100)
+async function cgSearchTokenId(query) {
+  try {
+    const url = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const data = await r.json();
+    const hit = data?.coins?.[0];
+    if (hit?.id && hit?.symbol) {
+      // prime caches so future lookups are instant
+      topTokens[(hit.symbol || "").toUpperCase()] = hit.id;
+      topTokens[(hit.name || "").toUpperCase()] = hit.id;
+      cgIdToSymbol[hit.id] = (hit.symbol || "").toUpperCase();
+      return hit.id;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 // 🆕 NEW: fetch CoinGecko prices for multiple symbols
 async function fetchPricesForSymbols(symbols) {
   const ids = symbols
@@ -331,9 +352,27 @@ app.post("/ask", async (req, res) => {
   walletUsage[wallet].count++;
 
   // 🆕 NEW: multi-token detection up front
-  const symbols = findAllTokenSymbols(prompt); // e.g., ["ONDO","SOL","ETH"]
+  let symbols = findAllTokenSymbols(prompt); // e.g., ["ONDO","SOL","ETH"]
   const askedPrice = wantsAnyPrice(prompt);
   const askedCompare = wantsComparison(prompt);
+
+  // 🆕 NEW: fallback search if user asked for price but we found nothing in cache
+  if (askedPrice && symbols.length === 0) {
+    // try to guess a coin name near "price of X" or just whole prompt
+    const m = (prompt.match(/\bprice\s+of\s+([A-Za-z0-9 .-]{2,30})/i) || [])[1];
+    const guessTerms = [];
+    if (m) guessTerms.push(m.trim());
+    // also try the whole prompt as a coarse search term
+    guessTerms.push(prompt.slice(0, 100));
+
+    for (const term of guessTerms) {
+      const id = await cgSearchTokenId(term);
+      if (id) {
+        const sym = cgIdToSymbol[id];
+        if (sym) { symbols = [sym]; break; }
+      }
+    }
+  }
 
   // ===== Price branch (supports 1..N tokens) =====
   try {

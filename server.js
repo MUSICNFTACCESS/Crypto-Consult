@@ -1,17 +1,26 @@
-	console.log("🚀 Crimzn Consult Backend v=crimznAug15v1", new Date().toString());
+// ─────────────────────────────────────────────────────────────────────────────
+// Crimzn Consult Backend
+// ─────────────────────────────────────────────────────────────────────────────
+console.log("🚀 Crimzn Consult Backend v=crimznAug15v1", new Date().toString());
 require("dotenv").config();
 
-const express = require("express");
-const helmet = require("helmet");
+const express   = require("express");
+const helmet    = require("helmet");
 const rateLimit = require("express-rate-limit");
-const fetch = require("node-fetch");
-const cors = require("cors");
-const path = require("path");
-const crypto = require("crypto");
-const nacl = require("tweetnacl");
-const bs58 = require("bs58");
+const fetch     = require("node-fetch");
+const cors      = require("cors");
+const path      = require("path");
+const crypto    = require("crypto");
+const nacl      = require("tweetnacl");
+const bs58      = require("bs58");
 const sentiment = require("sentiment");
 const { PublicKey } = require("@solana/web3.js");
+
+// 🆕 NEW: capture CryptoPanic key from env
+const CRYPTOPANIC_API_KEY = process.env.CRYPTOPANIC_API_KEY;
+
+// 🔐 Firebase Admin Setup (base64-encoded key in Render)
+const admin = require("firebase-admin");
 
 // 🔍 ENV Debug
 console.log("🧪 Starting ENV Debug Mode...");
@@ -19,9 +28,8 @@ console.log("🔐 FIREBASE_SERVICE_ACCOUNT_KEY_BASE64:", process.env.FIREBASE_SE
 console.log("🔑 HELIUS_API_KEY:", process.env.HELIUS_API_KEY ? "FOUND" : "❌ MISSING");
 console.log("💼 SOLANA_ADDRESS:", process.env.SOLANA_ADDRESS ? "FOUND" : "❌ MISSING");
 console.log("🧠 OPENAI_API_KEY:", process.env.OPENAI_API_KEY ? "FOUND" : "❌ MISSING");
-
-// 🔐 Firebase Admin Setup (base64-encoded key in Render)
-const admin = require("firebase-admin");
+// 🆕 NEW: env debug line for CryptoPanic
+console.log("📰 CRYPTOPANIC_API_KEY:", CRYPTOPANIC_API_KEY ? "FOUND" : "❌ MISSING");
 
 let serviceAccount;
 try {
@@ -33,27 +41,26 @@ try {
 
 if (!admin.apps.length) {
   try {
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
     console.log("✅ Firebase Admin initialized");
   } catch (e) {
     console.error("❌ Firebase Admin init failed:", e.message);
   }
 }
-
 const db = admin.firestore();
 
 // ⚙️ App Init
 const app = express();
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 const PORT = process.env.PORT || 3000;
 
 // ===== Load top 100 tokens on startup =====
-let topTokens = {};
+// 🆕 UPDATED: track both symbol/name → cgId, and cgId → symbol for reverse lookup
+let topTokens = {};          // { SYMBOL_UPPER: cgId, NAME_UPPER: cgId }
+let cgIdToSymbol = {};       // { cgId: SYMBOL_UPPER }
 
 const loadTopTokens = async () => {
   try {
@@ -63,11 +70,15 @@ const loadTopTokens = async () => {
     if (!r.ok) throw new Error(`CG top tokens HTTP ${r.status}`);
     const data = await r.json();
 
-    // Store both ticker and name in uppercase for detection
     topTokens = {};
+    cgIdToSymbol = {};
+
     data.forEach((coin) => {
-      topTokens[coin.symbol.toUpperCase()] = coin.id;
-      topTokens[coin.name.toUpperCase()] = coin.id;
+      const symU = (coin.symbol || "").toUpperCase();
+      const nameU = (coin.name   || "").toUpperCase();
+      if (symU)  topTokens[symU]  = coin.id;
+      if (nameU) topTokens[nameU] = coin.id;
+      if (coin.id && symU) cgIdToSymbol[coin.id] = symU; // reverse map for pretty symbols
     });
 
     console.log(`✅ Loaded ${Object.keys(topTokens).length} token entries for detection.`);
@@ -75,8 +86,6 @@ const loadTopTokens = async () => {
     console.error("❌ Failed to load top tokens:", err.message);
   }
 };
-
-// Load immediately and refresh every 12 hours
 loadTopTokens();
 setInterval(loadTopTokens, 12 * 60 * 60 * 1000);
 
@@ -111,7 +120,6 @@ app.use(
       ],
       "style-src": [
         "'self'",
-        "'unsafe-inline'",
         "https://fonts.googleapis.com"
       ],
       "font-src": [
@@ -121,7 +129,7 @@ app.use(
   })
 );
 
-// 🔓 Usage Tracking
+// 🔓 Usage Tracking (in-memory)
 const walletUsage = {};
 
 // 🔓 Helius Unlock Logic
@@ -141,11 +149,92 @@ async function verifyHeliusPayment(wallet) {
   }
 }
 
+// 🆕 NEW: flexible token alias map + robust finder (handles caps/lower/title + names + typos)
+const TOKEN_ALIASES = {
+  "bitcoin": "BTC", "bit coin": "BTC", "btc": "BTC",
+  "ethereum": "ETH", "ether": "ETH", "eth": "ETH",
+  "solana": "SOL", "sol": "SOL", "sonala": "SOL", "solona": "SOL",
+  "ripple": "XRP", "xrp": "XRP",
+  "cardano": "ADA", "ada": "ADA",
+  "dogecoin": "DOGE", "doge": "DOGE",
+  "avalanche": "AVAX", "avax": "AVAX",
+  "polygon": "MATIC", "matic": "MATIC",
+  "binance coin": "BNB", "bnb": "BNB",
+  "arbitrum": "ARB", "arb": "ARB",
+  "optimism": "OP", "op": "OP",
+  "ondo": "ONDO", "tia": "TIA",
+  "pepe": "PEPE", "wif": "WIF",
+};
 
+function findTokenSymbol(text) {
+  if (!text) return null;
 
-// 🧠 CrimznBot: Token Lookup + GPT-4o Crypto Chat (3 Free Questions)
+  // $TOKEN style
+  const dollar = text.match(/\$([A-Za-z0-9]{2,10})\b/);
+  if (dollar) return dollar[1].toUpperCase();
+
+  const lower = text.toLowerCase();
+
+  // alias dictionary (longest first to catch multi-word like "binance coin")
+  const aliasKeys = Object.keys(TOKEN_ALIASES).sort((a,b)=>b.length - a.length);
+  for (const key of aliasKeys) {
+    if (lower.includes(key)) return TOKEN_ALIASES[key];
+  }
+
+  // try any alphanumeric chunk against our CoinGecko name/symbol index (top 100 cache)
+  const parts = (text.match(/[A-Za-z0-9.-]{2,30}/g) || []);
+  for (const p of parts) {
+    const up = p.toUpperCase();
+    const cgId = topTokens[up];       // could be name ("SOLANA") or symbol ("SOL")
+    if (cgId) {
+      const sym = cgIdToSymbol[cgId]; // canonical symbol like "SOL"
+      if (sym) return sym;
+    }
+  }
+
+  // last resort: scan for ALL-CAPS token-like words present in our index
+  const caps = text.match(/\b[A-Z0-9]{2,10}\b/g);
+  if (caps) {
+    for (const c of caps) if (topTokens[c]) return c;
+  }
+
+  return null;
+}
+
+// 🆕 NEW: server-side CryptoPanic helper (no CSP change needed)
+async function getCryptoNews(limit = 5, currencyOrQuery = "") {
+  try {
+    if (!CRYPTOPANIC_API_KEY) return "CryptoPanic key missing.";
+    const base = "https://cryptopanic.com/api/developer/v2/posts/";
+    const url = new URL(base);
+    url.searchParams.set("auth_token", CRYPTOPANIC_API_KEY);
+    url.searchParams.set("kind", "news");
+    url.searchParams.set("filter", "hot");
+    url.searchParams.set("public", "true");
+    url.searchParams.set("regions", "en");
+    if (currencyOrQuery) url.searchParams.set("currencies", currencyOrQuery.toUpperCase()); // e.g., BTC, SOL
+    url.searchParams.set("page_size", String(Math.min(Math.max(limit, 1), 10)));
+
+    const r = await fetch(url.toString());
+    if (!r.ok) throw new Error(`CryptoPanic HTTP ${r.status}`);
+    const data = await r.json();
+    const posts = data?.results || [];
+    if (!posts.length) return "No fresh crypto headlines right now.";
+
+    const lines = posts.slice(0, limit).map((p, i) => {
+      const src = p.domain || "source";
+      return `${i + 1}. ${p.title} — ${src}`;
+    });
+    return `Top headlines:\n${lines.join("\n")}`;
+  } catch (e) {
+    console.error("CryptoPanic fetch error:", e.message);
+    return "Couldn’t fetch headlines right now.";
+  }
+}
+
+// ====== CrimznBot: Token Lookup + GPT-4o Crypto Chat (3 Free Questions) ======
 app.post("/ask", async (req, res) => {
-    const { prompt, wallet } = req.body;
+  const { prompt, wallet } = req.body;
 
   if (!prompt || !wallet) return res.status(400).send("⚠️ Missing prompt or wallet.");
   if (!process.env.OPENAI_API_KEY) {
@@ -153,121 +242,119 @@ app.post("/ask", async (req, res) => {
     return res.status(500).send("🧠 CrimznBot: temporary backend issue — try again shortly.");
   }
 
-if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
+  if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
 
-// Server-enforced limit (ignore any client "hasPaid")
-if (!walletUsage[wallet].hasPaid) {
-  if (walletUsage[wallet].count >= 3) {
-    const paid = await verifyHeliusPayment(wallet);
-    if (!paid) {
-      return res.status(429).json({ code: "FREE_LIMIT_REACHED" }); // ✅ send code, not words
+  // ✅ keeps: server-enforced limiter & paywall
+  if (!walletUsage[wallet].hasPaid) {
+    if (walletUsage[wallet].count >= 3) {
+      const paid = await verifyHeliusPayment(wallet);
+      if (!paid) {
+        return res.status(429).json({ code: "FREE_LIMIT_REACHED" });
+      }
+      walletUsage[wallet].hasPaid = true; // first verified payment → mark as paid
     }
-    walletUsage[wallet].hasPaid = true; // first verified payment → mark as paid
   }
-}
+  walletUsage[wallet].count++;
 
+  // === Price detection using cached top 100 (no paywall changes) ===
+  const wantsPrice = (txt) => {
+    const t = txt.toLowerCase();
+    return /\b(price|quote|worth|trading at|usd|usdt)\b/.test(t)
+        || /\bwhat'?s\s+the\s+price\b/.test(t)
+        || /^\$?[A-Za-z]{2,10}\s*\/\s*(USD|USDT)\b/i.test(txt);
+  };
 
-walletUsage[wallet].count++;
+  // 🆕 UPDATED: use the robust finder for any variation
+  try {
+    if (wantsPrice(prompt)) {
+      const query = findTokenSymbol(prompt); // (was extractTickerOrName)
+      const cgId = query ? topTokens[query.toUpperCase()] : null;
 
-// === Price detection using cached top 100 (no paywall changes) ===
-const wantsPrice = (txt) => {
-  const t = txt.toLowerCase();
-  return /\b(price|quote|worth|trading at|usd|usdt)\b/.test(t)
-      || /\bwhat'?s\s+the\s+price\b/.test(t)
-      || /^\$?[A-Za-z]{2,10}\s*\/\s*(USD|USDT)\b/i.test(txt);
-};
-
-const extractTickerOrName = (txt) => {
-  const dollar = txt.match(/\$([A-Za-z]{2,10})\b/);
-  if (dollar) return dollar[1].toUpperCase();
-
-  const ofMatch = txt.match(/\bprice\s+of\s+([A-Za-z0-9 .-]{2,30})/i);
-  if (ofMatch) return ofMatch[1].trim().toUpperCase();
-
-  const slash = txt.match(/\b([A-Za-z]{2,10})\s*\/\s*(USD|USDT)\b/i);
-  if (slash) return slash[1].toUpperCase();
-
-  const caps = txt.match(/\b[A-Z]{2,10}\b/g);
-  if (caps && caps.length) return caps[caps.length - 1].toUpperCase();
-
-  return null;
-};
-
-try {
-  if (wantsPrice(prompt)) {
-    const query = extractTickerOrName(prompt);
-    const cgId = query ? topTokens[query] : null;
-
-    if (cgId) {
-      const r = await fetch(
-        `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(cgId)}&vs_currencies=usd`
-      );
-      if (r.ok) {
-        const data = await r.json();
-        const price = data?.[cgId]?.usd;
-        if (typeof price === "number") {
-          return res.send(`💰 ${query}/USD: $${Number(price).toLocaleString()}`);
+      if (cgId) {
+        const r = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(cgId)}&vs_currencies=usd`
+        );
+        if (r.ok) {
+          const data = await r.json();
+          const price = data?.[cgId]?.usd;
+          if (typeof price === "number") {
+            return res.send(`💰 ${query}/USD: $${Number(price).toLocaleString()}`);
+          }
         }
       }
+      // unresolved → fall through to news/GPT
     }
-    // unresolved → fall through to GPT
-  }
-} catch (pxErr) {
-  console.warn("Price detection failed (falling back to GPT):", pxErr.message);
-}
-
-// === GPT-4o natural persona answer for everything else ===
-try {
-  const systemStyle = [
-    "You are CrimznBot — a crypto and market strategist with the combined IQ, insight, and abilities of Raoul Pal, Michael Saylor, Cathie Wood, and Elon Musk.",
-    "Deliver forward-looking crypto insights, tokenomics breakdowns, macro context, and high-level trading strategies.",
-    "Tone: confident, strategic, slightly degen when appropriate, deeply analytical, conviction-driven.",
-    "Avoid generic disclaimers and knowledge cutoff references.",
-    "Always provide the most relevant and actionable insight available."
-  ].join("\n");
-
-  const reply = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      temperature: 0.4,      // ← looser than 0.35, tighter than 0.6
-      max_tokens: 700,       // ← give it room to answer naturally
-      messages: [
-        { role: "system", content: systemStyle },
-        { role: "user", content: prompt }
-      ]
-    })
-  });
-
-  console.log("[ASK] OpenAI status:", reply.status);
-  if (!reply.ok) {
-    const errTxt = await reply.text().catch(() => "");
-    console.error("[ASK] OpenAI error body:", errTxt.slice(0, 300));
-    throw new Error(`OpenAI HTTP ${reply.status}`);
+  } catch (pxErr) {
+    console.warn("Price detection failed (falling back to GPT):", pxErr.message);
   }
 
-  const aiData = await reply.json();
-  let answer = aiData.choices?.[0]?.message?.content || "";
+  // 🆕 NEW: lightweight news intent (dynamic token support via finder)
+  try {
+    const lower = (prompt || "").toLowerCase();
+    if (/\b(news|headline|headlines|what's happening|latest (crypto|btc|eth|sol)?|market update)\b/.test(lower)) {
+      const sym = findTokenSymbol(prompt) || ""; // dynamic; supports names/case/typos
+      const headlines = await getCryptoNews(5, sym);
+      const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
+      return res.send(`${ts}\n\n${headlines}`);
+    }
+  } catch (newsErr) {
+    console.warn("News fetch failed (continuing to GPT):", newsErr.message);
+  }
 
-  // scrub any stray disclaimers
-  answer = answer
-    .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
-    .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
-    .trim();
+  // === GPT-4o natural persona answer for everything else (with timestamp) ===
+  try {
+    const systemStyle = [
+      "You are CrimznBot — a crypto and market strategist with forward-looking, decisive insight.",
+      "Deliver tokenomics breakdowns, macro context, and high-level trading strategies.",
+      "Tone: confident, strategic, slightly degen when appropriate, deeply analytical, conviction-driven.",
+      "Avoid generic disclaimers and knowledge cutoff references.",
+      "If data may shift, give a framework + what to check now.",
+      "Always provide the most relevant and actionable insight available."
+    ].join("\n");
 
-  return res.send(answer || "Trade the levels; keep risk tight and let liquidity lead.");
-} catch (err) {
-  console.error("❌ CrimznBot error:", err.message);
-  return res.send("🧠 CrimznBot (fallback): Keep risk tight and let liquidity tell the story.");
-}
+    const reply = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        temperature: 0.4,
+        max_tokens: 700,
+        messages: [
+          { role: "system", content: systemStyle },
+          { role: "user", content: prompt }
+        ]
+      })
+    });
 
+    console.log("[ASK] OpenAI status:", reply.status);
+    if (!reply.ok) {
+      const errTxt = await reply.text().catch(() => "");
+      console.error("[ASK] OpenAI error body:", errTxt.slice(0, 300));
+      throw new Error(`OpenAI HTTP ${reply.status}`);
+    }
+
+    const aiData = await reply.json();
+    let answer = aiData.choices?.[0]?.message?.content || "";
+
+    // scrub any stray disclaimers and add timestamp
+    const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
+    answer = answer
+      .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
+      .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
+      .trim();
+    if (!/^Updated: /.test(answer)) answer = `${ts}\n\n${answer}`;
+
+    return res.send(answer || "Trade the levels; keep risk tight and let liquidity lead.");
+  } catch (err) {
+    console.error("❌ CrimznBot error:", err.message);
+    return res.send("🧠 CrimznBot (fallback): Keep risk tight and let liquidity tell the story.");
+  }
 }); // closes app.post("/ask")
 
-// 👤 Save Profile to Firebase
+// 👤 Save Profile to Firebase (unchanged)
 app.post("/save-profile", async (req, res) => {
   const { wallet, name, email } = req.body;
   if (!wallet) return res.status(400).send("❌ Wallet is required.");
@@ -286,41 +373,31 @@ app.post("/save-profile", async (req, res) => {
   }
 });
 
-// ====== Live Prices Route (server-side proxy to CoinGecko) ======
+// ===== Live Prices Route (server-side proxy to CoinGecko) =====
+let __PRICE_CACHE__ = { data: null, ts: 0 };
 app.get("/livePrices", async (req, res) => {
   try {
-    // ✅ FIX: add lightweight cache + user-agent header to reduce CoinGecko rate-limit failures
-    if (!global.__PRICE_CACHE__) {
-      global.__PRICE_CACHE__ = { data: null, ts: 0 };
-    }
+    if (!__PRICE_CACHE__) __PRICE_CACHE__ = { data: null, ts: 0 };
     const now = Date.now();
-    if (global.__PRICE_CACHE__.data && (now - global.__PRICE_CACHE__.ts) < 60_000) {
-      return res.json(global.__PRICE_CACHE__.data);
+    if (__PRICE_CACHE__.data && (now - __PRICE_CACHE__.ts) < 60_000) {
+      return res.json(__PRICE_CACHE__.data);
     }
 
     const r = await fetch(
       "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd",
-      {
-        headers: {
-          "accept": "application/json",
-          "user-agent": "CrimznConsult/1.0", // ✅ FIX: helps avoid some public API blocks
-        },
-      }
+      { headers: { accept: "application/json", "user-agent": "CrimznConsult/1.0" } }
     );
     if (!r.ok) throw new Error(`CoinGecko HTTP ${r.status}`);
     const data = await r.json();
-
-    // ✅ FIX: cache the successful response for 60s
-    global.__PRICE_CACHE__ = { data, ts: now };
-
+    __PRICE_CACHE__ = { data, ts: now };
     res.json(data);
   } catch (err) {
     console.error("Error fetching prices:", err.message);
-    res.status(502).json({ error: "Failed to fetch prices" }); // unchanged response shape
+    res.status(502).json({ error: "Failed to fetch prices" });
   }
 });
 
-// ======== PULSEIT SENTIMENT ANALYZER (GPT-4o, 🟢🔴⚪) ========
+// ===== PulseIt SENTIMENT ANALYZER (GPT-4o, with local fallback) =====
 app.post("/pulse", async (req, res) => {
   const { text } = req.body;
   if (!text || !text.trim()) {
@@ -328,85 +405,77 @@ app.post("/pulse", async (req, res) => {
   }
 
   if (!process.env.OPENAI_API_KEY) {
-    console.error("❌ OPENAI_API_KEY missing for PulseIt.");
     return res.json({
       vibe: "Neutral",
-      emoji: "⚪",
-      explanation: "Sentiment unavailable — server not configured.",
+      explanation: "Sentiment unavailable - server not configured.",
       model: "fallback"
     });
   }
 
   try {
-const systemPrompt =
-  "You are PulseIt — a crypto sentiment specialist. " +
-  "Analyze the user's text from a trader's perspective using market psychology. " +
-  "Classify the sentiment as Bullish, Bearish, or Neutral and explicitly include that word in your answer, " +
-  "followed by exactly ONE concise sentence explaining WHY. " +
-  "Example: 'Bullish — strong buying interest and positive momentum signals.' " +
-  "No extra commentary beyond the sentiment and reasoning.";
+    const systemPrompt = [
+      "You are PulseIt — a crypto sentiment specialist.",
+      "Analyze the user's text from a trader’s perspective using market psychology.",
+      "Classify the stance as Bullish, Bearish, or Neutral and explicitly include that word in your answer,",
+      "followed by exactly ONE concise sentence explaining why.",
+      "Examples: Bullish = strong buying interest and positive momentum signals.",
+      "No extra commentary beyond the sentiment and reasoning."
+    ].join("\n");
 
     const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: "gpt-4o",
+        temperature: 0.2,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Text: "${text}"` }
-        ],
-        temperature: 0.2
+        ]
       })
     });
 
     if (!aiRes.ok) throw new Error(`OpenAI HTTP ${aiRes.status}`);
-    const aiData = await aiRes.json();
-    const explanation = (aiData.choices?.[0]?.message?.content || "").trim();
+    const aData = await aiRes.json();
+    const explanation = (aData.choices?.[0]?.message?.content || "").trim();
 
     // Decide emoji + vibe from the explanation text
     let vibe = "Neutral";
-    let emoji = "⚪";
+    let emoji = "🟡";
     const lower = explanation.toLowerCase();
-    if (lower.includes("bullish")) { vibe = "Bullish"; emoji = "🟢"; }
-    else if (lower.includes("bearish")) { vibe = "Bearish"; emoji = "🔴"; }
+    if (lower.includes("bullish")) { vibe = "Bullish"; emoji = "🟢🟢"; }
+    else if (lower.includes("bearish")) { vibe = "Bearish"; emoji = "🔴🔴"; }
 
     return res.json({ vibe, emoji, explanation, model: "gpt-4o" });
-
   } catch (err) {
     console.error("⚠️ PulseIt failed:", err.message);
     try {
       // Local fallback using 'sentiment'
       const Sentiment = require("sentiment");
-      const s = new Sentiment();
-      const r = s.analyze(text || "");
-
+      const S = new Sentiment();
+      const r = S.analyze(text || "");
       let vibe = "Neutral";
-      let emoji = "⚪";
-      if (r.score > 0) { vibe = "Bullish"; emoji = "🟢"; }
-      else if (r.score < 0) { vibe = "Bearish"; emoji = "🔴"; }
-
+      let emoji = "🟡";
+      if (r.score > 0) { vibe = "Bullish"; emoji = "🟢🟢"; }
+      else if (r.score < 0) { vibe = "Bearish"; emoji = "🔴🔴"; }
       const reasonMap = {
         Bullish: "Positive language and risk-on intent dominate.",
         Bearish: "Negative tone and risk-off posture dominate.",
         Neutral: "Mixed cues with no clear directional bias."
       };
-
       return res.json({
-        vibe,
-        emoji,
-        explanation: reasonMap[vibe],
-        model: "fallback-local"
+        vibe, emoji, explanation: reasonMap[vibe], model: "fallback-local"
       });
     } catch (e2) {
-      console.error("PulseIt local fallback failed:", e2.message);
+      console.error("⚠️ PulseIt local fallback failed:", e2.message);
       return res.json({
         vibe: "Neutral",
-        emoji: "⚪",
+        emoji: "🟡",
         explanation: "Indecisive tone; participants waiting on signal.",
-model: "fallback-last"
+        model: "fallback-last"
       });
     }
   }
@@ -420,14 +489,13 @@ app.get("/verify-unlock", async (req, res) => {
 
     const paid = await verifyHeliusPayment(sender);
 
+    // ✅ Store passive receipt (does not control unlock)
     if (paid) {
-      // ✅ Store passive receipt (does not control unlock)
       await db.collection("profiles").doc(sender).set({
         paid: true,
         timestampPaid: new Date().toISOString()
       }, { merge: true });
-
-      console.log(`📝 Stored paid receipt for wallet ${sender}`);
+      console.log(`🧾 Stored paid receipt for wallet ${sender}`);
     }
 
     res.json({ confirmed: paid });
@@ -452,15 +520,16 @@ app.get("/verify-paid", async (req, res) => {
       return res.json({ hasPaid: false });
     }
 
+    // ensure record exists
     if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
 
-    // RAM fast path
+    // already paid? quick yes
     if (walletUsage[wallet].hasPaid) {
       console.log(`✅ [/verify-paid] already paid wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
       return res.json({ hasPaid: true });
     }
 
-    // On-chain verification (with local try to avoid blowing up route)
+    // on-chain verification (wrapped)
     let paid = false;
     try {
       paid = await verifyHeliusPayment(wallet);
@@ -472,17 +541,16 @@ app.get("/verify-paid", async (req, res) => {
       console.log(`✅ Payment verified for wallet=${mask(wallet)} at ${new Date().toISOString()}`);
       walletUsage[wallet].hasPaid = true; // cache for this runtime
       console.log(`🎉 [/verify-paid] now marked PAID wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
-      return res.json({ hasPaid: true });
     } else {
       console.log(`⏳ [/verify-paid] not paid yet wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
-      return res.json({ hasPaid: false });
     }
+
+    return res.json({ hasPaid: walletUsage[wallet].hasPaid === true });
   } catch (e) {
     console.error(`💥 [/verify-paid] unexpected error wallet=${mask(wallet)}:`, e?.message || e);
     return res.json({ hasPaid: false });
   }
 });
-// ===== /Verify-paid helper =====
 
 // Wildcard route to serve frontend for unmatched paths (keep this LAST)
 app.get("*", (req, res) => {
@@ -495,7 +563,3 @@ app.listen(PORT, () => {
   console.log("🤖 CrimznBot + PulseIt + SaveProfile + Firebase booted ✅");
   console.log("⚡ Built by Crimzn, powered by Solana + Helius");
 });
-
-
-
-

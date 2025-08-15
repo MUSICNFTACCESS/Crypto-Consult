@@ -1,4 +1,4 @@
-	console.log("🚀 Crimzn Consult Backend v=crimznAug11v2", new Date().toString());
+	console.log("🚀 Crimzn Consult Backend v=crimznAug15v1", new Date().toString());
 require("dotenv").config();
 
 const express = require("express");
@@ -419,6 +419,17 @@ app.get("/verify-unlock", async (req, res) => {
     if (!sender) return res.status(400).json({ error: "Missing sender wallet" });
 
     const paid = await verifyHeliusPayment(sender);
+
+    if (paid) {
+      // ✅ Store passive receipt (does not control unlock)
+      await db.collection("profiles").doc(sender).set({
+        paid: true,
+        timestampPaid: new Date().toISOString()
+      }, { merge: true });
+
+      console.log(`📝 Stored paid receipt for wallet ${sender}`);
+    }
+
     res.json({ confirmed: paid });
   } catch (err) {
     console.error("❌ Verify-unlock error:", err.message);
@@ -461,6 +472,10 @@ app.get("/verify-paid", async (req, res) => {
     }
 
     if (paid) {
+    console.log(`✅ Payment verified for wallet=${mask(wallet)} at ${new Date().toISOString()}`);
+    walletUsage[wallet].hasPaid = true;
+    console.log(`💰 /verify-paid marked PAID wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
+}
       walletUsage[wallet].hasPaid = true;
       console.log(`🎉 [/verify-paid] now marked PAID wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
     } else {
@@ -475,25 +490,6 @@ app.get("/verify-paid", async (req, res) => {
   }
 });
 // ===== /Verify-paid helper =====
-
-// 🧪 TEMP: Firebase + Helius debug endpoint
-app.get("/test-hel-fire", async (req, res) => {
-  try {
-    const keyJson = Buffer.from(
-      process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64,
-      "base64"
-    ).toString("utf8");
-
-    const serviceAccount = JSON.parse(keyJson);
-    res.json({
-      project_id: serviceAccount.project_id,
-      client_email: serviceAccount.client_email,
-      heliusKey: process.env.HELIUS_API_KEY ? "Found" : "Missing"
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // Wildcard route to serve frontend for unmatched paths (keep this LAST)
 app.get("*", (req, res) => {

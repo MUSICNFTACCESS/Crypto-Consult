@@ -201,6 +201,80 @@ function findTokenSymbol(text) {
   return null;
 }
 
+// 🆕 NEW: extract ALL token symbols from arbitrary text (names/case/$TICKER/typos)
+function findAllTokenSymbols(text) {
+  if (!text) return [];
+  const out = [];
+  const seen = new Set();
+  const push = (sym) => {
+    const up = (sym || "").toUpperCase();
+    if (!up || seen.has(up)) return;
+    seen.add(up);
+    out.push(up);
+  };
+
+  // $TICKER matches
+  const dollarAll = text.match(/\$([A-Za-z0-9]{2,10})\b/g) || [];
+  dollarAll.forEach(m => push(m.replace("$","")));
+
+  // Alias dictionary (longest first)
+  const lower = text.toLowerCase();
+  const aliasKeys = Object.keys(TOKEN_ALIASES).sort((a,b)=>b.length - a.length);
+  aliasKeys.forEach(key => { if (lower.includes(key)) push(TOKEN_ALIASES[key]); });
+
+  // Any chunk → CoinGecko name/symbol index
+  const parts = (text.match(/[A-Za-z0-9.-]{2,30}/g) || []);
+  parts.forEach(p => {
+    const up = p.toUpperCase();
+    const cgId = topTokens[up];
+    if (cgId) {
+      const sym = cgIdToSymbol[cgId];
+      if (sym) push(sym);
+    }
+  });
+
+  // ALL-CAPS tokens present in our index
+  const caps = text.match(/\b[A-Z0-9]{2,10}\b/g) || [];
+  caps.forEach(c => { if (topTokens[c]) push(c); });
+
+  return out.slice(0, 6); // sane limit
+}
+
+// 🆕 NEW: fetch CoinGecko prices for multiple symbols
+async function fetchPricesForSymbols(symbols) {
+  const ids = symbols
+    .map(s => topTokens[String(s).toUpperCase()])
+    .filter(Boolean);
+
+  if (!ids.length) return { prices: {}, resolved: [] };
+
+  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ids.join(","))}&vs_currencies=usd`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`CoinGecko HTTP ${r.status}`);
+  const data = await r.json();
+
+  const prices = {};
+  const resolved = [];
+  ids.forEach(id => {
+    const sym = cgIdToSymbol[id];
+    const val = data?.[id]?.usd;
+    if (sym && typeof val === "number") {
+      prices[sym] = val;
+      resolved.push(sym);
+    }
+  });
+  return { prices, resolved };
+}
+
+// 🆕 NEW: quick intent helpers
+const wantsAnyPrice = (txt="") =>
+  /\b(price|quote|worth|trading at|usd|usdt)\b/i.test(txt) ||
+  /\bwhat'?s\s+the\s+price\b/i.test(txt) ||
+  /\$[A-Za-z0-9]{2,10}\b/.test(txt);
+
+const wantsComparison = (txt="") =>
+  /\b(which is better|which one|better|vs|versus|compare|comparison)\b/i.test(txt);
+
 // 🆕 NEW: server-side CryptoPanic helper (no CSP change needed)
 async function getCryptoNews(limit = 5, currencyOrQuery = "") {
   try {
@@ -256,43 +330,88 @@ app.post("/ask", async (req, res) => {
   }
   walletUsage[wallet].count++;
 
-  // === Price detection using cached top 100 (no paywall changes) ===
-  const wantsPrice = (txt) => {
-    const t = txt.toLowerCase();
-    return /\b(price|quote|worth|trading at|usd|usdt)\b/.test(t)
-        || /\bwhat'?s\s+the\s+price\b/.test(t)
-        || /^\$?[A-Za-z]{2,10}\s*\/\s*(USD|USDT)\b/i.test(txt);
-  };
+  // 🆕 NEW: multi-token detection up front
+  const symbols = findAllTokenSymbols(prompt); // e.g., ["ONDO","SOL","ETH"]
+  const askedPrice = wantsAnyPrice(prompt);
+  const askedCompare = wantsComparison(prompt);
 
-  // 🆕 UPDATED: use the robust finder for any variation
+  // ===== Price branch (supports 1..N tokens) =====
   try {
-    if (wantsPrice(prompt)) {
-      const query = findTokenSymbol(prompt); // (was extractTickerOrName)
-      const cgId = query ? topTokens[query.toUpperCase()] : null;
+    if (askedPrice && symbols.length) {
+      const { prices, resolved } = await fetchPricesForSymbols(symbols);
 
-      if (cgId) {
-        const r = await fetch(
-          `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(cgId)}&vs_currencies=usd`
-        );
-        if (r.ok) {
-          const data = await r.json();
-          const price = data?.[cgId]?.usd;
-          if (typeof price === "number") {
-            return res.send(`💰 ${query}/USD: $${Number(price).toLocaleString()}`);
+      if (resolved.length) {
+        const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
+        const lines = resolved.map(sym => `💰 ${sym}/USD: $${Number(prices[sym]).toLocaleString()}`);
+
+        // 🆕 NEW: comparison path if user asked "which is better"
+        if (askedCompare && resolved.length >= 2) {
+          const comparePairs = resolved.join(", ");
+          const priceContext = resolved.map(sym => `${sym}=${prices[sym]}`).join(", ");
+
+          const systemStyle = [
+            "You are CrimznBot — a crypto strategist. Be decisive and current.",
+            "Never invent numbers. Use provided price context when relevant.",
+            "Prefer concise bullets, then a clear one-line verdict and confidence (0-100)."
+          ].join("\n");
+
+          const userMsg = [
+            `User asked: ${prompt}`,
+            `Live prices: ${priceContext}`,
+            `Compare the mentioned assets (${comparePairs}).`,
+            `Output:`,
+            `- 3-6 crisp bullets (thesis, security/decentralization, costs, performance/throughput, ecosystem/dev).`,
+            `- Then a single-line Verdict with a Winner (one ticker or 'split') and Confidence (0-100).`
+          ].join("\n");
+
+          const reply = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "gpt-4o",
+              temperature: 0.35,
+              max_tokens: 700,
+              messages: [
+                { role: "system", content: systemStyle },
+                { role: "user", content: userMsg }
+              ]
+            })
+          });
+
+          if (!reply.ok) {
+            const errTxt = await reply.text().catch(()=> "");
+            console.error("[ASK compare] OpenAI error:", errTxt.slice(0,200));
+            // fall back to prices only
+            return res.send(`${ts}\n\n${lines.join("\n")}`);
           }
+
+          const ai = await reply.json();
+          let analysis = ai.choices?.[0]?.message?.content?.trim() || "";
+          analysis = analysis
+            .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
+            .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
+            .trim();
+
+          return res.send(`${ts}\n\n${lines.join("\n")}\n\n${analysis}`);
         }
+
+        // Otherwise: just return prices
+        return res.send(`${ts}\n\n${lines.join("\n")}`);
       }
-      // unresolved → fall through to news/GPT
+      // unresolved → fall through
     }
-  } catch (pxErr) {
-    console.warn("Price detection failed (falling back to GPT):", pxErr.message);
+  } catch (e) {
+    console.warn("Multi-price flow failed, continuing:", e.message);
   }
 
-  // 🆕 NEW: lightweight news intent (dynamic token support via finder)
+  // 📰 News branch (dynamic symbol via finder)
   try {
     const lower = (prompt || "").toLowerCase();
     if (/\b(news|headline|headlines|what's happening|latest (crypto|btc|eth|sol)?|market update)\b/.test(lower)) {
-      const sym = findTokenSymbol(prompt) || ""; // dynamic; supports names/case/typos
+      const sym = findTokenSymbol(prompt) || ""; // names/case/typos supported
       const headlines = await getCryptoNews(5, sym);
       const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
       return res.send(`${ts}\n\n${headlines}`);
@@ -301,15 +420,13 @@ app.post("/ask", async (req, res) => {
     console.warn("News fetch failed (continuing to GPT):", newsErr.message);
   }
 
-  // === GPT-4o natural persona answer for everything else (with timestamp) ===
+  // ===== GPT-4o for everything else (with timestamp) =====
   try {
     const systemStyle = [
-      "You are CrimznBot — a crypto and market strategist with forward-looking, decisive insight.",
-      "Deliver tokenomics breakdowns, macro context, and high-level trading strategies.",
-      "Tone: confident, strategic, slightly degen when appropriate, deeply analytical, conviction-driven.",
-      "Avoid generic disclaimers and knowledge cutoff references.",
-      "If data may shift, give a framework + what to check now.",
-      "Always provide the most relevant and actionable insight available."
+      "You are CrimznBot — a crypto and market strategist.",
+      "Be decisive and current. Avoid filler and generic disclaimers.",
+      "If numbers are uncertain, give a framework and what to check now.",
+      "Tone: confident, strategic, slightly degen when appropriate, deeply analytical."
     ].join("\n");
 
     const reply = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -339,7 +456,6 @@ app.post("/ask", async (req, res) => {
     const aiData = await reply.json();
     let answer = aiData.choices?.[0]?.message?.content || "";
 
-    // scrub any stray disclaimers and add timestamp
     const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
     answer = answer
       .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")

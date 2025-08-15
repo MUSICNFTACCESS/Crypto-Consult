@@ -1,4 +1,4 @@
-	console.log("🚀 Crimzn Consult Backend v=crimznAug11v2", new Date().toString());
+console.log("🚀 Crimzn Consult Backend v=crimznAug11v2", new Date().toString());
 require("dotenv").config();
 
 const express = require("express");
@@ -124,17 +124,44 @@ app.use(
 // 🔓 Usage Tracking
 const walletUsage = {};
 
-// 🔓 Helius Unlock Logic
+// 🔓 Helius Unlock Logic with Firebase update (preserves name/email)
 async function verifyHeliusPayment(wallet) {
   try {
     const url = `https://api.helius.xyz/v0/addresses/${wallet}/transactions?api-key=${process.env.HELIUS_API_KEY}&limit=5`;
     const response = await fetch(url);
     const data = await response.json();
+
     const match = data.find(tx =>
       tx.type === "TRANSFER" &&
-      tx.nativeTransfers?.some(t => t.toUserAccount === process.env.SOLANA_ADDRESS && t.amount >= 25000000)
+      tx.nativeTransfers?.some(t =>
+        t.toUserAccount === process.env.SOLANA_ADDRESS &&
+        t.amount >= 25000000 // 0.025 SOL in lamports
+      )
     );
-    return !!match;
+
+    if (match) {
+      // Get any existing profile info
+      const docRef = db.collection("profiles").doc(wallet);
+      const existingDoc = await docRef.get();
+      let existingData = {};
+      if (existingDoc.exists) {
+        existingData = existingDoc.data();
+      }
+
+      // ✅ Mark wallet as paid in Firebase while preserving existing fields
+      await docRef.set({
+        wallet,
+        name: existingData.name || "",
+        email: existingData.email || "",
+        isPaid: true,
+        lastPaid: new Date().toISOString(),
+      }, { merge: true });
+
+      console.log(`✅ Wallet ${wallet} marked as paid in Firebase.`);
+      return true;
+    }
+
+    return false;
   } catch (e) {
     console.error("🔴 Failed to verify payment:", e.message);
     return false;
@@ -283,6 +310,23 @@ app.post("/save-profile", async (req, res) => {
     res.status(500).send("❌ Failed to save profile.");
   }
 });
+
+app.get("/check-profile/:wallet", async (req, res) => {
+  const { wallet } = req.params;
+  if (!wallet) return res.status(400).send("❌ Wallet is required.");
+
+  try {
+    const doc = await db.collection("profiles").doc(wallet).get();
+    if (!doc.exists) return res.json({ isPaid: false });
+
+    const data = doc.data();
+    res.json({ isPaid: !!data.isPaid });
+  } catch (e) {
+    console.error("❌ Firebase error:", e.message);
+    res.status(500).send("❌ Failed to check profile.");
+  }
+});
+
 
 // ====== Live Prices Route (server-side proxy to CoinGecko) ======
 app.get("/livePrices", async (req, res) => {

@@ -16,10 +16,10 @@ const bs58      = require("bs58");
 const sentiment = require("sentiment");
 const { PublicKey } = require("@solana/web3.js");
 
-// 🆕 NEW: capture CryptoPanic key from env
+// 📰 CryptoPanic key (optional)
 const CRYPTOPANIC_API_KEY = process.env.CRYPTOPANIC_API_KEY;
 
-// 🔐 Firebase Admin Setup (base64-encoded key in Render)
+// 🔐 Firebase Admin Setup (base64-encoded key in Render) — SAFE guard for local dev
 const admin = require("firebase-admin");
 
 // 🔍 ENV Debug
@@ -28,26 +28,25 @@ console.log("🔐 FIREBASE_SERVICE_ACCOUNT_KEY_BASE64:", process.env.FIREBASE_SE
 console.log("🔑 HELIUS_API_KEY:", process.env.HELIUS_API_KEY ? "FOUND" : "❌ MISSING");
 console.log("💼 SOLANA_ADDRESS:", process.env.SOLANA_ADDRESS ? "FOUND" : "❌ MISSING");
 console.log("🧠 OPENAI_API_KEY:", process.env.OPENAI_API_KEY ? "FOUND" : "❌ MISSING");
-// 🆕 NEW: env debug line for CryptoPanic
 console.log("📰 CRYPTOPANIC_API_KEY:", CRYPTOPANIC_API_KEY ? "FOUND" : "❌ MISSING");
 
-let serviceAccount;
+let db = null;
 try {
-  const decodedKey = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64, "base64").toString("utf-8");
-  serviceAccount = JSON.parse(decodedKey);
-} catch (e) {
-  console.error("❌ Error parsing Firebase key:", e.message);
-}
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64 || "";
+  const decodedKey = raw ? Buffer.from(raw, "base64").toString("utf-8") : "";
+  const serviceAccount = decodedKey ? JSON.parse(decodedKey) : null;
 
-if (!admin.apps.length) {
-  try {
+  if (serviceAccount && typeof serviceAccount === "object" && !admin.apps.length) {
     admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    db = admin.firestore();
     console.log("✅ Firebase Admin initialized");
-  } catch (e) {
-    console.error("❌ Firebase Admin init failed:", e.message);
+  } else if (!serviceAccount) {
+    console.warn("⚠️ Firebase service account not provided or invalid — skipping init (OK for local dev).");
   }
+} catch (e) {
+  console.error("❌ Firebase Admin init skipped (parse/init error):", e.message);
+  db = null; // ensure null so save-profile can short-circuit
 }
-const db = admin.firestore();
 
 // ⚙️ App Init
 const app = express();
@@ -57,8 +56,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 const PORT = process.env.PORT || 3000;
 
-// ===== Load top 100 tokens on startup =====
-// 🆙 UPDATED: track both symbol/name → cgId, and cgId → symbol for reverse lookup
+// ===== Load top 100 tokens on startup (with retry) =====
 let topTokens = {};          // { SYMBOL_UPPER: cgId, NAME_UPPER: cgId }
 let cgIdToSymbol = {};       // { cgId: SYMBOL_UPPER }
 
@@ -74,24 +72,21 @@ const loadTopTokens = async () => {
   try {
     let data;
     for (let i = 0; i < 3; i++) {
-      try {
-        data = await attempt(i);
-        break;
-      } catch (e) {
+      try { data = await attempt(i); break; }
+      catch (e) {
         const wait = (i + 1) * 1000;
-        console.warn(`⚠️ loadTopTokens attempt ${i + 1} failed: ${e.message} — retrying in ${wait}ms`);
-        await new Promise((res) => setTimeout(res, wait));
+        console.warn(`▲ loadTopTokens attempt ${i + 1} failed: ${e.message} — retrying in ${wait}ms`);
+        await new Promise(res => setTimeout(res, wait));
       }
     }
     if (!data) throw new Error("CG markets fetch failed after retries");
 
     topTokens = {};
     cgIdToSymbol = {};
-
     data.forEach((coin) => {
-      const symU = (coin.symbol || "").toUpperCase();
-      const nameU = (coin.name || "").toUpperCase();
-      if (symU) topTokens[symU] = coin.id;
+      const symU  = (coin.symbol || "").toUpperCase();
+      const nameU = (coin.name   || "").toUpperCase();
+      if (symU)  topTokens[symU]  = coin.id;
       if (nameU) topTokens[nameU] = coin.id;
       if (coin.id && symU) cgIdToSymbol[coin.id] = symU;
     });
@@ -101,8 +96,10 @@ const loadTopTokens = async () => {
     console.error("❌ Failed to load top tokens:", err.message);
   }
 };
+loadTopTokens();
+setInterval(loadTopTokens, 12 * 60 * 60 * 1000);
 
-// 🧱 Middleware
+// 🧱 Security + Rate-limit
 app.use(helmet());
 app.use(rateLimit({
   windowMs: 60 * 1000,
@@ -162,7 +159,7 @@ async function verifyHeliusPayment(wallet) {
   }
 }
 
-// 🆕 NEW: flexible token alias map + robust finder (handles caps/lower/title + names + minor typos)
+// 🆕 Flexible token alias map
 const TOKEN_ALIASES = {
   "bitcoin": "BTC", "bit coin": "BTC", "btc": "BTC",
   "ethereum": "ETH", "ether": "ETH", "eth": "ETH",
@@ -179,42 +176,37 @@ const TOKEN_ALIASES = {
   "pepe": "PEPE", "wif": "WIF",
 };
 
+// Single token finder ($TICKER, aliases, CG top100)
 function findTokenSymbol(text) {
   if (!text) return null;
 
-  // $TOKEN style
   const dollar = text.match(/\$([A-Za-z0-9]{2,10})\b/);
   if (dollar) return dollar[1].toUpperCase();
 
   const lower = text.toLowerCase();
-
-  // alias dictionary (longest first to catch multi-word like "binance coin")
   const aliasKeys = Object.keys(TOKEN_ALIASES).sort((a,b)=>b.length - a.length);
   for (const key of aliasKeys) {
     if (lower.includes(key)) return TOKEN_ALIASES[key];
   }
 
-  // try any alphanumeric chunk against CoinGecko name/symbol index (top 100 cache)
   const parts = (text.match(/[A-Za-z0-9.-]{2,30}/g) || []);
   for (const p of parts) {
     const up = p.toUpperCase();
-    const cgId = topTokens[up];       // could be name ("SOLANA") or symbol ("SOL")
+    const cgId = topTokens[up];
     if (cgId) {
-      const sym = cgIdToSymbol[cgId]; // canonical symbol like "SOL"
+      const sym = cgIdToSymbol[cgId];
       if (sym) return sym;
     }
   }
 
-  // last resort: scan ALL-CAPS token-like words present in our index
   const caps = text.match(/\b[A-Z0-9]{2,10}\b/g);
   if (caps) {
     for (const c of caps) if (topTokens[c]) return c;
   }
-
   return null;
 }
 
-// 🆕 NEW: extract ALL token symbols from arbitrary text (names/case/$TICKER/aliases)
+// Multi-token extractor
 function findAllTokenSymbols(text) {
   if (!text) return [];
   const out = [];
@@ -226,16 +218,13 @@ function findAllTokenSymbols(text) {
     out.push(up);
   };
 
-  // $TICKER matches
   const dollarAll = text.match(/\$([A-Za-z0-9]{2,10})\b/g) || [];
   dollarAll.forEach(m => push(m.replace("$","")));
 
-  // Alias dictionary (longest first)
   const lower = text.toLowerCase();
   const aliasKeys = Object.keys(TOKEN_ALIASES).sort((a,b)=>b.length - a.length);
   aliasKeys.forEach(key => { if (lower.includes(key)) push(TOKEN_ALIASES[key]); });
 
-  // Any chunk → CoinGecko name/symbol index
   const parts = (text.match(/[A-Za-z0-9.-]{2,30}/g) || []);
   parts.forEach(p => {
     const up = p.toUpperCase();
@@ -246,14 +235,13 @@ function findAllTokenSymbols(text) {
     }
   });
 
-  // ALL-CAPS tokens present in our index
   const caps = text.match(/\b[A-Z0-9]{2,10}\b/g) || [];
   caps.forEach(c => { if (topTokens[c]) push(c); });
 
-  return out.slice(0, 6); // sane limit
+  return out.slice(0, 6);
 }
 
-// 🔎 emergency symbol→id resolver via CoinGecko /search
+// 🔎 emergency symbol→id resolver via CoinGecko /search (multi)
 async function resolveCgIdsBySearch(symbolsUpper) {
   const out = [];
   for (const s of symbolsUpper) {
@@ -261,56 +249,68 @@ async function resolveCgIdsBySearch(symbolsUpper) {
       const r = await fetch(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(s)}`);
       if (!r.ok) continue;
       const j = await r.json();
-      // prefer exact symbol match first, otherwise first coin result
       const exact = (j.coins || []).find(c => (c.symbol || "").toUpperCase() === s);
       const pick = exact || (j.coins || [])[0];
-      if (pick && pick.id) out.push(pick.id);
+      if (pick && pick.id) {
+        out.push(pick.id);
+        // prime caches
+        const sym = (pick.symbol || "").toUpperCase();
+        const name = (pick.name || "").toUpperCase();
+        if (sym)  topTokens[sym]  = pick.id;
+        if (name) topTokens[name] = pick.id;
+        if (sym)  cgIdToSymbol[pick.id] = sym;
+      }
     } catch { /* no-op */ }
   }
   return out;
 }
 
-// 🔎 single-token fallback search that primes caches (symbol/name → id, id → symbol)
+// 🔎 single-token fallback (primes caches too)
 async function cgSearchTokenId(query) {
   try {
     const url = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`;
     const r = await fetch(url);
     if (!r.ok) return null;
     const data = await r.json();
-
-    // Prefer exact symbol match (case-insensitive), else first coin result
     const qUpper = String(query).toUpperCase();
     const coins = data?.coins || [];
     const exact = coins.find(c => (c.symbol || "").toUpperCase() === qUpper) || coins[0];
-
     if (exact?.id) {
-      // Prime caches for future instant lookups
-      const sym = (exact.symbol || "").toUpperCase();
-      const name = (exact.name || "").toUpperCase();
+      const sym  = (exact.symbol || "").toUpperCase();
+      const name = (exact.name   || "").toUpperCase();
       if (sym)  topTokens[sym]  = exact.id;
       if (name) topTokens[name] = exact.id;
       if (sym)  cgIdToSymbol[exact.id] = sym;
       return exact.id;
     }
     return null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-// 🆕 fetch CoinGecko prices for multiple symbols (cache → multi-search → per-symbol fallback)
+// ⚓ Coinbase spot fallback per symbol (no key)
+async function fetchCoinbaseSpot(symbolUpper) {
+  try {
+    const base = symbolUpper.toUpperCase();
+    const url = `https://api.coinbase.com/v2/prices/${base}-USD/spot`;
+    const r = await fetch(url, { headers: { accept: "application/json", "user-agent": "CrimznConsult/1.0" } });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const amt = parseFloat(j?.data?.amount);
+    return Number.isFinite(amt) ? amt : null;
+  } catch { return null; }
+}
+
+// 🧮 fetch prices (CG + Coinbase fallback)
 async function fetchPricesForSymbols(symbols) {
   const uppers = symbols.map(s => String(s).toUpperCase());
 
-  // 1) Try cache (topTokens maps SYMBOL/NAME → cgId)
+  // 1) cache
   let ids = uppers.map(u => topTokens[u]).filter(Boolean);
 
-  // 2) If no luck, try multi search (best-effort)
-  if (!ids.length) {
-    ids = await resolveCgIdsBySearch(uppers);
-  }
+  // 2) multi-search if none
+  if (!ids.length) ids = await resolveCgIdsBySearch(uppers);
 
-  // 3) Still missing? Try per-symbol fallback and prime caches
+  // 3) per-symbol fallback if still missing
   if (ids.length < uppers.length) {
     const missing = uppers.filter(u => !ids.includes(topTokens[u]));
     for (const m of missing) {
@@ -319,27 +319,43 @@ async function fetchPricesForSymbols(symbols) {
     }
   }
 
-  if (!ids.length) return { prices: {}, resolved: [] };
-
-  // De-dupe ids
   ids = [...new Set(ids)];
 
-  // Query simple/price for everything we have
-  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ids.join(","))}&vs_currencies=usd`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`CoinGecko HTTP ${r.status}`);
-  const data = await r.json();
-
-  // Build response with best available symbols
   const prices = {};
   const resolved = [];
-  for (const id of ids) {
-    const val = data?.[id]?.usd;
-    if (typeof val === "number") {
-      const sym =
-        cgIdToSymbol[id] ||
-        uppers.find(u => topTokens[u] === id) ||
-        (id || "").toUpperCase();
+
+  // CoinGecko first
+  if (ids.length) {
+try {
+      const headers = { accept: "application/json", "user-agent": "CrimznConsult/1.0" };
+      if (process.env.COINGECKO_API_KEY) headers["x-cg-pro-api-key"] = process.env.COINGECKO_API_KEY;
+
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ids.join(","))}&vs_currencies=usd`;
+      const r = await fetch(url, { headers });
+      if (r.ok) {
+        const data = await r.json();
+        for (const id of ids) {
+          const val = data?.[id]?.usd;
+          if (typeof val === "number") {
+            const sym =
+              cgIdToSymbol[id] ||
+              uppers.find(u => topTokens[u] === id) ||
+              (id || "").toUpperCase();
+            prices[sym] = val;
+            resolved.push(sym);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("CG simple/price failed; trying Coinbase fallback:", e.message);
+    }
+  }
+
+  // Coinbase fallback for any unresolved symbols
+  const unresolved = uppers.filter(s => prices[s] === undefined);
+  for (const sym of unresolved) {
+    const val = await fetchCoinbaseSpot(sym).catch(() => null);
+    if (typeof val === "number" && !Number.isNaN(val)) {
       prices[sym] = val;
       resolved.push(sym);
     }
@@ -348,7 +364,7 @@ async function fetchPricesForSymbols(symbols) {
   return { prices, resolved };
 }
 
-// 🆕 NEW: quick intent helpers
+// 🔎 intent helpers
 const wantsAnyPrice = (txt = "") =>
   /\b(price|quote|worth|trading at|usd|usdt|how much(?: is| are)?)\b/i.test(txt) ||
   /\bwhat'?s\s+the\s+price\b/i.test(txt) ||
@@ -357,7 +373,10 @@ const wantsAnyPrice = (txt = "") =>
 const wantsComparison = (txt = "") =>
   /\b(which is better|which one|better|vs|versus|compare|comparison)\b/i.test(txt);
 
-// 🧭 Fear & Greed Index fetcher
+const wantsNews = (txt = "") =>
+  /\b(news|headline|headlines|what's happening|latest (crypto|btc|eth|sol)?|market update|news on)\b/i.test(txt);
+
+// 🧭 Fear & Greed Index
 async function getFearGreedIndex() {
   try {
     const r = await fetch("https://api.alternative.me/fng/?limit=1");
@@ -372,7 +391,7 @@ async function getFearGreedIndex() {
   }
 }
 
-// 🆕 NEW: server-side CryptoPanic helper (no CSP change needed)
+// 🗞️ CryptoPanic headlines
 async function getCryptoNews(limit = 5, currencyOrQuery = "") {
   try {
     if (!CRYPTOPANIC_API_KEY) return "CryptoPanic key missing.";
@@ -383,7 +402,7 @@ async function getCryptoNews(limit = 5, currencyOrQuery = "") {
     url.searchParams.set("filter", "hot");
     url.searchParams.set("public", "true");
     url.searchParams.set("regions", "en");
-    if (currencyOrQuery) url.searchParams.set("currencies", currencyOrQuery.toUpperCase()); // e.g., BTC, SOL
+    if (currencyOrQuery) url.searchParams.set("currencies", currencyOrQuery.toUpperCase());
     url.searchParams.set("page_size", String(Math.min(Math.max(limit, 1), 10)));
 
     const r = await fetch(url.toString());
@@ -403,7 +422,6 @@ async function getCryptoNews(limit = 5, currencyOrQuery = "") {
   }
 }
 
-
 // ====== CrimznBot: Token Lookup + GPT-4o Crypto Chat (3 Free Questions) ======
 app.post("/ask", async (req, res) => {
   const { prompt, wallet } = req.body;
@@ -416,119 +434,128 @@ app.post("/ask", async (req, res) => {
 
   if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
 
-  // ✅ keeps: server-enforced limiter & paywall
-  if (!walletUsage[wallet].hasPaid) {
-    if (walletUsage[wallet].count >= 3) {
-      const paid = await verifyHeliusPayment(wallet);
-      if (!paid) {
-        return res.status(429).json({ code: "FREE_LIMIT_REACHED" });
-      }
-      walletUsage[wallet].hasPaid = true; // first verified payment → mark as paid
-    }
+  // server-enforced limiter & paywall
+  if (!walletUsage[wallet].hasPaid && walletUsage[wallet].count >= 3) {
+    const paid = await verifyHeliusPayment(wallet);
+    if (!paid) return res.status(429).json({ code: "FREE_LIMIT_REACHED" });
+    walletUsage[wallet].hasPaid = true;
   }
   walletUsage[wallet].count++;
 
-  // 🆕 NEW: multi-token detection up front
-  let symbols = findAllTokenSymbols(prompt); // e.g., ["ONDO","SOL","ETH"]
+  // detect tokens/intents
+  let symbols = findAllTokenSymbols(prompt);       // e.g., ["ONDO","SOL","ETH"]
   const askedPrice = wantsAnyPrice(prompt);
   const askedCompare = wantsComparison(prompt);
-  console.log("[ASK debug]", { askedPrice, askedCompare, symbols, topTokensSize: Object.keys(topTokens||{}).length });
+  const askedNews = /\b(news|headline|headlines|what's happening|market update|news on|news for)\b/i.test(prompt);
+  if (process.env.DEBUG_ASK === "1") {
+    console.log("[ASK debug]", { askedPrice, askedCompare, symbols, topTokensSize: Object.keys(topTokens||{}).length });
+  }
 
-  // 🆕 NEW: fallback search if user asked for price but we found nothing in cache
+  // fallback search if user clearly asked price but we didn't detect any symbol
   if (askedPrice && symbols.length === 0) {
-    // try to guess a coin name near "price of X" or just whole prompt
     const m = (prompt.match(/\bprice\s+of\s+([A-Za-z0-9 .-]{2,30})/i) || [])[1];
     const guessTerms = [];
     if (m) guessTerms.push(m.trim());
-    // also try the whole prompt as a coarse search term
-    guessTerms.push(prompt.slice(0, 100));
+    if (!guessTerms.length) guessTerms.push(prompt.trim().slice(0, 60));
 
     for (const term of guessTerms) {
       const id = await cgSearchTokenId(term);
       if (id) {
         const sym = cgIdToSymbol[id];
-        if (sym) { symbols = [sym]; break; }
+        if (sym) symbols = [sym];
+        break;
       }
     }
   }
 
-  // ===== Price branch (supports 1..N tokens) =====
-  try {
-    if (askedPrice && symbols.length) {
-      const { prices, resolved } = await fetchPricesForSymbols(symbols);
+// ===== Price branch =====
+try {
+    if (askedPrice && symbols.length && !askedNews) {
+    const { prices, resolved } = await fetchPricesForSymbols(symbols);
+    if (resolved.length) {
+      const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
+      const lines = resolved.map(sym => `💰 ${sym}/USD: $${Number(prices[sym]).toLocaleString()}`);
 
-      if (resolved.length) {
-        const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
-        const lines = resolved.map(sym => `💰 ${sym}/USD: $${Number(prices[sym]).toLocaleString()}`);
+      // comparison path
+      if (askedCompare && resolved.length >= 2) {
+        const comparePairs = resolved.join(", ");
+        const priceContext = resolved.map(sym => `${sym}=${prices[sym]}`).join(", ");
 
-        // 🆕 NEW: comparison path if user asked "which is better"
-        if (askedCompare && resolved.length >= 2) {
-          const comparePairs = resolved.join(", ");
-          const priceContext = resolved.map(sym => `${sym}=${prices[sym]}`).join(", ");
+        const systemStyle = [
+          "You are CrimznBot — a crypto strategist. Be decisive and current.",
+          "Never invent numbers. Use provided price context when relevant.",
+          "Prefer concise bullets, then a clear one-line verdict and confidence (0-100)."
+        ].join("\n");
 
-          const systemStyle = [
-            "You are CrimznBot — a crypto strategist. Be decisive and current.",
-            "Never invent numbers. Use provided price context when relevant.",
-            "Prefer concise bullets, then a clear one-line verdict and confidence (0-100)."
-          ].join("\n");
+        const userMsg = [
+          `User asked: ${prompt}`,
+          `Live prices: ${priceContext}`,
+          `Compare the mentioned assets (${comparePairs}).`,
+          `Output:`,
+          `- 3-6 crisp bullets (thesis, security/decentralization, costs, performance/throughput, ecosystem/dev).`,
+          `- Then a single-line Verdict with a Winner (one ticker or 'split') and Confidence (0-100).`
+        ].join("\n");
 
-          const userMsg = [
-            `User asked: ${prompt}`,
-            `Live prices: ${priceContext}`,
-            `Compare the mentioned assets (${comparePairs}).`,
-            `Output:`,
-            `- 3-6 crisp bullets (thesis, security/decentralization, costs, performance/throughput, ecosystem/dev).`,
-            `- Then a single-line Verdict with a Winner (one ticker or 'split') and Confidence (0-100).`
-          ].join("\n");
+        const reply = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "gpt-4o",
+            temperature: 0.35,
+            max_tokens: 700,
+            messages: [
+              { role: "system", content: systemStyle },
+              { role: "user", content: userMsg }
+            ]
+          })
+        });
 
-          const reply = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "gpt-4o",
-              temperature: 0.35,
-              max_tokens: 700,
-              messages: [
-                { role: "system", content: systemStyle },
-                { role: "user", content: userMsg }
-              ]
-            })
-          });
-
-          if (!reply.ok) {
-            const errTxt = await reply.text().catch(()=> "");
-            console.error("[ASK compare] OpenAI error:", errTxt.slice(0,200));
-            // fall back to prices only
-            return res.send(`${ts}\n\n${lines.join("\n")}`);
-          }
-
-          const ai = await reply.json();
-          let analysis = ai.choices?.[0]?.message?.content?.trim() || "";
-          analysis = analysis
-            .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
-            .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
-            .trim();
-
-          return res.send(`${ts}\n\n${lines.join("\n")}\n\n${analysis}`);
+        if (!reply.ok) {
+          const errTxt = await reply.text().catch(()=> "");
+          console.error("[ASK compare] OpenAI error:", errTxt.slice(0,200));
+          return res.send(`${ts}\n\n${lines.join("\n")}`);
         }
 
-        // Otherwise: just return prices
-        return res.send(`${ts}\n\n${lines.join("\n")}`);
-      }
-      // unresolved → fall through
-    }
-  } catch (e) {
-    console.warn("Multi-price flow failed, continuing:", e.message);
-  }
+        const ai = await reply.json();
+        let analysis = ai.choices?.[0]?.message?.content?.trim() || "";
+        analysis = analysis
+          .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
+          .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
+          .trim();
 
-  // 📰 News branch (dynamic symbol via finder)
+        return res.send(`${ts}\n\n${lines.join("\n")}\n\n${analysis}`);
+      }
+
+      // prices only
+      return res.send(`${ts}\n\n${lines.join("\n")}`);
+    }
+    // unresolved → fall through
+  }
+} catch (e) {
+  console.warn("Multi-price flow failed, continuing:", e.message);
+}
+
+
+  // 🧭 Fear & Greed Index branch
   try {
     const lower = (prompt || "").toLowerCase();
-    if (/\b(news|headline|headlines|what's happening|latest (crypto|btc|eth|sol)?|market update)\b/.test(lower)) {
-      const sym = findTokenSymbol(prompt) || ""; // names/case/typos supported
+    if (/\b(fear\s*&\s*greed|fear and greed|greed index)\b/i.test(lower)) {
+      const index = await getFearGreedIndex();
+      const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
+      return res.send(`${ts}\n\n${index}`);
+    }
+  } catch (fgErr) {
+    console.warn("FearGreed fetch failed (continuing to other routes):", fgErr.message);
+  }
+
+  // 📰 News branch
+  try {
+    const lower = (prompt || "").toLowerCase();
+    if (/\b(news|headline|headlines|what's happening|market update|news on|news for)\b/.test(lower)) {
+      const sym = findTokenSymbol(prompt) || "";
       const headlines = await getCryptoNews(5, sym);
       const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
       return res.send(`${ts}\n\n${headlines}`);
@@ -537,18 +564,7 @@ app.post("/ask", async (req, res) => {
     console.warn("News fetch failed (continuing to GPT):", newsErr.message);
   }
 
-// 🧭 Fear & Greed Index branch
-try {
-  if (/\b(fear & greed|fear and greed|greed index)\b/i.test(prompt)) {
-    const index = await getFearGreedIndex();
-    const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
-    return res.send(`${ts}\n\n${index}`);
-  }
-} catch (fgErr) {
-  console.warn("FearGreed fetch failed:", fgErr.message);
-}
-
-  // ===== GPT-4o for everything else (with timestamp) =====
+  // ===== GPT-4o fallback =====
   try {
     const systemStyle = [
       "You are CrimznBot — a crypto and market strategist.",
@@ -598,10 +614,14 @@ try {
   }
 }); // closes app.post("/ask")
 
-// 👤 Save Profile to Firebase (unchanged)
+// 👤 Save Profile to Firebase (safe if Firebase disabled)
 app.post("/save-profile", async (req, res) => {
   const { wallet, name, email } = req.body;
   if (!wallet) return res.status(400).send("❌ Wallet is required.");
+
+  if (!db) {
+    return res.status(501).send("⚠️ Profile storage is disabled in this environment.");
+  }
 
   try {
     await db.collection("profiles").doc(wallet).set({
@@ -621,15 +641,17 @@ app.post("/save-profile", async (req, res) => {
 let __PRICE_CACHE__ = { data: null, ts: 0 };
 app.get("/livePrices", async (req, res) => {
   try {
-    if (!__PRICE_CACHE__) __PRICE_CACHE__ = { data: null, ts: 0 };
     const now = Date.now();
     if (__PRICE_CACHE__.data && (now - __PRICE_CACHE__.ts) < 60_000) {
       return res.json(__PRICE_CACHE__.data);
     }
 
+    const headers = { accept: "application/json", "user-agent": "CrimznConsult/1.0" };
+    if (process.env.COINGECKO_API_KEY) headers["x-cg-pro-api-key"] = process.env.COINGECKO_API_KEY;
+
     const r = await fetch(
       "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd",
-      { headers: { accept: "application/json", "user-agent": "CrimznConsult/1.0" } }
+      { headers }
     );
     if (!r.ok) throw new Error(`CoinGecko HTTP ${r.status}`);
     const data = await r.json();
@@ -686,7 +708,6 @@ app.post("/pulse", async (req, res) => {
     const aData = await aiRes.json();
     const explanation = (aData.choices?.[0]?.message?.content || "").trim();
 
-    // Decide emoji + vibe from the explanation text
     let vibe = "Neutral";
     let emoji = "🟡";
     const lower = explanation.toLowerCase();
@@ -697,7 +718,6 @@ app.post("/pulse", async (req, res) => {
   } catch (err) {
     console.error("⚠️ PulseIt failed:", err.message);
     try {
-      // Local fallback using 'sentiment'
       const Sentiment = require("sentiment");
       const S = new Sentiment();
       const r = S.analyze(text || "");
@@ -733,8 +753,7 @@ app.get("/verify-unlock", async (req, res) => {
 
     const paid = await verifyHeliusPayment(sender);
 
-    // ✅ Store passive receipt (does not control unlock)
-    if (paid) {
+    if (paid && db) {
       await db.collection("profiles").doc(sender).set({
         paid: true,
         timestampPaid: new Date().toISOString()
@@ -749,7 +768,7 @@ app.get("/verify-unlock", async (req, res) => {
   }
 });
 
-// ===== Verify-paid helper with logging (does NOT alter limiter logic) =====
+// ===== Verify-paid helper (does NOT alter limiter logic) =====
 app.get("/verify-paid", async (req, res) => {
   const mask = (w) => (w && w.length >= 8 ? `${w.slice(0,4)}…${w.slice(-4)}` : (w || "(none)"));
   const wallet = String(req.query.wallet || "");
@@ -764,26 +783,20 @@ app.get("/verify-paid", async (req, res) => {
       return res.json({ hasPaid: false });
     }
 
-    // ensure record exists
     if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
 
-    // already paid? quick yes
     if (walletUsage[wallet].hasPaid) {
       console.log(`✅ [/verify-paid] already paid wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
       return res.json({ hasPaid: true });
     }
 
-    // on-chain verification (wrapped)
     let paid = false;
-    try {
-      paid = await verifyHeliusPayment(wallet);
-    } catch (e) {
-      console.error(`❌ [/verify-paid] verifyHeliusPayment error wallet=${mask(wallet)}:`, e?.message || e);
-    }
+    try { paid = await verifyHeliusPayment(wallet); }
+    catch (e) { console.error(`❌ [/verify-paid] verifyHeliusPayment error wallet=${mask(wallet)}:`, e?.message || e); }
 
     if (paid) {
       console.log(`✅ Payment verified for wallet=${mask(wallet)} at ${new Date().toISOString()}`);
-      walletUsage[wallet].hasPaid = true; // cache for this runtime
+      walletUsage[wallet].hasPaid = true; // cache
       console.log(`🎉 [/verify-paid] now marked PAID wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
     } else {
       console.log(`⏳ [/verify-paid] not paid yet wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
@@ -804,6 +817,6 @@ app.get("*", (req, res) => {
 // 🚀 Start Server — must be last!
 app.listen(PORT, () => {
   console.log("✅ Server running on port", PORT);
-  console.log("🤖 CrimznBot + PulseIt + SaveProfile + Firebase booted ✅");
+  console.log("🤖 CrimznBot + PulseIt + SaveProfile + Firebase booted ✅ (Firebase:", db ? "ON" : "OFF", ")");
   console.log("⚡ Built by Crimzn, powered by Solana + Helius");
 });

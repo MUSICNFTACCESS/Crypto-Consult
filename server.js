@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Crimzn Consult Backend
 // ─────────────────────────────────────────────────────────────────────────────
-console.log("🚀 Crimzn Consult Backend v=crimznAug15v3", new Date().toString());
+console.log("🚀 Crimzn Consult Backend v=crimznAug17v1", new Date().toString());
 require("dotenv").config();
 
 const express   = require("express");
@@ -432,6 +432,7 @@ app.post("/ask", async (req, res) => {
   let symbols = findAllTokenSymbols(prompt); // e.g., ["ONDO","SOL","ETH"]
   const askedPrice = wantsAnyPrice(prompt);
   const askedCompare = wantsComparison(prompt);
+  console.log("[ASK debug]", { askedPrice, askedCompare, symbols, topTokensSize: Object.keys(topTokens||{}).length });
 
   // 🆕 NEW: fallback search if user asked for price but we found nothing in cache
   if (askedPrice && symbols.length === 0) {

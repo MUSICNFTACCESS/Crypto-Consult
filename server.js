@@ -63,22 +63,37 @@ let topTokens = {};          // { SYMBOL_UPPER: cgId, NAME_UPPER: cgId }
 let cgIdToSymbol = {};       // { cgId: SYMBOL_UPPER }
 
 const loadTopTokens = async () => {
-  try {
+  const attempt = async (n) => {
     const r = await fetch(
       "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false"
     );
     if (!r.ok) throw new Error(`CG top tokens HTTP ${r.status}`);
-    const data = await r.json();
+    return r.json();
+  };
+
+  try {
+    let data;
+    for (let i = 0; i < 3; i++) {
+      try {
+        data = await attempt(i);
+        break;
+      } catch (e) {
+        const wait = (i + 1) * 1000;
+        console.warn(`⚠️ loadTopTokens attempt ${i + 1} failed: ${e.message} — retrying in ${wait}ms`);
+        await new Promise((res) => setTimeout(res, wait));
+      }
+    }
+    if (!data) throw new Error("CG markets fetch failed after retries");
 
     topTokens = {};
     cgIdToSymbol = {};
 
     data.forEach((coin) => {
       const symU = (coin.symbol || "").toUpperCase();
-      const nameU = (coin.name   || "").toUpperCase();
-      if (symU)  topTokens[symU]  = coin.id;
+      const nameU = (coin.name || "").toUpperCase();
+      if (symU) topTokens[symU] = coin.id;
       if (nameU) topTokens[nameU] = coin.id;
-      if (coin.id && symU) cgIdToSymbol[coin.id] = symU; // reverse map for pretty symbols
+      if (coin.id && symU) cgIdToSymbol[coin.id] = symU;
     });
 
     console.log(`✅ Loaded ${Object.keys(topTokens).length} token entries for detection.`);
@@ -86,8 +101,6 @@ const loadTopTokens = async () => {
     console.error("❌ Failed to load top tokens:", err.message);
   }
 };
-loadTopTokens();
-setInterval(loadTopTokens, 12 * 60 * 60 * 1000);
 
 // 🧱 Middleware
 app.use(helmet());
@@ -240,20 +253,44 @@ function findAllTokenSymbols(text) {
   return out.slice(0, 6); // sane limit
 }
 
-// 🆕 NEW: fallback CoinGecko search for obscure tokens (beyond top 100)
+// 🔎 emergency symbol→id resolver via CoinGecko /search
+async function resolveCgIdsBySearch(symbolsUpper) {
+  const out = [];
+  for (const s of symbolsUpper) {
+    try {
+      const r = await fetch(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(s)}`);
+      if (!r.ok) continue;
+      const j = await r.json();
+      // prefer exact symbol match first, otherwise first coin result
+      const exact = (j.coins || []).find(c => (c.symbol || "").toUpperCase() === s);
+      const pick = exact || (j.coins || [])[0];
+      if (pick && pick.id) out.push(pick.id);
+    } catch { /* no-op */ }
+  }
+  return out;
+}
+
+// 🔎 single-token fallback search that primes caches (symbol/name → id, id → symbol)
 async function cgSearchTokenId(query) {
   try {
     const url = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`;
     const r = await fetch(url);
     if (!r.ok) return null;
     const data = await r.json();
-    const hit = data?.coins?.[0];
-    if (hit?.id && hit?.symbol) {
-      // prime caches so future lookups are instant
-      topTokens[(hit.symbol || "").toUpperCase()] = hit.id;
-      topTokens[(hit.name || "").toUpperCase()] = hit.id;
-      cgIdToSymbol[hit.id] = (hit.symbol || "").toUpperCase();
-      return hit.id;
+
+    // Prefer exact symbol match (case-insensitive), else first coin result
+    const qUpper = String(query).toUpperCase();
+    const coins = data?.coins || [];
+    const exact = coins.find(c => (c.symbol || "").toUpperCase() === qUpper) || coins[0];
+
+    if (exact?.id) {
+      // Prime caches for future instant lookups
+      const sym = (exact.symbol || "").toUpperCase();
+      const name = (exact.name || "").toUpperCase();
+      if (sym)  topTokens[sym]  = exact.id;
+      if (name) topTokens[name] = exact.id;
+      if (sym)  cgIdToSymbol[exact.id] = sym;
+      return exact.id;
     }
     return null;
   } catch {
@@ -261,39 +298,63 @@ async function cgSearchTokenId(query) {
   }
 }
 
-// 🆕 NEW: fetch CoinGecko prices for multiple symbols
+// 🆕 fetch CoinGecko prices for multiple symbols (cache → multi-search → per-symbol fallback)
 async function fetchPricesForSymbols(symbols) {
-  const ids = symbols
-    .map(s => topTokens[String(s).toUpperCase()])
-    .filter(Boolean);
+  const uppers = symbols.map(s => String(s).toUpperCase());
+
+  // 1) Try cache (topTokens maps SYMBOL/NAME → cgId)
+  let ids = uppers.map(u => topTokens[u]).filter(Boolean);
+
+  // 2) If no luck, try multi search (best-effort)
+  if (!ids.length) {
+    ids = await resolveCgIdsBySearch(uppers);
+  }
+
+  // 3) Still missing? Try per-symbol fallback and prime caches
+  if (ids.length < uppers.length) {
+    const missing = uppers.filter(u => !ids.includes(topTokens[u]));
+    for (const m of missing) {
+      const found = await cgSearchTokenId(m);
+      if (found) ids.push(found);
+    }
+  }
 
   if (!ids.length) return { prices: {}, resolved: [] };
 
+  // De-dupe ids
+  ids = [...new Set(ids)];
+
+  // Query simple/price for everything we have
   const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ids.join(","))}&vs_currencies=usd`;
   const r = await fetch(url);
   if (!r.ok) throw new Error(`CoinGecko HTTP ${r.status}`);
   const data = await r.json();
 
+  // Build response with best available symbols
   const prices = {};
   const resolved = [];
-  ids.forEach(id => {
-    const sym = cgIdToSymbol[id];
+  for (const id of ids) {
     const val = data?.[id]?.usd;
-    if (sym && typeof val === "number") {
+    if (typeof val === "number") {
+      const sym =
+        cgIdToSymbol[id] ||
+        uppers.find(u => topTokens[u] === id) ||
+        (id || "").toUpperCase();
       prices[sym] = val;
       resolved.push(sym);
     }
-  });
+  }
+
   return { prices, resolved };
 }
 
 // 🆕 NEW: quick intent helpers
-const wantsAnyPrice = (txt="") =>
-  /\b(price|quote|worth|trading at|usd|usdt)\b/i.test(txt) ||
+const wantsAnyPrice = (txt = "") =>
+  /\b(price|quote|worth|trading at|usd|usdt|how much(?: is| are)?)\b/i.test(txt) ||
   /\bwhat'?s\s+the\s+price\b/i.test(txt) ||
   /\$[A-Za-z0-9]{2,10}\b/.test(txt);
 
-const wantsComparison = (txt="") =>
+const wantsComparison = (txt = "") =>
   /\b(which is better|which one|better|vs|versus|compare|comparison)\b/i.test(txt);
 
 // 🧭 Fear & Greed Index fetcher

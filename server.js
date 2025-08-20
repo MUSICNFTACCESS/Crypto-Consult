@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Crimzn Consult Backend
 // ─────────────────────────────────────────────────────────────────────────────
-console.log("🚀 Crimzn Consult Backend v=crimznAug17v2", new Date().toString());
+console.log("🚀 Crimzn Consult Backend v=crimznAug20v1", new Date().toString());
 require("dotenv").config();
 
 const express   = require("express");
@@ -324,32 +324,32 @@ async function fetchPricesForSymbols(symbols) {
   const prices = {};
   const resolved = [];
 
-  // CoinGecko first
-  if (ids.length) {
-try {
-      const headers = { accept: "application/json", "user-agent": "CrimznConsult/1.0" };
-      if (process.env.COINGECKO_API_KEY) headers["x-cg-pro-api-key"] = process.env.COINGECKO_API_KEY;
+// CoinGecko first
+if (ids.length) {
+  try {
+    const headers = { accept: "application/json", "user-agent": "CrimznConsult/1.0" };
+    if (process.env.COINGECKO_API_KEY) headers["x-cg-pro-api-key"] = process.env.COINGECKO_API_KEY;
 
-      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ids.join(","))}&vs_currencies=usd`;
-      const r = await fetch(url, { headers });
-      if (r.ok) {
-        const data = await r.json();
-        for (const id of ids) {
-          const val = data?.[id]?.usd;
-          if (typeof val === "number") {
-            const sym =
-              cgIdToSymbol[id] ||
-              uppers.find(u => topTokens[u] === id) ||
-              (id || "").toUpperCase();
-            prices[sym] = val;
-            resolved.push(sym);
-          }
+    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ids.join(","))}&vs_currencies=usd`;
+    const r = await fetch(url, { headers });
+    if (r.ok) {
+      const data = await r.json();
+      for (const id of ids) {
+        const val = data?.[id]?.usd;
+        if (typeof val === "number") {
+          const sym =
+            cgIdToSymbol[id] ||
+            uppers.find(u => topTokens[u] === id) ||
+            (id || "").toUpperCase();
+          prices[sym] = val;
+          resolved.push(sym);
         }
       }
-    } catch (e) {
-      console.warn("CG simple/price failed; trying Coinbase fallback:", e.message);
     }
+  } catch (e) {
+    console.warn("CG simple/price failed; trying Coinbase fallback:", e.message);
   }
+}
 
   // Coinbase fallback for any unresolved symbols
   const unresolved = uppers.filter(s => prices[s] === undefined);
@@ -468,76 +468,76 @@ app.post("/ask", async (req, res) => {
     }
   }
 
+
 // ===== Price branch =====
-try {
-    if (askedPrice && symbols.length && !askedNews) {
-    const { prices, resolved } = await fetchPricesForSymbols(symbols);
-    if (resolved.length) {
-      const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
-      const lines = resolved.map(sym => `💰 ${sym}/USD: $${Number(prices[sym]).toLocaleString()}`);
+  try {
+    if ((askedPrice || askedCompare) && symbols.length && !askedNews) {
+      const { prices, resolved } = await fetchPricesForSymbols(symbols);
+      if (resolved.length) {
+        const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
+        const lines = resolved.map(sym => `💰 ${sym}/USD: $${Number(prices[sym]).toLocaleString()}`);
 
-      // comparison path
-      if (askedCompare && resolved.length >= 2) {
-        const comparePairs = resolved.join(", ");
-        const priceContext = resolved.map(sym => `${sym}=${prices[sym]}`).join(", ");
+        // comparison path
+        if (askedCompare && resolved.length >= 2) {
+          const comparePairs = resolved.join(", ");
+          const priceContext = resolved.map(sym => `${sym}=${prices[sym]}`).join(", ");
 
-        const systemStyle = [
-          "You are CrimznBot — a crypto strategist. Be decisive and current.",
-          "Never invent numbers. Use provided price context when relevant.",
-          "Prefer concise bullets, then a clear one-line verdict and confidence (0-100)."
-        ].join("\n");
+          const systemStyle = [
+            "You are CrimznBot — a crypto strategist. Be decisive and current.",
+            "Never invent numbers. Use provided price context when relevant.",
+            "Prefer concise bullets, then a clear one-line verdict and confidence (0-100)."
+          ].join("\n");
 
-        const userMsg = [
-          `User asked: ${prompt}`,
-          `Live prices: ${priceContext}`,
-          `Compare the mentioned assets (${comparePairs}).`,
-          `Output:`,
-          `- 3-6 crisp bullets (thesis, security/decentralization, costs, performance/throughput, ecosystem/dev).`,
-          `- Then a single-line Verdict with a Winner (one ticker or 'split') and Confidence (0-100).`
-        ].join("\n");
+          const userMsg = [
+            `User asked: ${prompt}`,
+            `Live prices: ${priceContext}`,
+            `Compare the mentioned assets (${comparePairs}).`,
+            `Output:`,
+            `- 3-6 crisp bullets (thesis, security/decentralization, costs, performance/throughput, ecosystem/dev).`,
+            `- Then a single-line Verdict with a Winner (one ticker or 'split') and Confidence (0-100).`
+          ].join("\n");
 
-        const reply = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "gpt-4o",
-            temperature: 0.35,
-            max_tokens: 700,
-            messages: [
-              { role: "system", content: systemStyle },
-              { role: "user", content: userMsg }
-            ]
-          })
-        });
+          const reply = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "gpt-4o",
+              temperature: 0.35,
+              max_tokens: 700,
+              messages: [
+                { role: "system", content: systemStyle },
+                { role: "user", content: userMsg }
+              ]
+            })
+          });
 
-        if (!reply.ok) {
-          const errTxt = await reply.text().catch(()=> "");
-          console.error("[ASK compare] OpenAI error:", errTxt.slice(0,200));
-          return res.send(`${ts}\n\n${lines.join("\n")}`);
+          if (!reply.ok) {
+            const errTxt = await reply.text().catch(()=> "");
+            console.error("[ASK compare] OpenAI error:", errTxt.slice(0,200));
+            return res.send(`${ts}\n\n${lines.join("\n")}`);
+          }
+
+          const ai = await reply.json();
+          let analysis = ai.choices?.[0]?.message?.content?.trim() || "";
+          analysis = analysis
+            .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
+            .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
+            .trim();
+
+          return res.send(`${ts}\n\n${lines.join("\n")}\n\n${analysis}`);
         }
 
-        const ai = await reply.json();
-        let analysis = ai.choices?.[0]?.message?.content?.trim() || "";
-        analysis = analysis
-          .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
-          .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
-          .trim();
-
-        return res.send(`${ts}\n\n${lines.join("\n")}\n\n${analysis}`);
+        // prices only
+        return res.send(`${ts}\n\n${lines.join("\n")}`);
       }
-
-      // prices only
-      return res.send(`${ts}\n\n${lines.join("\n")}`);
+      // unresolved → fall through
     }
-    // unresolved → fall through
+  } catch (e) {
+    console.warn("Multi-price flow failed, continuing:", e.message);
   }
-} catch (e) {
-  console.warn("Multi-price flow failed, continuing:", e.message);
-}
-
 
   // 🧭 Fear & Greed Index branch
   try {
@@ -605,7 +605,7 @@ try {
       .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
       .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
       .trim();
-    if (!/^Updated: /.test(answer)) answer = `${ts}\n\n${answer}`;
+      if (!/^Updated: /.test(answer)) answer = `${ts}\n\n${answer}`;
 
     return res.send(answer || "Trade the levels; keep risk tight and let liquidity lead.");
   } catch (err) {

@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Crimzn Consult Backend
 // ─────────────────────────────────────────────────────────────────────────────
-console.log("🚀 Crimzn Consult Backend v=crimznAug20v1", new Date().toString());
+console.log("🚀 Crimzn Consult Backend v=crimznAug21v1", new Date().toString());
 require("dotenv").config();
 
 const express   = require("express");
@@ -365,10 +365,18 @@ if (ids.length) {
 }
 
 // 🔎 intent helpers
-const wantsAnyPrice = (txt = "") =>
-  /\b(price|quote|worth|trading at|usd|usdt|how much(?: is| are)?)\b/i.test(txt) ||
-  /\bwhat'?s\s+the\s+price\b/i.test(txt) ||
-  /\$[A-Za-z0-9]{2,10}\b/.test(txt);
+const wantsAnyPrice = (txt = "", syms = []) => {
+  // strict, low-false-positive triggers
+  if (/\b(price|quote)\b/i.test(txt)) return true;
+  if (/\bwhat'?s\s+the\s+price\b/i.test(txt)) return true;
+  if (/\$[A-Za-z0-9]{2,10}\b/.test(txt)) return true;
+
+  // allow natural phrasing *only if* we already detected a token symbol/name
+  if (syms.length && /\bhow\s+much(?:\s+is|\s+are)?\b/i.test(txt)) return true;
+  if (syms.length && /\bworth\b/i.test(txt)) return true;
+
+  return false;
+};
 
 const wantsComparison = (txt = "") =>
   /\b(which is better|which one|better|vs|versus|compare|comparison)\b/i.test(txt);
@@ -444,7 +452,7 @@ app.post("/ask", async (req, res) => {
 
   // detect tokens/intents
   let symbols = findAllTokenSymbols(prompt);       // e.g., ["ONDO","SOL","ETH"]
-  const askedPrice = wantsAnyPrice(prompt);
+  const askedPrice = wantsAnyPrice(prompt, symbols);
   const askedCompare = wantsComparison(prompt);
   const askedNews = /\b(news|headline|headlines|what's happening|market update|news on|news for)\b/i.test(prompt);
   if (process.env.DEBUG_ASK === "1") {

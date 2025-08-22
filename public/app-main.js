@@ -1,4 +1,4 @@
-console.log("🧠 Crimzn Consult v=crimznAug21v1 loaded", new Date().toString());
+console.log("🧠 Crimzn Consult v=crimznAug21v2 loaded", new Date().toString());
 
 // ✅ Crimzn Consult - app-main.js (Aug 10, 2025)
 // Fixes: PulseIt path, stale price badge, debounce buttons, Enter-to-submit, newer Solana blockhash, improved paywall handling

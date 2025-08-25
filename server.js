@@ -13,13 +13,12 @@ const path      = require("path");
 const crypto    = require("crypto");
 const nacl      = require("tweetnacl");
 const bs58      = require("bs58");
-const sentiment = require("sentiment");
 const { PublicKey } = require("@solana/web3.js");
 
 // 📰 CryptoPanic key (optional)
 const CRYPTOPANIC_API_KEY = process.env.CRYPTOPANIC_API_KEY;
 
-// 🔐 Firebase Admin Setup (base64-encoded key in Render) — SAFE guard for local dev
+// 🔐 Firebase Admin Setup
 const admin = require("firebase-admin");
 
 // 🔍 ENV Debug
@@ -45,7 +44,7 @@ try {
   }
 } catch (e) {
   console.error("❌ Firebase Admin init skipped (parse/init error):", e.message);
-  db = null; // ensure null so save-profile can short-circuit
+  db = null;
 }
 
 // ⚙️ App Init
@@ -56,9 +55,9 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 const PORT = process.env.PORT || 3000;
 
-// ===== Load top 100 tokens on startup (with retry) =====
-let topTokens = {};          // { SYMBOL_UPPER: cgId, NAME_UPPER: cgId }
-let cgIdToSymbol = {};       // { cgId: SYMBOL_UPPER }
+// ===== Load top 100 tokens =====
+let topTokens = {};      // { SYMBOL_UPPER: cgId, NAME_UPPER: cgId }
+let cgIdToSymbol = {};   // { cgId: SYMBOL_UPPER }
 
 const loadTopTokens = async () => {
   const attempt = async (n) => {
@@ -99,14 +98,7 @@ const loadTopTokens = async () => {
 loadTopTokens();
 setInterval(loadTopTokens, 12 * 60 * 60 * 1000);
 
-// 🧱 Security + Rate-limit
-app.use(helmet());
-app.use(rateLimit({
-  windowMs: 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-}));
+// 🧱 Security (CSP)
 app.use(
   helmet.contentSecurityPolicy({
     useDefaults: true,
@@ -148,7 +140,7 @@ async function verifyHeliusPayment(wallet) {
     const url = `https://api.helius.xyz/v0/addresses/${wallet}/transactions?api-key=${process.env.HELIUS_API_KEY}&limit=5`;
     const response = await fetch(url);
     const data = await response.json();
-    const match = data.find(tx =>
+    const match = (data || []).find(tx =>
       tx.type === "TRANSFER" &&
       tx.nativeTransfers?.some(t => t.toUserAccount === process.env.SOLANA_ADDRESS && t.amount >= 25000000)
     );
@@ -254,13 +246,13 @@ async function resolveCgIdsBySearch(symbolsUpper) {
       if (pick && pick.id) {
         out.push(pick.id);
         // prime caches
-        const sym = (pick.symbol || "").toUpperCase();
-        const name = (pick.name || "").toUpperCase();
+        const sym  = (pick.symbol || "").toUpperCase();
+        const name = (pick.name   || "").toUpperCase();
         if (sym)  topTokens[sym]  = pick.id;
         if (name) topTokens[name] = pick.id;
         if (sym)  cgIdToSymbol[pick.id] = sym;
       }
-    } catch { /* no-op */ }
+    } catch (e) { /* no-op */ }
   }
   return out;
 }
@@ -284,7 +276,7 @@ async function cgSearchTokenId(query) {
       return exact.id;
     }
     return null;
-  } catch { return null; }
+  } catch (e) { return null; }
 }
 
 // ⚓ Coinbase spot fallback per symbol (no key)
@@ -297,8 +289,9 @@ async function fetchCoinbaseSpot(symbolUpper) {
     const j = await r.json();
     const amt = parseFloat(j?.data?.amount);
     return Number.isFinite(amt) ? amt : null;
-  } catch { return null; }
+  } catch (e) { return null; }
 }
+
 
 // 🧮 fetch prices (CG + Coinbase fallback)
 async function fetchPricesForSymbols(symbols) {
@@ -320,36 +313,35 @@ async function fetchPricesForSymbols(symbols) {
   }
 
   ids = [...new Set(ids)];
-
   const prices = {};
   const resolved = [];
 
-// CoinGecko first
-if (ids.length) {
-  try {
-    const headers = { accept: "application/json", "user-agent": "CrimznConsult/1.0" };
-    if (process.env.COINGECKO_API_KEY) headers["x-cg-pro-api-key"] = process.env.COINGECKO_API_KEY;
+  // CoinGecko first
+  if (ids.length) {
+    try {
+      const headers = { accept: "application/json", "user-agent": "CrimznConsult/1.0" };
+      if (process.env.COINGECKO_API_KEY) headers["x-cg-pro-api-key"] = process.env.COINGECKO_API_KEY;
 
-    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ids.join(","))}&vs_currencies=usd`;
-    const r = await fetch(url, { headers });
-    if (r.ok) {
-      const data = await r.json();
-      for (const id of ids) {
-        const val = data?.[id]?.usd;
-        if (typeof val === "number") {
-          const sym =
-            cgIdToSymbol[id] ||
-            uppers.find(u => topTokens[u] === id) ||
-            (id || "").toUpperCase();
-          prices[sym] = val;
-          resolved.push(sym);
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ids.join(","))}&vs_currencies=usd`;
+      const r = await fetch(url, { headers });
+      if (r.ok) {
+        const data = await r.json();
+        for (const id of ids) {
+          const val = data?.[id]?.usd;
+          if (typeof val === "number") {
+            const sym =
+              cgIdToSymbol[id] ||
+              uppers.find(u => topTokens[u] === id) ||
+              (id || "").toUpperCase();
+            prices[sym] = val;
+            resolved.push(sym);
+          }
         }
       }
+    } catch (e) {
+      console.warn("CG simple/price failed; trying Coinbase fallback:", e.message);
     }
-  } catch (e) {
-    console.warn("CG simple/price failed; trying Coinbase fallback:", e.message);
   }
-}
 
   // Coinbase fallback for any unresolved symbols
   const unresolved = uppers.filter(s => prices[s] === undefined);
@@ -366,15 +358,11 @@ if (ids.length) {
 
 // 🔎 intent helpers
 const wantsAnyPrice = (txt = "", syms = []) => {
-  // strict, low-false-positive triggers
   if (/\b(price|quote)\b/i.test(txt)) return true;
   if (/\bwhat'?s\s+the\s+price\b/i.test(txt)) return true;
   if (/\$[A-Za-z0-9]{2,10}\b/.test(txt)) return true;
-
-  // allow natural phrasing *only if* we already detected a token symbol/name
   if (syms.length && /\bhow\s+much(?:\s+is|\s+are)?\b/i.test(txt)) return true;
   if (syms.length && /\bworth\b/i.test(txt)) return true;
-
   return false;
 };
 
@@ -382,22 +370,7 @@ const wantsComparison = (txt = "") =>
   /\b(which is better|which one|better|vs|versus|compare|comparison)\b/i.test(txt);
 
 const wantsNews = (txt = "") =>
-  /\b(news|headline|headlines|what's happening|latest (crypto|btc|eth|sol)?|market update|news on)\b/i.test(txt);
-
-// 🧭 Fear & Greed Index
-async function getFearGreedIndex() {
-  try {
-    const r = await fetch("https://api.alternative.me/fng/?limit=1");
-    if (!r.ok) throw new Error(`FearGreed HTTP ${r.status}`);
-    const data = await r.json();
-    const entry = data?.data?.[0];
-    if (!entry) return "No index data available right now.";
-    return `Crypto Fear & Greed Index = ${entry.value} (${entry.value_classification})`;
-  } catch (e) {
-    console.error("FearGreed fetch error:", e.message);
-    return "Couldn’t fetch Fear & Greed Index right now.";
-  }
-}
+  /\b(news|headline|headlines|what's happening|latest (crypto|btc|eth|sol)?|market update|news on|news for)\b/i.test(txt);
 
 // 🗞️ CryptoPanic headlines
 async function getCryptoNews(limit = 5, currencyOrQuery = "") {
@@ -430,19 +403,18 @@ async function getCryptoNews(limit = 5, currencyOrQuery = "") {
   }
 }
 
+
 // ====== CrimznBot: Token Lookup + GPT-4o Crypto Chat (3 Free Questions) ======
 app.post("/ask", async (req, res) => {
-  const { prompt, wallet } = req.body;
-
-  if (!prompt || !wallet) return res.status(400).send("⚠️ Missing prompt or wallet.");
+  const { prompt, wallet } = req.body || {};
+  if (!prompt || !wallet) return res.status(400).send("▲ Missing prompt or wallet.");
   if (!process.env.OPENAI_API_KEY) {
     console.error("❌ OPENAI_API_KEY is missing in environment.");
-    return res.status(500).send("🧠 CrimznBot: temporary backend issue — try again shortly.");
+    return res.status(500).send("🤖 CrimznBot: temporary backend issue – try again shortly.");
   }
 
+  // --- server-enforced limiter & paywall ---
   if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
-
-  // server-enforced limiter & paywall
   if (!walletUsage[wallet].hasPaid && walletUsage[wallet].count >= 3) {
     const paid = await verifyHeliusPayment(wallet);
     if (!paid) return res.status(429).json({ code: "FREE_LIMIT_REACHED" });
@@ -450,22 +422,25 @@ app.post("/ask", async (req, res) => {
   }
   walletUsage[wallet].count++;
 
-  // detect tokens/intents
-  let symbols = findAllTokenSymbols(prompt);       // e.g., ["ONDO","SOL","ETH"]
-  const askedPrice = wantsAnyPrice(prompt, symbols);
+  // --- detect tokens/intents ---
+  let symbols        = findAllTokenSymbols(prompt);          // e.g., ["ONDO","SOL","ETH"]
+  const askedPrice   = wantsAnyPrice(prompt, symbols);
   const askedCompare = wantsComparison(prompt);
-  const askedNews = /\b(news|headline|headlines|what's happening|market update|news on|news for)\b/i.test(prompt);
+  const askedNews    = wantsNews(prompt);
+
   if (process.env.DEBUG_ASK === "1") {
-    console.log("[ASK debug]", { askedPrice, askedCompare, symbols, topTokensSize: Object.keys(topTokens||{}).length });
+    console.log("[ASK debug]", {
+      askedPrice, askedCompare, askedNews, symbols,
+      topTokensSize: Object.keys(topTokens || {}).length
+    });
   }
 
-  // fallback search if user clearly asked price but we didn't detect any symbol
+  // --- fallback: user clearly asked price but no symbol detected ---
   if (askedPrice && symbols.length === 0) {
-    const m = (prompt.match(/\bprice\s+of\s+([A-Za-z0-9 .-]{2,30})/i) || [])[1];
+    const m = (prompt.match(/\bprice\s+of\s+([A-Za-z0-9_-]{2,30})/i) || [])[1];
     const guessTerms = [];
     if (m) guessTerms.push(m.trim());
     if (!guessTerms.length) guessTerms.push(prompt.trim().slice(0, 60));
-
     for (const term of guessTerms) {
       const id = await cgSearchTokenId(term);
       if (id) {
@@ -476,36 +451,94 @@ app.post("/ask", async (req, res) => {
     }
   }
 
-
-// ===== Price branch =====
+  // ===== Price / Compare / Advisory branch (requires symbols, not news) =====
   try {
     if ((askedPrice || askedCompare) && symbols.length && !askedNews) {
       const { prices, resolved } = await fetchPricesForSymbols(symbols);
       if (resolved.length) {
-        const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
+        const ts = `Updated: ${new Date().toISOString().replace("T", " ").slice(0, 16)} UTC`;
         const lines = resolved.map(sym => `💰 ${sym}/USD: $${Number(prices[sym]).toLocaleString()}`);
 
-        // comparison path
+        // ---------- Advisory branch ----------
+        const advisoryRe = /\b(should\s+(?:i|we)\s+(?:ape(?:\s+in)?|buy(?:\s+more)?|sell|hold|dca|add|bag|load\s+up|get\s+in(?:\s+now)?)|is\s+.+?\s+(?:a\s+buy|a\s+good\s+buy|worth(?:\s+buying|\s+it)?|investment)|good\s+time\s+to\s+(?:buy|sell)|(?:buy|sell|hold)\s+or\s+(?:sell|hold|buy)|entry\s+(?:here|now)|(?:price\s*target|target\s*price)|undervalu(?:e|ed)|overvalu(?:e|ed)|bullish|bearish)\b/i;
+        if (advisoryRe.test(prompt) || /\bshould\s+i\s+(buy|sell|hold)\b/i.test(prompt)) {
+          const systemStyle = [
+            "You are CrimznBot — a bold crypto strategist (year = 2025).",
+            "Use ONLY the provided live price context when mentioning prices. Never invent numbers.",
+            "Respond with crisp bullets (pros/cons, risks, adoption, catalysts, on-chain/flow if relevant).",
+            "End with a single-line Bottom Line: (Buy | Hold | Sell) + Confidence 0–100.",
+            "Tone: sharp, current, slightly degen but strategic. No generic ‘as of my last update’ wording."
+          ].join("\n");
+
+          const userMsg = [
+            `User asked: ${prompt}`,
+            `Live prices: ${resolved.map(sym => `${sym}=${prices[sym]}`).join(", ")}`,
+            "Provide bullets + Bottom Line (Buy/Hold/Sell) + Confidence (0–100). Be decisive."
+          ].join("\n");
+
+          const reply = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "gpt-4o",
+              temperature: 0.4,
+              max_tokens: 600,
+              messages: [
+                { role: "system", content: systemStyle },
+                { role: "user", content: userMsg }
+              ]
+            })
+          });
+
+          if (reply.ok) {
+            const ai = await reply.json();
+            let advisory = ai.choices?.[0]?.message?.content?.trim() || "";
+
+            // Strip out common useless disclaimers
+            advisory = advisory
+              .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
+              .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
+              .replace(/prices can (?:fluctuate|change).*?(\.|$)/gi, "")
+              .replace(/consult (?:a financial advisor|your financial advisor).*?(\.|$)/gi, "")
+              .trim();
+
+            if (!advisory) advisory = "⚠️ Advisory model gave no content.";
+            return res.send(`${ts}\n\n${lines.join("\n")}\n\n${advisory}`);
+          } else {
+            const t = await reply.text().catch(() => "");
+            console.error("[ASK advisory] OpenAI error:", t.slice(0, 200));
+            // fall through to compare/price
+          }
+        }
+
+        // ---------- Compare branch ----------
         if (askedCompare && resolved.length >= 2) {
           const comparePairs = resolved.join(", ");
           const priceContext = resolved.map(sym => `${sym}=${prices[sym]}`).join(", ");
 
           const systemStyle = [
-            "You are CrimznBot — a crypto strategist. Be decisive and current.",
-            "Never invent numbers. Use provided price context when relevant.",
-            "Prefer concise bullets, then a clear one-line verdict and confidence (0-100)."
+            "You are CrimznBot — a crypto strategist. Be decisive and current (year = 2025).",
+            "Never invent numbers. Only use the provided price context when referring to prices.",
+            "Prefer concise bullets, then a clear one-line verdict and confidence (0-100).",
+            "Tone: sharp, contemporary; no 2023-style filler."
           ].join("\n");
 
           const userMsg = [
             `User asked: ${prompt}`,
             `Live prices: ${priceContext}`,
             `Compare the mentioned assets (${comparePairs}).`,
-            `Output:`,
-            `- 3-6 crisp bullets (thesis, security/decentralization, costs, performance/throughput, ecosystem/dev).`,
-            `- Then a single-line Verdict with a Winner (one ticker or 'split') and Confidence (0-100).`
+            "Output:",
+            "- 3–6 crisp bullets covering thesis, security/decentralization, costs, performance/throughput, ecosystem/dev.",
+            "- Then a single-line Verdict with a Winner (one ticker or 'split') and Confidence (0–100)."
           ].join("\n");
 
-          const reply = await fetch("https://api.openai.com/v1/chat/completions", {
+          console.log("[ASK compare] prompt=", prompt);
+          console.log("[ASK compare] priceContext=", priceContext);
+
+          const compareRes = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
             headers: {
               Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -522,14 +555,14 @@ app.post("/ask", async (req, res) => {
             })
           });
 
-          if (!reply.ok) {
-            const errTxt = await reply.text().catch(()=> "");
-            console.error("[ASK compare] OpenAI error:", errTxt.slice(0,200));
+          if (!compareRes.ok) {
+            const errTxt = await compareRes.text().catch(() => "");
+            console.error("[ASK compare] OpenAI error:", errTxt.slice(0, 200));
             return res.send(`${ts}\n\n${lines.join("\n")}`);
           }
 
-          const ai = await reply.json();
-          let analysis = ai.choices?.[0]?.message?.content?.trim() || "";
+          const ai2 = await compareRes.json();
+          let analysis = ai2.choices?.[0]?.message?.content?.trim() || "";
           analysis = analysis
             .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
             .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
@@ -538,54 +571,55 @@ app.post("/ask", async (req, res) => {
           return res.send(`${ts}\n\n${lines.join("\n")}\n\n${analysis}`);
         }
 
-        // prices only
+        // ---------- Prices only ----------
         return res.send(`${ts}\n\n${lines.join("\n")}`);
       }
+
       // unresolved → fall through
     }
   } catch (e) {
     console.warn("Multi-price flow failed, continuing:", e.message);
   }
 
-  // 🧭 Fear & Greed Index branch
+  // ===== Fear & Greed Index branch =====
   try {
     const lower = (prompt || "").toLowerCase();
     if (/\b(fear\s*&\s*greed|fear and greed|greed index)\b/i.test(lower)) {
       const index = await getFearGreedIndex();
-      const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
+      const ts = `Updated: ${new Date().toISOString().replace("T", " ").slice(0,16)} UTC`;
       return res.send(`${ts}\n\n${index}`);
     }
   } catch (fgErr) {
     console.warn("FearGreed fetch failed (continuing to other routes):", fgErr.message);
   }
 
-  // 📰 News branch
+  // ===== News branch =====
   try {
     const lower = (prompt || "").toLowerCase();
-    if (/\b(news|headline|headlines|what's happening|market update|news on|news for)\b/.test(lower)) {
+    if (/\b(news|headline|headlines|what's happening|market update|news on|news for)\b/i.test(lower)) {
       const sym = findTokenSymbol(prompt) || "";
       const headlines = await getCryptoNews(5, sym);
-      const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
+      const ts = `Updated: ${new Date().toISOString().replace("T", " ").slice(0,16)} UTC`;
       return res.send(`${ts}\n\n${headlines}`);
     }
   } catch (newsErr) {
     console.warn("News fetch failed (continuing to GPT):", newsErr.message);
   }
 
-  // ===== GPT-4o fallback =====
+  // ===== GPT-4o fallback (general Q&A) =====
   try {
     const systemStyle = [
-      "You are CrimznBot — a crypto and market strategist.",
-      "Be decisive and current. Avoid filler and generic disclaimers.",
-      "If numbers are uncertain, give a framework and what to check now.",
-      "Tone: confident, strategic, slightly degen when appropriate, deeply analytical."
+      "You are CrimznBot — crypto and market strategist.",
+      "Be concise and current. Avoid filler and generic disclaimers.",
+      "If numbers are uncertain, give a framework and what to check next.",
+      "Tone: smart, strategic; slightly degen when appropriate; deeply analytical."
     ].join("\n");
 
     const reply = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         model: "gpt-4o",
@@ -601,26 +635,20 @@ app.post("/ask", async (req, res) => {
     console.log("[ASK] OpenAI status:", reply.status);
     if (!reply.ok) {
       const errTxt = await reply.text().catch(() => "");
-      console.error("[ASK] OpenAI error body:", errTxt.slice(0, 300));
-      throw new Error(`OpenAI HTTP ${reply.status}`);
+      console.error("[ASK fallback] OpenAI error:", errTxt.slice(0,300));
+      return res.status(500).send("GPT fallback failed.");
     }
 
     const aiData = await reply.json();
-    let answer = aiData.choices?.[0]?.message?.content || "";
-
+    const ans = aiData.choices?.[0]?.message?.content || "";
     const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
-    answer = answer
-      .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
-      .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
-      .trim();
-      if (!/^Updated: /.test(answer)) answer = `${ts}\n\n${answer}`;
-
-    return res.send(answer || "Trade the levels; keep risk tight and let liquidity lead.");
-  } catch (err) {
-    console.error("❌ CrimznBot error:", err.message);
-    return res.send("🧠 CrimznBot (fallback): Keep risk tight and let liquidity tell the story.");
+    return res.send(`${ts}\n\n${ans}`);
+  } catch (e) {
+    console.error("ASK handler fatal:", e);
+    return res.status(500).send("Backend error.");
   }
-}); // closes app.post("/ask")
+});
+
 
 // 👤 Save Profile to Firebase (safe if Firebase disabled)
 app.post("/save-profile", async (req, res) => {
@@ -637,7 +665,7 @@ app.post("/save-profile", async (req, res) => {
       name: name || "",
       email: email || "",
       timestamp: new Date().toISOString(),
-    });
+    }, { merge: true });
     res.send("✅ Profile saved.");
   } catch (e) {
     console.error("❌ Firebase error:", e.message);
@@ -785,7 +813,6 @@ app.get("/verify-paid", async (req, res) => {
 
   try {
     console.log(`🔎 [/verify-paid] start wallet=${mask(wallet)} ip=${ip}`);
-
     if (!wallet) {
       console.log(`⚠️ [/verify-paid] missing wallet param`);
       return res.json({ hasPaid: false });

@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Crimzn Consult Backend
 // ─────────────────────────────────────────────────────────────────────────────
-console.log("🚀 Crimzn Consult Backend v=crimznAug21v2", new Date().toString());
+console.log("🚀 Crimzn Consult Backend v=crimznAug27v1", new Date().toString());
 require("dotenv").config();
 
 const express   = require("express");
@@ -404,7 +404,7 @@ async function getCryptoNews(limit = 5, currencyOrQuery = "") {
 }
 
 
-// ====== CrimznBot: Token Lookup + GPT-4o Crypto Chat (3 Free Questions) ======
+// ====== CrimznBot: Fusion-Persona GPT Chat (3 Free Questions; no branching) ======
 app.post("/ask", async (req, res) => {
   const { prompt, wallet } = req.body || {};
   if (!prompt || !wallet) return res.status(400).send("▲ Missing prompt or wallet.");
@@ -413,7 +413,7 @@ app.post("/ask", async (req, res) => {
     return res.status(500).send("🤖 CrimznBot: temporary backend issue – try again shortly.");
   }
 
-  // --- server-enforced limiter & paywall ---
+  // --- server-enforced limiter & paywall (UNCHANGED) ---
   if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
   if (!walletUsage[wallet].hasPaid && walletUsage[wallet].count >= 3) {
     const paid = await verifyHeliusPayment(wallet);
@@ -422,199 +422,54 @@ app.post("/ask", async (req, res) => {
   }
   walletUsage[wallet].count++;
 
-  // --- detect tokens/intents ---
-  let symbols        = findAllTokenSymbols(prompt);          // e.g., ["ONDO","SOL","ETH"]
-  const askedPrice   = wantsAnyPrice(prompt, symbols);
-  const askedCompare = wantsComparison(prompt);
-  const askedNews    = wantsNews(prompt);
+  // --- detect tokens & (optionally) fetch live prices for grounding ---
+  const ts = `Updated: ${new Date().toISOString().replace("T", " ").slice(0, 16)} UTC`;
+  let symbols = [];
+  let priceLines = [];
+  let priceContext = "";
 
-  if (process.env.DEBUG_ASK === "1") {
-    console.log("[ASK debug]", {
-      askedPrice, askedCompare, askedNews, symbols,
-      topTokensSize: Object.keys(topTokens || {}).length
-    });
-  }
-
-  // --- fallback: user clearly asked price but no symbol detected ---
-  if (askedPrice && symbols.length === 0) {
-    const m = (prompt.match(/\bprice\s+of\s+([A-Za-z0-9_-]{2,30})/i) || [])[1];
-    const guessTerms = [];
-    if (m) guessTerms.push(m.trim());
-    if (!guessTerms.length) guessTerms.push(prompt.trim().slice(0, 60));
-    for (const term of guessTerms) {
-      const id = await cgSearchTokenId(term);
-      if (id) {
-        const sym = cgIdToSymbol[id];
-        if (sym) symbols = [sym];
-        break;
-      }
-    }
-  }
-
-  // ===== Price / Compare / Advisory branch (requires symbols, not news) =====
   try {
-    if ((askedPrice || askedCompare) && symbols.length && !askedNews) {
+    symbols = findAllTokenSymbols(prompt) || [];
+    if (symbols.length) {
       const { prices, resolved } = await fetchPricesForSymbols(symbols);
-      if (resolved.length) {
-        const ts = `Updated: ${new Date().toISOString().replace("T", " ").slice(0, 16)} UTC`;
-        const lines = resolved.map(sym => `💰 ${sym}/USD: $${Number(prices[sym]).toLocaleString()}`);
-
-        // ---------- Advisory branch ----------
-        const advisoryRe = /\b(should\s+(?:i|we)\s+(?:ape(?:\s+in)?|buy(?:\s+more)?|sell|hold|dca|add|bag|load\s+up|get\s+in(?:\s+now)?)|is\s+.+?\s+(?:a\s+buy|a\s+good\s+buy|worth(?:\s+buying|\s+it)?|investment)|good\s+time\s+to\s+(?:buy|sell)|(?:buy|sell|hold)\s+or\s+(?:sell|hold|buy)|entry\s+(?:here|now)|(?:price\s*target|target\s*price)|undervalu(?:e|ed)|overvalu(?:e|ed)|bullish|bearish)\b/i;
-        if (advisoryRe.test(prompt) || /\bshould\s+i\s+(buy|sell|hold)\b/i.test(prompt)) {
-          const systemStyle = [
-            "You are CrimznBot — a bold crypto strategist (year = 2025).",
-            "Use ONLY the provided live price context when mentioning prices. Never invent numbers.",
-            "Respond with crisp bullets (pros/cons, risks, adoption, catalysts, on-chain/flow if relevant).",
-            "End with a single-line Bottom Line: (Buy | Hold | Sell) + Confidence 0–100.",
-            "Tone: sharp, current, slightly degen but strategic. No generic ‘as of my last update’ wording."
-          ].join("\n");
-
-          const userMsg = [
-            `User asked: ${prompt}`,
-            `Live prices: ${resolved.map(sym => `${sym}=${prices[sym]}`).join(", ")}`,
-            "Provide bullets + Bottom Line (Buy/Hold/Sell) + Confidence (0–100). Be decisive."
-          ].join("\n");
-
-          const reply = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "gpt-4o",
-              temperature: 0.4,
-              max_tokens: 600,
-              messages: [
-                { role: "system", content: systemStyle },
-                { role: "user", content: userMsg }
-              ]
-            })
-          });
-
-          if (reply.ok) {
-            const ai = await reply.json();
-            let advisory = ai.choices?.[0]?.message?.content?.trim() || "";
-
-            // Strip out common useless disclaimers
-            advisory = advisory
-              .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
-              .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
-              .replace(/prices can (?:fluctuate|change).*?(\.|$)/gi, "")
-              .replace(/consult (?:a financial advisor|your financial advisor).*?(\.|$)/gi, "")
-              .trim();
-
-            if (!advisory) advisory = "⚠️ Advisory model gave no content.";
-            return res.send(`${ts}\n\n${lines.join("\n")}\n\n${advisory}`);
-          } else {
-            const t = await reply.text().catch(() => "");
-            console.error("[ASK advisory] OpenAI error:", t.slice(0, 200));
-            // fall through to compare/price
-          }
-        }
-
-        // ---------- Compare branch ----------
-        if (askedCompare && resolved.length >= 2) {
-          const comparePairs = resolved.join(", ");
-          const priceContext = resolved.map(sym => `${sym}=${prices[sym]}`).join(", ");
-
-          const systemStyle = [
-            "You are CrimznBot — a crypto strategist. Be decisive and current (year = 2025).",
-            "Never invent numbers. Only use the provided price context when referring to prices.",
-            "Prefer concise bullets, then a clear one-line verdict and confidence (0-100).",
-            "Tone: sharp, contemporary; no 2023-style filler."
-          ].join("\n");
-
-          const userMsg = [
-            `User asked: ${prompt}`,
-            `Live prices: ${priceContext}`,
-            `Compare the mentioned assets (${comparePairs}).`,
-            "Output:",
-            "- 3–6 crisp bullets covering thesis, security/decentralization, costs, performance/throughput, ecosystem/dev.",
-            "- Then a single-line Verdict with a Winner (one ticker or 'split') and Confidence (0–100)."
-          ].join("\n");
-
-          console.log("[ASK compare] prompt=", prompt);
-          console.log("[ASK compare] priceContext=", priceContext);
-
-          const compareRes = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "gpt-4o",
-              temperature: 0.35,
-              max_tokens: 700,
-              messages: [
-                { role: "system", content: systemStyle },
-                { role: "user", content: userMsg }
-              ]
-            })
-          });
-
-          if (!compareRes.ok) {
-            const errTxt = await compareRes.text().catch(() => "");
-            console.error("[ASK compare] OpenAI error:", errTxt.slice(0, 200));
-            return res.send(`${ts}\n\n${lines.join("\n")}`);
-          }
-
-          const ai2 = await compareRes.json();
-          let analysis = ai2.choices?.[0]?.message?.content?.trim() || "";
-          analysis = analysis
-            .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
-            .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
-            .trim();
-
-          return res.send(`${ts}\n\n${lines.join("\n")}\n\n${analysis}`);
-        }
-
-        // ---------- Prices only ----------
-        return res.send(`${ts}\n\n${lines.join("\n")}`);
+      if (resolved && resolved.length) {
+        priceLines = resolved.map(sym => `💰 ${sym}/USD: $${Number(prices[sym]).toLocaleString()}`);
+        priceContext = resolved.map(sym => `${sym}=${prices[sym]}`).join(", ");
       }
-
-      // unresolved → fall through
     }
   } catch (e) {
-    console.warn("Multi-price flow failed, continuing:", e.message);
+    console.warn("Price prefetch skipped:", e.message);
   }
 
-  // ===== Fear & Greed Index branch =====
-  try {
-    const lower = (prompt || "").toLowerCase();
-    if (/\b(fear\s*&\s*greed|fear and greed|greed index)\b/i.test(lower)) {
-      const index = await getFearGreedIndex();
-      const ts = `Updated: ${new Date().toISOString().replace("T", " ").slice(0,16)} UTC`;
-      return res.send(`${ts}\n\n${index}`);
-    }
-  } catch (fgErr) {
-    console.warn("FearGreed fetch failed (continuing to other routes):", fgErr.message);
-  }
+  // --- Fusion persona: Raoul Pal + Michael Saylor + Cathie Wood + Elon Musk (“CrimznBot”) ---
+  const systemStyle = [
+    "You are CrimznBot — a fusion of four market minds:",
+    "- Raoul Pal: macro cycles, liquidity, dollar liquidity, reflexivity, regime shifts.",
+    "- Michael Saylor: strategic conviction, digital scarcity, balance-sheet thinking, long-duration bias.",
+    "- Cathie Wood: disruptive innovation frameworks, S-curves, TAM, exponential adoption.",
+    "- Elon Musk: first-principles reasoning, engineering instincts, non-linear upside and risk calculus.",
+    "",
+    "Rules:",
+    "1) Be decisive and current (assume it's 2025 and you can reason with the latest public context).",
+    "2) You MAY reference the live prices provided in the context; do NOT hallucinate specific numbers beyond those.",
+    "3) Give a concise, high-signal answer first; then a short bullet framework (macro, tech/adoption, flows/liquidity, risks).",
+    "4) If user asks for a projection, provide a RANGE with drivers, scenario probabilities, and what would invalidate the view.",
+    "5) Avoid filler, boilerplate disclaimers, and generic 'as of my last update' language.",
+    "6) Never provide legal/financial advice disclaimers; just give a clear thesis + how to monitor it."
+  ].join("\n");
 
-  // ===== News branch =====
-  try {
-    const lower = (prompt || "").toLowerCase();
-    if (/\b(news|headline|headlines|what's happening|market update|news on|news for)\b/i.test(lower)) {
-      const sym = findTokenSymbol(prompt) || "";
-      const headlines = await getCryptoNews(5, sym);
-      const ts = `Updated: ${new Date().toISOString().replace("T", " ").slice(0,16)} UTC`;
-      return res.send(`${ts}\n\n${headlines}`);
-    }
-  } catch (newsErr) {
-    console.warn("News fetch failed (continuing to GPT):", newsErr.message);
-  }
+  const userMsg = [
+    `User prompt: ${prompt}`,
+    priceContext ? `Live prices: ${priceContext}` : "Live prices: (none detected)",
+    "Output format:",
+    "• TL;DR (1–3 sentences with a clear view).",
+    "• Drivers (macro/liquidity, adoption/tech, on-chain/flows if relevant).",
+    "• Risks (top 2–4).",
+    "• Scenarios (Bear/Base/Bull) with rough ranges and catalysts.",
+    "• What to watch next (3–5 specific checks)."
+  ].join("\n");
 
-  // ===== GPT-4o fallback (general Q&A) =====
   try {
-    const systemStyle = [
-      "You are CrimznBot — crypto and market strategist.",
-      "Be concise and current. Avoid filler and generic disclaimers.",
-      "If numbers are uncertain, give a framework and what to check next.",
-      "Tone: smart, strategic; slightly degen when appropriate; deeply analytical."
-    ].join("\n");
-
     const reply = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -623,32 +478,41 @@ app.post("/ask", async (req, res) => {
       },
       body: JSON.stringify({
         model: "gpt-4o",
-        temperature: 0.4,
-        max_tokens: 700,
+        temperature: 0.38,
+        max_tokens: 900,
         messages: [
           { role: "system", content: systemStyle },
-          { role: "user", content: prompt }
+          { role: "user", content: userMsg }
         ]
       })
     });
 
-    console.log("[ASK] OpenAI status:", reply.status);
+    console.log("[ASK fusion] OpenAI status:", reply.status);
+
     if (!reply.ok) {
       const errTxt = await reply.text().catch(() => "");
-      console.error("[ASK fallback] OpenAI error:", errTxt.slice(0,300));
-      return res.status(500).send("GPT fallback failed.");
+      console.error("[ASK fusion] OpenAI error:", errTxt.slice(0, 300));
+      const header = [ts].concat(priceLines.length ? ["", ...priceLines, ""] : [""]).join("\n");
+      return res.status(502).send(`${header}\n⚠️ AI temporarily unavailable. Try again shortly.`);
     }
 
     const aiData = await reply.json();
-    const ans = aiData.choices?.[0]?.message?.content || "";
-    const ts = `Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC`;
-    return res.send(`${ts}\n\n${ans}`);
+    let ans = aiData.choices?.[0]?.message?.content?.trim() || "";
+
+    // Light scrub of annoying disclaimers if any sneak in
+    ans = ans
+      .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
+      .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
+      .trim();
+
+    const header = [ts].concat(priceLines.length ? ["", ...priceLines, ""] : [""]).join("\n");
+    return res.send(`${header}\n${ans}`);
   } catch (e) {
-    console.error("ASK handler fatal:", e);
-    return res.status(500).send("Backend error.");
+    console.error("ASK fusion fatal:", e);
+    const header = [ts].concat(priceLines.length ? ["", ...priceLines, ""] : [""]).join("\n");
+    return res.status(500).send(`${header}\nBackend error.`);
   }
 });
-
 
 // 👤 Save Profile to Firebase (safe if Firebase disabled)
 app.post("/save-profile", async (req, res) => {

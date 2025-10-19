@@ -10,8 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const provider = window?.phantom?.solana;
 
-      if (!provider) {
-        alert("🛑 No Solana wallet detected. Use Coinbase Commerce or install a wallet (Phantom, Backpack, Solflare).");
+      if (!provider?.isPhantom) {
+        alert("🛑 Phantom Wallet not found. Please install it first.");
         return;
       }
 

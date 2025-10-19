@@ -50,7 +50,7 @@ const startUnlock = async () => {
         const resp = await (window.phantom?.solana ?? window.solana)?.connect();
         connectedWallet = resp?.publicKey?.toString();
       } catch (e) {
-        alert("No wallet detected — use Coinbase Commerce or install a wallet.");
+        return alert("Connect your wallet first.");
       }
     }
 

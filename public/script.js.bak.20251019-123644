@@ -72,8 +72,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 🔌 Phantom Wallet
   async function connectWallet() {
-    if (!window.solana) {
-      alert("No Solana wallet detected.");
+    if (!window.solana || !window.solana.isPhantom) {
+      alert("Phantom Wallet not found.");
       return;
     }
 

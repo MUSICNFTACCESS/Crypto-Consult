@@ -388,3 +388,60 @@ if (askBtn && userInput && responseBox) {
     console.error("❌ Error in DOMContentLoaded:", err);
   }
 });
+
+/* === Minimal Guest Mode (independent of Connect button) === */
+(() => {
+  if (window.__guestModeIndependent) return;
+  window.__guestModeIndependent = true;
+
+  function ensureGuestId() {
+    let id = localStorage.getItem("guestId");
+    if (!id) {
+      id = "guest-" + Math.random().toString(36).slice(2) + Date.now();
+      localStorage.setItem("guestId", id);
+    }
+    return id;
+  }
+
+  function enableGuestMode() {
+    const id = ensureGuestId();
+    // Make the app think “a wallet string” exists so /ask can proceed
+    localStorage.setItem("wallet", id);
+    localStorage.setItem("hasPaid", "false");
+    window.connectedWallet = id;
+
+    // Optional: status line only (does NOT hide connect/disconnect)
+    const s = document.getElementById("walletStatus");
+    if (s) s.textContent = "👋 Guest Mode Active (no wallet)";
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    // Wire the existing button if present (no styling or placement changes)
+    const btn = document.getElementById("continueWithoutWalletBtn");
+    if (btn && !btn.__wiredGuest) {
+      btn.__wiredGuest = true;
+      btn.addEventListener("click", enableGuestMode);
+    }
+
+    // If user already chose guest earlier, expose it so app can send /ask immediately
+    const w = localStorage.getItem("wallet") || "";
+    if (w.startsWith("guest-")) window.connectedWallet = w;
+
+    // (Optional safety) If server returns 429 on /ask in guest mode, reveal your unlock UI
+    const origFetch = window.fetch.bind(window);
+    window.fetch = async (...args) => {
+      const res = await origFetch(...args);
+      try {
+        const url = typeof args[0] === "string" ? args[0] : (args[0]?.url || "");
+        const isGuest = (localStorage.getItem("wallet") || "").startsWith("guest-");
+        if (isGuest && url.includes("/ask") && res.status === 429) {
+          if (typeof window.forceShowUnlock === "function") window.forceShowUnlock();
+          const s = document.getElementById("unlockStatus");
+          if (s) { s.style.display = "block"; s.style.color = "lime";
+                  s.textContent = "🔓 Unlock available — tap the button below."; }
+        }
+      } catch {}
+      return res;
+    };
+  });
+})();

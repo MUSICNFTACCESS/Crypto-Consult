@@ -117,3 +117,97 @@ document.addEventListener("DOMContentLoaded", () => {
 
   console.log("✅ Guest + Ask handler ready");
 });
+/* === Guest mode + Ask override (correct IDs) === */
+document.addEventListener("DOMContentLoaded", () => {
+  const askBtn      = document.getElementById("askBtn");
+  const userInput   = document.getElementById("user-input");     // <-- correct id
+  const responseBox = document.getElementById("response-box");   // <-- correct id
+  const guestBtn    = document.getElementById("continueWithoutWalletBtn");
+  const statusEl    = document.getElementById("walletStatus");
+
+  console.log("[guest/ask override] found:",
+    !!askBtn, !!userInput, !!responseBox, !!guestBtn, !!statusEl);
+
+  // Enable guest mode
+  guestBtn?.addEventListener("click", () => {
+    let id = localStorage.getItem("wallet");
+    if (!id || !id.startsWith("guest-")) {
+      id = "guest-" + Math.random().toString(36).slice(2) + Date.now();
+      localStorage.setItem("wallet", id);
+    }
+    window.connectedWallet = id;
+    if (!localStorage.getItem("guest_free_qs")) localStorage.setItem("guest_free_qs", "0");
+    if (statusEl) statusEl.textContent = "👋 Guest Mode Active (no wallet)";
+  });
+
+  if (askBtn && userInput && responseBox) {
+    askBtn.addEventListener("click", async (e) => {
+      const prompt = (userInput.value || "").trim();
+      if (!prompt) { responseBox.innerText = "⚠️ Enter a question."; return; }
+
+      const effWallet = (window.connectedWallet || localStorage.getItem("wallet") || "").trim();
+      if (!effWallet) {
+        responseBox.innerText = "⚠️ Connect wallet or tap 'Continue without Wallet'.";
+        return;
+      }
+
+      const key  = `free_qs:${effWallet}`;
+      let used   = parseInt(localStorage.getItem(key) || "0", 10);
+
+      const showUnlock = () => {
+        if (typeof window.forceShowUnlock === "function") {
+          window.forceShowUnlock();
+        } else {
+          let btn = document.getElementById("payNowInline");
+          if (!btn) {
+            btn = document.createElement("button");
+            btn.id = "payNowInline";
+            btn.className = "solana-button";
+            btn.textContent = "🔓 Unlock with 0.025 SOL";
+            if (typeof window.startUnlock === "function") btn.onclick = window.startUnlock;
+            (document.getElementById("response-box")?.parentElement || document.body).appendChild(btn);
+          }
+          btn.classList.remove("hidden");
+          const s = document.getElementById("unlockStatus");
+          if (s) { s.style.display = "block"; s.style.color = "lime"; s.textContent = "🔓 Unlock available — tap the button below."; }
+          btn.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      };
+
+      if (used >= 3) {
+        responseBox.innerText = "🔓 3 free questions used — please unlock with 0.025 SOL.";
+        showUnlock();
+        return;
+      }
+
+      // Count this try
+      localStorage.setItem(key, String(used + 1));
+
+      askBtn.disabled = true;
+      responseBox.innerText = "🧠 Thinking…";
+      try {
+        const r = await fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, wallet: effWallet })
+        });
+
+        if (r.status === 429) {
+          responseBox.innerText = "🔓 3 free questions used — please unlock with 0.025 SOL.";
+          showUnlock();
+          return;
+        }
+
+        responseBox.innerText = await r.text();
+      } catch (err) {
+        responseBox.innerText = "❌ Error getting answer.";
+        const cur = Math.max(0, parseInt(localStorage.getItem(key) || "1", 10) - 1);
+        localStorage.setItem(key, String(cur));
+      } finally {
+        askBtn.disabled = false;
+        userInput.value = "";
+      }
+    }, true); // capture = true so we run before legacy handlers
+  }
+});
+/* === /Guest mode + Ask override === */

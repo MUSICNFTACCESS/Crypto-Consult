@@ -134,39 +134,17 @@ app.use(
 // 🔓 Usage Tracking (in-memory)
 const walletUsage = {};
 
-// 🔓 Helius Unlock Logic - Improved & Reliable
+// 🔓 Helius Unlock Logic
 async function verifyHeliusPayment(wallet) {
-  if (!wallet || !process.env.HELIUS_API_KEY || !process.env.SOLANA_ADDRESS) {
-    return false;
-  }
-
   try {
-    // Check last 50 transactions, filtered to only transfers (much more reliable)
-    const url = `https://api.helius.xyz/v0/addresses/${wallet}/transactions?api-key=${process.env.HELIUS_API_KEY}&limit=50&type=TRANSFER`;
-
+    const url = `https://api.helius.xyz/v0/addresses/${wallet}/transactions?api-key=${process.env.HELIUS_API_KEY}&limit=5`;
     const response = await fetch(url);
-
-    if (!response.ok) {
-      console.warn(`Helius API error ${response.status} for wallet ${wallet}`);
-      return false;
-    }
-
     const data = await response.json();
-
-    // Look for any transfer of ≥0.025 SOL to your address
     const match = (data || []).find(tx =>
-      tx.nativeTransfers?.some(t =>
-        t.toUserAccount === process.env.SOLANA_ADDRESS &&
-        t.amount >= 25000000  // 0.025 SOL in lamports
-      )
+      tx.type === "TRANSFER" &&
+      tx.nativeTransfers?.some(t => t.toUserAccount === process.env.SOLANA_ADDRESS && t.amount >= 25000000)
     );
-
-    if (match) {
-      console.log(`✅ Payment verified for ${wallet} (tx: ${match.signature})`);
-    }
-
     return !!match;
-
   } catch (e) {
     console.error("🔴 Failed to verify payment:", e.message);
     return false;

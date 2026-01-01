@@ -28,6 +28,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let connectedWallet = null;
 
+function openInPhantom() {
+  const here = window.location.href.split("#")[0];
+  const phantomBrowse = "https://phantom.app/ul/browse/" + encodeURIComponent(here);
+  window.location.href = phantomBrowse;
+}
+
+
 function showVerifyUnlockUI() {
   const paywall = document.getElementById("paywall");
   const s = document.getElementById("unlockStatus");
@@ -285,6 +292,20 @@ solanaPayBtn?.addEventListener("click", startUnlock);
   // ✅ Don't block visitors. Wallet is optional for the free trial.
   console.warn("Phantom not detected. Free mode will still work; wallet required only to unlock.");
   if (walletStatus) walletStatus.innerText = "🆓 Free mode (no wallet). Install Phantom to unlock.";
+  // ✅ Chrome fallback: open this page inside Phantom browser for full connect + unlock flow
+  if (typeof responseBox !== "undefined" && responseBox) {
+    responseBox.innerHTML = `
+      <div style="margin-top:10px; line-height:1.4">
+        <div style="font-weight:700; margin-bottom:6px">🆓 Free mode</div>
+        <div style="opacity:.9; margin-bottom:10px">
+          To unlock on Chrome, open this page inside Phantom (wallet connect works there).
+        </div>
+        <button id="openInPhantomBtn" class="solana-button">👻 Open in Phantom</button>
+      </div>
+    `;
+    document.getElementById("openInPhantomBtn")?.addEventListener("click", openInPhantom);
+  }
+
   // Leave the connect button visible if you want, but don't force anything.
 }
     // ========================= /WALLET =========================

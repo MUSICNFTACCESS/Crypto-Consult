@@ -144,23 +144,26 @@ const startUnlock = async () => {
       }
     }
 
-    // Open Phantom deep link
-    const url = new URL(`solana:${receiver}`);
-    url.searchParams.set("amount", amountSol.toString());
-    url.searchParams.set("label", "CrimznBot Unlock");
-    url.searchParams.set("message", "Unlock CrimznBot access");
-    // Mark pending so unlock can be verified after returning from wallet
+        // Open Phantom transfer (more reliable on Chrome mobile than raw solana: links)
+    const label = encodeURIComponent("CrimznBot Unlock");
+    const message = encodeURIComponent("Unlock CrimznBot access");
+    const phantomUL = `https://phantom.app/ul/v1/transfer?recipient=${encodeURIComponent(receiver)}&amount=${encodeURIComponent(amountSol.toString())}&label=${label}&message=${message}`;
+
+    // Mark pending so we can auto-verify when user returns
     localStorage.setItem("pendingUnlock", "true");
-    if (connectedWallet) localStorage.setItem("pendingWallet", connectedWallet);
+    localStorage.setItem("pendingWallet", connectedWallet);
 
-    // Tell user what to do (mobile wallets often don't bounce back automatically)
-    if (typeof responseBox !== "undefined" && responseBox) {
-      responseBox.innerText = "👻 Opening Phantom… send 0.025 SOL to unlock, then come back here to auto-verify.";
+    // Prefer Phantom universal link; fallback to solana: if needed
+    try {
+      window.location.href = phantomUL;
+    } catch (e) {
+      const url = new URL(`solana:${receiver}`);
+      url.searchParams.set("amount", amountSol.toString());
+      url.searchParams.set("label", "CrimznBot Unlock");
+      url.searchParams.set("message", "Unlock CrimznBot access");
+      window.location.href = url.toString();
     }
-
-    // Open Phantom / wallet app
-    window.location.href = url.toString();
-    return;
+return;
 
     // ✅ Mobile-safe: mark pending unlock and verify when user returns from Phantom
     localStorage.setItem("pendingUnlock", "true");

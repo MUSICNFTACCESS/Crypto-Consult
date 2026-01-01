@@ -137,19 +137,52 @@ const walletUsage = {};
 // 🔓 Helius Unlock Logic
 async function verifyHeliusPayment(wallet) {
   try {
-    const url = `https://api.helius.xyz/v0/addresses/${wallet}/transactions?api-key=${process.env.HELIUS_API_KEY}&limit=5`;
+    const receiver = process.env.SOLANA_ADDRESS;
+    const key = process.env.HELIUS_API_KEY;
+    if (!wallet || !receiver || !key) return false;
+
+    // 0.025 SOL = 25,000,000 lamports
+    const MIN_LAMPORTS = 25_000_000;
+
+    // pull more history so we don't miss it
+    const url = `https://api.helius.xyz/v0/addresses/${wallet}/transactions?api-key=${key}&limit=25`;
     const response = await fetch(url);
     const data = await response.json();
-    const match = (data || []).find(tx =>
-      tx.type === "TRANSFER" &&
-      tx.nativeTransfers?.some(t => t.toUserAccount === process.env.SOLANA_ADDRESS && t.amount >= 25000000)
-    );
+
+    // Helius "type" can vary; trust nativeTransfers details instead
+    const match = (data || []).find((tx) => {
+      const natives = Array.isArray(tx?.nativeTransfers) ? tx.nativeTransfers : [];
+      if (!natives.length) return false;
+
+      // ✅ Require a native transfer that goes TO your receiver wallet, from the payer wallet
+      const ok = natives.some((t) =>
+        t?.toUserAccount === receiver &&
+        t?.fromUserAccount === wallet &&
+        typeof t?.amount === "number" &&
+        t.amount >= MIN_LAMPORTS
+      );
+
+      // Optional: allow self-pay testing if you ever need it (disabled by default)
+      // Set ALLOW_SELF_PAY_TEST="true" in Render env only when testing.
+      if (!ok && process.env.ALLOW_SELF_PAY_TEST === "true") {
+        return natives.some((t) =>
+          t?.toUserAccount === receiver &&
+          t?.fromUserAccount === receiver &&
+          typeof t?.amount === "number" &&
+          t.amount >= MIN_LAMPORTS
+        );
+      }
+
+      return ok;
+    });
+
     return !!match;
   } catch (e) {
-    console.error("🔴 Failed to verify payment:", e.message);
+    console.error("🔴 Failed to verify payment:", e?.message || e);
     return false;
   }
 }
+
 
 // 🆕 Flexible token alias map
 const TOKEN_ALIASES = {

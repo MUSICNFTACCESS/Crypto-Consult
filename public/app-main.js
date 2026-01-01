@@ -20,6 +20,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const pulseResult  = document.getElementById("pulseResult");
     const walletStatus = document.getElementById("walletStatus");
 
+    // ✅ Mobile-safe unlock verification: run when user returns from Phantom
+    window.addEventListener("focus", () => { verifyPendingUnlock(); });
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) verifyPendingUnlock();
+    });
+
     let connectedWallet = null;
 
 // --- verify paid: poll backend quietly for up to 20s ---
@@ -38,6 +44,48 @@ async function verifyPaidLoop(wallet) {
   return false;
 }
 
+// --- verify on return (mobile-safe): if user just paid in Phantom, verify when they come back ---
+async function verifyPendingUnlock() {
+  try {
+    const pending = localStorage.getItem("pendingUnlock") === "true";
+    const w = localStorage.getItem("pendingWallet") || localStorage.getItem("wallet") || "";
+    if (!pending || !w) return;
+
+    if (typeof responseBox !== "undefined" && responseBox) {
+      responseBox.innerText = "🔎 Checking payment…";
+    }
+
+    const ok = await verifyPaidLoop(w);
+    if (ok) {
+      localStorage.setItem("hasPaid", "true");
+      localStorage.removeItem("pendingUnlock");
+      localStorage.removeItem("pendingWallet");
+
+      const sEl = document.getElementById("unlockStatus");
+      if (sEl) {
+        sEl.style.display = "block";
+        sEl.style.color = "lime";
+        sEl.textContent = "✅ CrimznBot Unlocked!";
+      }
+
+      // Hide paywall + unlock buttons
+      document.getElementById("paywall")?.classList.add("hidden");
+      document.getElementById("solana-pay-btn")?.classList.add("hidden");
+
+      if (typeof responseBox !== "undefined" && responseBox) {
+        responseBox.innerText = "✅ Unlocked! Ask away.";
+      }
+    } else {
+      // keep pending so it can be checked again
+      if (typeof responseBox !== "undefined" && responseBox) {
+        responseBox.innerText = "⏳ Payment not confirmed yet. If you just paid, tap Unlock again or wait a moment.";
+      }
+    }
+  } catch (e) {
+    console.warn("verifyPendingUnlock error:", e);
+  }
+}
+
 // ================= UNLOCK via Phantom deeplink + server verify =================
 const startUnlock = async () => {
   try {
@@ -49,6 +97,9 @@ const startUnlock = async () => {
       try {
         const resp = await (window.phantom?.solana ?? window.solana)?.connect();
         connectedWallet = resp?.publicKey?.toString();
+        localStorage.setItem("wallet", connectedWallet);
+        localStorage.setItem("pendingWallet", connectedWallet);
+
       } catch (e) {
         alert("No wallet detected — use Coinbase Commerce or install a wallet.");
       }
@@ -61,35 +112,19 @@ const startUnlock = async () => {
     url.searchParams.set("message", "Unlock CrimznBot access");
     window.location.href = url.toString();
 
-    // UI: start verifying
-    if (typeof responseBox !== "undefined" && responseBox) {
-      responseBox.innerText = "🔄 Verifying unlock on-chain…";
-    }
+    // ✅ Mobile-safe: mark pending unlock and verify when user returns from Phantom
+    localStorage.setItem("pendingUnlock", "true");
+    if (connectedWallet) localStorage.setItem("pendingWallet", connectedWallet);
 
-    // Poll backend for paid status
-    const ok = await verifyPaidLoop(connectedWallet);
-    if (ok) {
-      localStorage.setItem("hasPaid", "true");
-      const s = document.getElementById("unlockStatus");
-      if (s) {
-        s.style.display = "block";
-        s.style.color = "lime";
-        s.textContent = "✅ CrimznBot Unlocked!";
-      }
-      if (typeof responseBox !== "undefined" && responseBox) {
-        responseBox.innerText = "✅ Unlocked! Ask away.";
-      }
-    } else {
-      if (typeof responseBox !== "undefined" && responseBox) {
-        responseBox.innerText = "⚠️ Unlock pending. If it doesn’t clear in a minute, try again.";
-      }
+    if (typeof responseBox !== "undefined" && responseBox) {
+      responseBox.innerText = "📲 Complete the payment in your wallet, then come back here — I’ll verify automatically.";
     }
 
   } catch (err) {
     // Outer catch: network/transient issues after deeplink
     console.warn("Unlock flow transient error:", err);
     if (typeof responseBox !== "undefined" && responseBox) {
-      responseBox.innerText = "⚠️ Network hiccup during unlock. I’ll keep checking…";
+      responseBox.innerText = "⚠️ Network hiccup. If you just paid, return here and I’ll verify.";
     }
     try {
       const ok2 = await verifyPaidLoop(connectedWallet);
@@ -188,9 +223,12 @@ solanaPayBtn?.addEventListener("click", startUnlock);
           console.warn("Auto-connect failed.");
         }
       }
-    } else {
-      alert("👻 Phantom Wallet not found. Please install it.");
-    }
+} else {
+  // ✅ Don't block visitors. Wallet is optional for the free trial.
+  console.warn("Phantom not detected. Free mode will still work; wallet required only to unlock.");
+  if (walletStatus) walletStatus.innerText = "🆓 Free mode (no wallet). Install Phantom to unlock.";
+  // Leave the connect button visible if you want, but don't force anything.
+}
     // ========================= /WALLET =========================
 
 
@@ -204,22 +242,44 @@ if (askBtn && userInput && responseBox) {
 
   function injectInlineUnlock() {
     responseBox.innerHTML = `
-      <div style="margin-top:8px">
-        <button id="payNowInline" class="solana-button">🔓 Unlock with 0.025 SOL</button>
-      </div>
-    `;
-    document.getElementById("payNowInline")?.addEventListener("click", startUnlock);
+  <div style="margin-top:10px; line-height:1.4">
+    <div style="font-weight:700; margin-bottom:6px">✅ Free trial used (3/3)</div>
+    <div style="opacity:.9; margin-bottom:10px">
+      Unlock unlimited CrimznBot Q&A + live prices + premium tools.
+    </div>
+    <button id="payNowInline" class="solana-button">🔓 Unlock unlimited (0.025 SOL)</button>
+    <div style="font-size:12px; opacity:.8; margin-top:8px">
+      Wallet connects only for payment verification — no custody, on-chain verified.
+    </div>
+  </div>
+`;
+document.getElementById("payNowInline")?.addEventListener("click", startUnlock);
   }
 
   askBtn.onclick = async () => {
     const prompt   = userInput.value.trim();
     const hasPaid  = localStorage.getItem("hasPaid") === "true";
-    const localKey = `askedLocal:${connectedWallet}`;
-
-    if (!prompt || !connectedWallet) {
-      responseBox.innerText = "⚠️ Enter a question and connect wallet.";
+    // ✅ Wallet optional for free mode
+    if (!prompt) {
+      responseBox.innerText = "⚠️ Enter a question.";
       return;
     }
+
+    // If no wallet connected, use a guest id for the 3 free questions
+    if (!connectedWallet) {
+      let id = localStorage.getItem("guestId");
+      if (!id) {
+        id = "guest-" + Math.random().toString(36).slice(2) + "-" + Date.now();
+        localStorage.setItem("guestId", id);
+      }
+      connectedWallet = id;
+      localStorage.setItem("wallet", connectedWallet);
+      if (typeof walletStatus !== "undefined" && walletStatus) {
+        walletStatus.innerText = "🆓 Free mode (3 questions). Connect wallet to unlock unlimited.";
+      }
+    }
+
+    const localKey = `askedLocal:${connectedWallet}`;
 
     // Read local count
     let askedLocal = parseInt(localStorage.getItem(localKey) || "0", 10);

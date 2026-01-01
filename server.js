@@ -684,6 +684,22 @@ app.get("/verify-paid", async (req, res) => {
 
     if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
 
+    // ✅ If Firestore is available, trust persisted paid status (survives restarts/deploys)
+    if (db) {
+      try {
+        const snap = await db.collection("profiles").doc(wallet).get();
+        const data = snap.exists ? snap.data() : null;
+        if (data && data.paid === true) {
+          walletUsage[wallet].hasPaid = true;
+          console.log(`✅ [/verify-paid] firestore says PAID wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
+          return res.json({ hasPaid: true });
+        }
+      } catch (e) {
+        console.warn(`⚠️ [/verify-paid] firestore read failed wallet=${mask(wallet)}:`, e?.message || e);
+      }
+    }
+
+
     if (walletUsage[wallet].hasPaid) {
       console.log(`✅ [/verify-paid] already paid wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
       return res.json({ hasPaid: true });
@@ -696,6 +712,20 @@ app.get("/verify-paid", async (req, res) => {
     if (paid) {
       console.log(`✅ Payment verified for wallet=${mask(wallet)} at ${new Date().toISOString()}`);
       walletUsage[wallet].hasPaid = true; // cache
+
+      // ✅ Persist paid status so unlock survives restarts/deploys
+      if (db) {
+        try {
+          await db.collection("profiles").doc(wallet).set({
+            paid: true,
+            timestampPaid: new Date().toISOString()
+          }, { merge: true });
+          console.log(`🧾 [/verify-paid] stored paid receipt wallet=${mask(wallet)}`);
+        } catch (e) {
+          console.warn(`⚠️ [/verify-paid] firestore write failed wallet=${mask(wallet)}:`, e?.message || e);
+        }
+      }
+
       console.log(`🎉 [/verify-paid] now marked PAID wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);
     } else {
       console.log(`⏳ [/verify-paid] not paid yet wallet=${mask(wallet)} (+${Date.now()-t0}ms)`);

@@ -28,6 +28,45 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let connectedWallet = null;
 
+function showVerifyUnlockUI() {
+  const paywall = document.getElementById("paywall");
+  const s = document.getElementById("unlockStatus");
+  if (s) {
+    s.style.display = "block";
+    s.style.color = "#ffd54a";
+    s.textContent = "🔎 Payment sent? Tap VERIFY to unlock.";
+  }
+
+  // Inject a verify button right into the response box area
+  if (typeof responseBox !== "undefined" && responseBox) {
+    responseBox.innerHTML = `
+      <div style="margin-top:10px; line-height:1.4">
+        <div style="font-weight:700; margin-bottom:6px">🔎 Verify Unlock</div>
+        <div style="opacity:.9; margin-bottom:10px">
+          If you paid in Phantom, connect your wallet (if needed) then tap verify.
+        </div>
+        <button id="verifyUnlockBtn" class="solana-button">✅ VERIFY UNLOCK</button>
+      </div>
+    `;
+    document.getElementById("verifyUnlockBtn")?.addEventListener("click", async () => {
+      try {
+        // If no wallet yet, try to connect (works in Phantom browser; in Chrome user may need to open in Phantom)
+        if (!connectedWallet) {
+          try {
+            const resp = await (window.phantom?.solana ?? window.solana)?.connect();
+            connectedWallet = resp?.publicKey?.toString();
+            if (connectedWallet) localStorage.setItem("wallet", connectedWallet);
+            if (connectedWallet) localStorage.setItem("pendingWallet", connectedWallet);
+          } catch {}
+        }
+        await verifyPendingUnlock();
+      } catch (e) {
+        console.warn("Verify unlock click error:", e);
+      }
+    });
+  }
+}
+
 // --- verify paid: poll backend quietly for up to 20s ---
 async function verifyPaidLoop(wallet) {
   const start = Date.now();
@@ -192,6 +231,11 @@ solanaPayBtn?.addEventListener("click", startUnlock);
     if (localStorage.getItem("hasPaid") === "true") {
       document.getElementById("paywall")?.classList.add("hidden");
       solanaPayBtn?.classList.add("hidden");
+    }
+
+    // If user paid in wallet app and returned, allow verify on Chrome
+    if (localStorage.getItem("pendingUnlock") === "true") {
+      showVerifyUnlockUI();
     }
     // ========================= /PAYWALL =========================
 

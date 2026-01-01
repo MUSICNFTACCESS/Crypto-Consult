@@ -110,7 +110,18 @@ const startUnlock = async () => {
     url.searchParams.set("amount", amountSol.toString());
     url.searchParams.set("label", "CrimznBot Unlock");
     url.searchParams.set("message", "Unlock CrimznBot access");
+    // Mark pending so unlock can be verified after returning from wallet
+    localStorage.setItem("pendingUnlock", "true");
+    if (connectedWallet) localStorage.setItem("pendingWallet", connectedWallet);
+
+    // Tell user what to do (mobile wallets often don't bounce back automatically)
+    if (typeof responseBox !== "undefined" && responseBox) {
+      responseBox.innerText = "👻 Opening Phantom… send 0.025 SOL to unlock, then come back here to auto-verify.";
+    }
+
+    // Open Phantom / wallet app
     window.location.href = url.toString();
+    return;
 
     // ✅ Mobile-safe: mark pending unlock and verify when user returns from Phantom
     localStorage.setItem("pendingUnlock", "true");

@@ -16,3 +16,7 @@ firebase-key.json
 *.bak
 opens.txt
 closes.txt
+
+# local backups
+public/*.bak*
+public/*.STABLE_*

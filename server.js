@@ -141,8 +141,8 @@ async function verifyHeliusPayment(wallet) {
     const key = process.env.HELIUS_API_KEY;
     if (!wallet || !receiver || !key) return false;
 
-    // 0.025 SOL = 25,000,000 lamports
-    const MIN_LAMPORTS = 25_000_000;
+    // 0.01  SOL = 10,000,000 lamports
+     const MIN_LAMPORTS = 10_000_000; // 0.01 SOL
 
     // pull more history so we don't miss it
     const url = `https://api.helius.xyz/v0/addresses/${wallet}/transactions?api-key=${key}&limit=25`;

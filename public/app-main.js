@@ -136,7 +136,7 @@ async function verifyPendingUnlock() {
 const startUnlock = async () => {
   try {
     const receiver = "Co6bkf4NpatyTCbzjhoaTS63w93iK1DmzuooCSmHSAjF";
-    const amountSol = 0.025;
+    const amountSol = 0.01;
 
     // Ensure wallet is connected (inner try/catch only here)
     if (!connectedWallet) {
@@ -326,7 +326,7 @@ if (askBtn && userInput && responseBox) {
     <div style="opacity:.9; margin-bottom:10px">
       Unlock unlimited CrimznBot Q&A + live prices + premium tools.
     </div>
-    <button id="payNowInline" class="solana-button">🔓 Unlock unlimited (0.025 SOL)</button>
+    <button id="payNowInline" class="solana-button">🔓 Unlock unlimited (0.01 SOL)</button>
     <div style="font-size:12px; opacity:.8; margin-top:8px">
       Wallet connects only for payment verification — no custody, on-chain verified.
     </div>

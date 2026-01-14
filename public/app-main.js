@@ -154,7 +154,7 @@ const startUnlock = async () => {
         // Open Phantom transfer (more reliable on Chrome mobile than raw solana: links)
     const label = encodeURIComponent("CrimznBot Unlock");
     const message = encodeURIComponent("Unlock CrimznBot access");
-    const phantomUL = `https://phantom.app/ul/v1/transfer?recipient=${encodeURIComponent(receiver)}&amount=${encodeURIComponent(amountSol.toString())}&label=${label}&message=${message}`;
+    const phantomUL = `https://phantom.app/ul/v1/pay?recipient=${encodeURIComponent(receiver)}&amount=${encodeURIComponent(amountSol.toString())}&label=${label}&message=${message}`;
 
     // Mark pending so we can auto-verify when user returns
     localStorage.setItem("pendingUnlock", "true");

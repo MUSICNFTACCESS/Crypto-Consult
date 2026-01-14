@@ -151,26 +151,44 @@ const startUnlock = async () => {
       }
     }
 
-        // Open Phantom transfer (more reliable on Chrome mobile than raw solana: links)
-    const label = encodeURIComponent("CrimznBot Unlock");
-    const message = encodeURIComponent("Unlock CrimznBot access");
-    const phantomUL = `https://phantom.app/ul/v1/pay?recipient=${encodeURIComponent(receiver)}&amount=${encodeURIComponent(amountSol.toString())}&label=${label}&message=${message}`;
+// Unified provider (works in Phantom in-app + normal browsers)
+const provider = (window.phantom?.solana ?? window.solana);
 
-    // Mark pending so we can auto-verify when user returns
-    localStorage.setItem("pendingUnlock", "true");
-    localStorage.setItem("pendingWallet", connectedWallet);
+// Build params
+const label = encodeURIComponent("CrimznBot Unlock");
+const message = encodeURIComponent("Unlock CrimznBot access");
+const memo = encodeURIComponent("CrimznBot Unlock");
+const here = window.location.href.split("#")[0];
+const redirect = encodeURIComponent(here);
 
-    // Prefer Phantom universal link; fallback to solana: if needed
-    try {
-      window.location.href = phantomUL;
-    } catch (e) {
-      const url = new URL(`solana:${receiver}`);
-      url.searchParams.set("amount", amountSol.toString());
-      url.searchParams.set("label", "CrimznBot Unlock");
-      url.searchParams.set("message", "Unlock CrimznBot access");
-      window.location.href = url.toString();
-    }
+// Phantom Universal Link (external browsers)
+const phantomUL =
+  `https://phantom.app/ul/v1/transfer` +
+  `?recipient=${encodeURIComponent(receiver)}` +
+  `&amount=${encodeURIComponent(amountSol.toString())}` +
+  `&label=${label}` +
+  `&message=${message}` +
+  `&memo=${memo}` +
+  `&redirect_link=${redirect}`;
+
+// solana: link (best inside Phantom in-app browser)
+const payUrl = new URL(`solana:${receiver}`);
+payUrl.searchParams.set("amount", amountSol.toString());
+payUrl.searchParams.set("label", "CrimznBot Unlock");
+payUrl.searchParams.set("message", "Unlock CrimznBot access");
+
+// Mark pending BEFORE redirect
+localStorage.setItem("pendingUnlock", "true");
+if (connectedWallet) localStorage.setItem("pendingWallet", connectedWallet);
+
+// Redirect correctly
+if (provider?.isPhantom) {
+  window.location.href = payUrl.toString();
+} else {
+  window.location.href = phantomUL;
+}
 return;
+
 
     // ✅ Mobile-safe: mark pending unlock and verify when user returns from Phantom
     localStorage.setItem("pendingUnlock", "true");

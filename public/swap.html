@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Swap (Cross-Chain)</title>
+
+  <!-- Reuse CryptoConsult styling -->
+  <link rel="stylesheet" href="app-style.css" />
+
+  <style>
+    .page-wrap { max-width: 1100px; margin: 0 auto; padding: 18px 14px 28px; }
+    .topbar { display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin: 8px 0 14px; }
+    .brandline { display:flex; align-items:center; gap:10px; }
+    .titleblock h1 { margin: 0; font-size: 22px; }
+    .titleblock p { margin: 4px 0 0; opacity: .85; font-size: 13px; }
+    .right { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end; }
+
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin: 10px 0;
+    }
+
+    .muted { opacity: .82; font-size: 12.5px; line-height: 1.35; }
+
+    .pill {
+      display:inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.18);
+      font-size: 12px;
+      opacity: .92;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+
+    .frame-wrap {
+      border-radius: 14px;
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.22);
+      height: 82vh;
+      min-height: 560px;
+    }
+
+    iframe {
+      width:100%;
+      height:100%;
+      border:0;
+      display:block;
+    }
+
+    @media (max-width: 720px) {
+      .frame-wrap { height: 84vh; min-height: 520px; }
+      .titleblock h1 { font-size: 20px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page-wrap">
+
+    <!-- Header -->
+    <div class="topbar">
+      <div class="brandline">
+        <div style="font-size:22px;">🔁</div>
+        <div class="titleblock">
+          <h1>Privacy Swap (Cross-Chain)</h1>
+          <p class="muted">
+            No account tracking on CryptoConsult. This page embeds a swap UI so users can bridge/swap without creating profiles.
+          </p>
+        </div>
+      </div>
+
+      <div class="right">
+        <a class="solana-button" href="/">← Back to CryptoConsult</a>
+      </div>
+    </div>
+
+    <!-- Info card -->
+    <div class="card">
+      <div class="muted">
+        <span class="pill">No account tracking</span>
+        <span class="pill">Cross-chain</span>
+        <span class="pill">Gas abstraction UX</span>
+
+        <div style="margin-top:10px;">
+          CryptoConsult does not store wallet addresses or swap history.<br />
+          The embedded swap provider and your wallet app may have their own policies.
+        </div>
+      </div>
+    </div>
+
+    <!-- Swap widget -->
+    <div class="frame-wrap" title="Embedded cross-chain swap UI">
+      <iframe
+        src="https://jumper.exchange/?theme=dark&integrator=cryptoconsult"
+        referrerpolicy="no-referrer"
+        allow="payment; clipboard-read; clipboard-write; fullscreen"
+        loading="lazy">
+      </iframe>
+    </div>
+
+  </div>
+</body>
+</html>

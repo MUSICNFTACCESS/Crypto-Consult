@@ -771,6 +771,131 @@ app.get("/verify-paid", async (req, res) => {
   }
 });
 
+// =========================
+// SolanaMind (Intelligence)
+// =========================
+app.post("/api/solanamind/analyze", async (req, res) => {
+  try {
+    const { address } = req.body || {};
+    if (!address) return res.status(400).json({ error: "Missing address" });
+
+    const key = process.env.HELIUS_API_KEY;
+    if (!key) return res.status(500).json({ error: "Missing HELIUS_API_KEY on server" });
+
+    const base = "https://api.helius.xyz/v0";
+    const headers = { accept: "application/json", "content-type": "application/json" };
+
+    const balUrl = `${base}/addresses/${address}/balances?api-key=${key}`;
+    const balRes = await fetch(balUrl, { headers });
+    if (!balRes.ok) return res.status(502).json({ error: "Helius balances failed", status: balRes.status });
+    const bal = await balRes.json();
+
+    const txUrl = `${base}/addresses/${address}/transactions?api-key=${key}&limit=50`;
+    const txRes = await fetch(txUrl, { headers });
+    if (!txRes.ok) return res.status(502).json({ error: "Helius transactions failed", status: txRes.status });
+    const txs = await txRes.json();
+
+    const lamports = Number(bal?.nativeBalance || 0);
+    const sol = lamports / 1e9;
+
+    const tokens = Array.isArray(bal?.tokens) ? bal.tokens : [];
+    const tokenCount = tokens.length;
+
+    const nftLike = tokens.filter(t => Number(t?.amount || 0) === 1 && Number(t?.decimals || 0) === 0);
+    const nftCount = nftLike.length;
+
+    const dust = tokens.filter(t => {
+      const amt = Number(t?.amount || 0);
+      const dec = Number(t?.decimals || 0);
+      const norm = dec ? amt / Math.pow(10, dec) : amt;
+      return norm > 0 && norm < 0.0001;
+    });
+    const dustCount = dust.length;
+
+    const arr = Array.isArray(txs) ? txs : [];
+    const totalTx = arr.length;
+
+    const failed = arr.filter(t => t?.transactionError);
+    const failRate = totalTx ? (failed.length / totalTx) : 0;
+
+    let solIn = 0, solOut = 0;
+    const cpMap = new Map();
+    let firstTs = null, lastTs = null;
+
+    for (const t of arr) {
+      const ts = typeof t?.timestamp === "number" ? t.timestamp : null;
+      if (ts) {
+        if (!firstTs || ts < firstTs) firstTs = ts;
+        if (!lastTs || ts > lastTs) lastTs = ts;
+      }
+      const natives = Array.isArray(t?.nativeTransfers) ? t.nativeTransfers : [];
+      for (const n of natives) {
+        const amtLamports = Number(n?.amount || 0);
+        const amtSol = amtLamports / 1e9;
+        const from = n?.fromUserAccount;
+        const to = n?.toUserAccount;
+
+        if (to === address) {
+          solIn += amtSol;
+          if (from) cpMap.set(from, (cpMap.get(from) || 0) + Math.abs(amtSol));
+        }
+        if (from === address) {
+          solOut += amtSol;
+          if (to) cpMap.set(to, (cpMap.get(to) || 0) + Math.abs(amtSol));
+        }
+      }
+    }
+
+    const netSol = solIn - solOut;
+
+    const topCounterparties = [...cpMap.entries()]
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0, 7)
+      .map(([addr, vol]) => ({ address: addr, sol_volume: Number(vol.toFixed(6)) }));
+
+    const now = Date.now() / 1000;
+    const ageDays = firstTs ? (now - firstTs) / 86400 : null;
+
+    const flags = [];
+    if (ageDays !== null && ageDays < 7) flags.push("NEW_WALLET_<7D");
+    if (failRate > 0.25) flags.push("HIGH_FAIL_RATE");
+    if (dustCount >= 20) flags.push("MANY_DUST_TOKENS_(AIRDROP_NOISE)");
+    if (tokenCount >= 100) flags.push("VERY_HIGH_TOKEN_COUNT");
+    if (Math.abs(netSol) >= 5 && totalTx >= 5) flags.push("LARGE_NET_SOL_FLOW_RECENT");
+
+    let score = 100;
+    if (flags.includes("NEW_WALLET_<7D")) score -= 15;
+    if (flags.includes("HIGH_FAIL_RATE")) score -= 20;
+    if (flags.includes("MANY_DUST_TOKENS_(AIRDROP_NOISE)")) score -= 10;
+    if (flags.includes("VERY_HIGH_TOKEN_COUNT")) score -= 10;
+    if (flags.includes("LARGE_NET_SOL_FLOW_RECENT")) score -= 10;
+    if (score < 0) score = 0;
+
+    return res.json({
+      address,
+      sol_balance: Number(sol.toFixed(6)),
+      token_count: tokenCount,
+      nft_like_count: nftCount,
+      dust_token_count: dustCount,
+      tx_sampled: totalTx,
+      fail_rate: Number(failRate.toFixed(3)),
+      sol_in_50tx: Number(solIn.toFixed(6)),
+      sol_out_50tx: Number(solOut.toFixed(6)),
+      net_sol_50tx: Number(netSol.toFixed(6)),
+      first_seen_ts: firstTs,
+      last_seen_ts: lastTs,
+      est_age_days: ageDays !== null ? Number(ageDays.toFixed(2)) : null,
+      top_counterparties: topCounterparties,
+      flags,
+      risk_score_0_100: score,
+    });
+  } catch (e) {
+    console.error("SolanaMind analyze error:", e?.message || e);
+    return res.status(500).json({ error: "SolanaMind analyze failed" });
+  }
+});
+// ========================= end SolanaMind =========================
+
 // Wildcard route to serve frontend for unmatched paths (keep this LAST)
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
@@ -779,6 +904,10 @@ app.get("*", (req, res) => {
 // 🚀 Start Server — must be last!
 app.listen(PORT, () => {
   console.log("✅ Server running on port", PORT);
-  console.log("🤖 CrimznBot + PulseIt + SaveProfile + Firebase booted ✅ (Firebase:", db ? "ON" : "OFF", ")");
+  console.log(
+    "🤖 CrimznBot + PulseIt + SaveProfile + Firebase booted ✅ (Firebase:",
+    db ? "ON" : "OFF",
+    ")"
+  );
   console.log("⚡ Built by Crimzn, powered by Solana + Helius");
 });

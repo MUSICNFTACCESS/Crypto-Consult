@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SolanaMind Intelligence</title>
+
+  <!-- Reuse CryptoConsult styling -->
+  <link rel="stylesheet" href="app-style.css" />
+
+  <style>
+    /* Light touch to ensure it looks native even if app-style changes */
+    .page-wrap { max-width: 920px; margin: 0 auto; padding: 18px 14px 40px; }
+    .topbar { display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin: 8px 0 16px; }
+    .brandline { display:flex; align-items:center; gap:10px; }
+    .brain { font-size: 22px; }
+    .titleblock h1 { margin: 0; font-size: 22px; }
+    .titleblock p { margin: 4px 0 0; opacity: .85; }
+
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      padding: 14px;
+      margin: 12px 0;
+    }
+
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .row input {
+      flex: 1;
+      min-width: 220px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(0,0,0,0.25);
+      color: #fff;
+      outline: none;
+    }
+
+    .muted { opacity: .8; font-size: 13px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+
+    .grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+
+    .metric { display:flex; justify-content:space-between; gap:10px; padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.18); }
+    .metric b { font-weight: 700; }
+    .metric span { opacity: .9; }
+
+    .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top: 8px; }
+    .chip {
+      display:inline-flex; align-items:center; gap:6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.18);
+      font-size: 12px;
+      opacity: .95;
+    }
+
+    .score-wrap { margin-top: 10px; }
+    .bar {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .bar > div { height: 100%; width: 0%; background: #22c55e; }
+
+    .subhead { margin: 0 0 8px; font-size: 14px; opacity: .9; }
+
+    .list { display:flex; flex-direction:column; gap:8px; }
+    .li { display:flex; justify-content:space-between; gap:10px; padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.18); }
+    .li small { opacity: .8; }
+
+    .pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 12px;
+      line-height: 1.35;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 12px;
+      padding: 12px;
+      overflow:auto;
+      max-height: 320px;
+    }
+
+    .right { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end; }
+  </style>
+</head>
+
+<body>
+  <div class="page-wrap">
+    <div class="topbar">
+      <div class="brandline">
+        <div class="brain">🧠</div>
+        <div class="titleblock">
+          <h1>SolanaMind Intelligence</h1>
+          <p class="muted">Wallet-level signals: flows, counterparties, dust/noise, and risk score.</p>
+        </div>
+      </div>
+
+      <div class="right">
+        <a class="solana-button" href="/">← Back to CryptoConsult</a>
+</div>
+
+
+    <div class="card">
+      <div class="subhead">Analyze a wallet</div>
+      <div class="row">
+        <input id="addr" class="mono" placeholder="Enter Solana wallet address (base58)" />
+        <button id="go" class="solana-button">🔍 Analyze</button>
+      </div>
+      <div class="muted" style="margin-top:10px;">
+        Tip: paste any address. you’ll get live balance + last 50 tx insights.
+      </div>
+    </div>
+
+    <div id="status" class="muted" style="margin: 10px 0;"></div>
+
+    <div id="results" style="display:none;">
+      <div class="card">
+        <div class="subhead">Overview</div>
+
+        <div class="grid" id="metrics"></div>
+
+        <div class="score-wrap">
+          <div class="muted">Risk score (0–100): <b id="scoreText">—</b></div>
+          <div class="bar" title="Higher = safer (heuristic)">
+            <div id="scoreBar"></div>
+          </div>
+
+          <div class="chips" id="flags"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="subhead">Top counterparties (by SOL volume in last 50 tx)</div>
+        <div class="list" id="cps"></div>
+      </div>
+
+      <div class="card">
+        <div class="subhead">Raw JSON (debug)</div>
+        <div class="pre mono" id="raw"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function fmt(n, d=6) {
+    if (n === null || n === undefined) return "—";
+    const x = Number(n);
+    if (!Number.isFinite(x)) return "—";
+    return x.toFixed(d);
+  }
+
+  function setStatus(t) {
+    $("status").textContent = t || "";
+  }
+
+  function riskColor(score) {
+    // green -> yellow -> red
+    if (score >= 80) return "#22c55e";
+    if (score >= 60) return "#eab308";
+    return "#ef4444";
+  }
+
+  function metric(label, value) {
+    const div = document.createElement("div");
+    div.className = "metric";
+    div.innerHTML = `<b>${label}</b><span class="mono">${value}</span>`;
+    return div;
+  }
+
+  async function analyze() {
+    const address = ($("addr").value || "").trim();
+    if (!address) return setStatus("Enter a wallet address.");
+
+    setStatus("Analyzing…");
+    $("results").style.display = "none";
+
+    try {
+      const res = await fetch("/api/solanamind/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setStatus(`Error: ${data.error || "Request failed"} (${res.status})`);
+        return;
+      }
+
+      // Metrics
+      const m = $("metrics");
+      m.innerHTML = "";
+      m.appendChild(metric("Address", `<span class="mono">${data.address}</span>`));
+      m.appendChild(metric("SOL balance", fmt(data.sol_balance, 6)));
+      m.appendChild(metric("Tokens", data.token_count ?? "—"));
+      m.appendChild(metric("NFT-like", data.nft_like_count ?? "—"));
+      m.appendChild(metric("Dust tokens", data.dust_token_count ?? "—"));
+      m.appendChild(metric("Tx sampled", data.tx_sampled ?? "—"));
+      m.appendChild(metric("Fail rate", fmt((data.fail_rate ?? 0) * 100, 1) + "%"));
+      m.appendChild(metric("SOL in (50tx)", fmt(data.sol_in_50tx, 6)));
+      m.appendChild(metric("SOL out (50tx)", fmt(data.sol_out_50tx, 6)));
+      m.appendChild(metric("Net SOL (50tx)", fmt(data.net_sol_50tx, 6)));
+      m.appendChild(metric("Est age (days)", data.est_age_days ?? "—"));
+
+      // Score
+      const score = Number(data.risk_score_0_100 ?? 0);
+      $("scoreText").textContent = score;
+      $("scoreBar").style.width = Math.max(0, Math.min(100, score)) + "%";
+      $("scoreBar").style.background = riskColor(score);
+
+      // Flags
+      const flags = Array.isArray(data.flags) ? data.flags : [];
+      const f = $("flags");
+      f.innerHTML = "";
+      if (!flags.length) {
+        const chip = document.createElement("div");
+        chip.className = "chip";
+        chip.textContent = "✅ No major flags detected";
+        f.appendChild(chip);
+      } else {
+        for (const flag of flags) {
+          const chip = document.createElement("div");
+          chip.className = "chip";
+          chip.textContent = "⚠️ " + flag;
+          f.appendChild(chip);
+        }
+      }
+
+      // Counterparties
+      const cps = $("cps");
+      cps.innerHTML = "";
+      const arr = Array.isArray(data.top_counterparties) ? data.top_counterparties : [];
+      if (!arr.length) {
+        const div = document.createElement("div");
+        div.className = "muted";
+        div.textContent = "No counterparties detected in sampled txs.";
+        cps.appendChild(div);
+      } else {
+        for (const c of arr) {
+          const row = document.createElement("div");
+          row.className = "li";
+          row.innerHTML = `
+            <div class="mono" style="max-width:72%; overflow:hidden; text-overflow:ellipsis;">
+              ${c.address}
+              <div><small class="muted">tap-hold to copy</small></div>
+            </div>
+            <div class="mono">${fmt(c.sol_volume, 6)} SOL</div>
+          `;
+          cps.appendChild(row);
+        }
+      }
+
+      // Raw
+      $("raw").textContent = JSON.stringify(data, null, 2);
+
+      $("results").style.display = "block";
+      setStatus("✅ Done.");
+    } catch (e) {
+      setStatus("Error: " + (e?.message || e));
+    }
+  }
+
+  $("go").addEventListener("click", analyze);
+  $("addr").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") analyze();
+  });
+</script>
+</body>
+</html>

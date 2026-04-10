@@ -90,6 +90,40 @@ async function verifyPaidLoop(wallet) {
   return false;
 }
 
+async function restorePaidAccessIfEligible(wallet) {
+  try {
+    if (!wallet || String(wallet).startsWith("guest-")) return false;
+
+    const paid = await verifyPaidLoop(wallet);
+    if (!paid) return false;
+
+    localStorage.setItem("hasPaid", "true");
+    localStorage.setItem("wallet", wallet);
+
+    const paywall = document.getElementById("paywall");
+    const payBtn = document.getElementById("solana-pay-btn");
+    const sEl = document.getElementById("unlockStatus");
+
+    paywall?.classList.add("hidden");
+    payBtn?.classList.add("hidden");
+
+    if (sEl) {
+      sEl.style.display = "block";
+      sEl.style.color = "lime";
+      sEl.textContent = "✅ CrimznBot Unlocked!";
+    }
+
+    if (typeof responseBox !== "undefined" && responseBox) {
+      responseBox.innerText = "✅ Unlocked! Ask away.";
+    }
+
+    return true;
+  } catch (e) {
+    console.warn("restorePaidAccessIfEligible error:", e);
+    return false;
+  }
+}
+
 // --- verify on return (mobile-safe): if user just paid in Phantom, verify when they come back ---
 async function verifyPendingUnlock() {
   try {
@@ -278,6 +312,7 @@ solanaPayBtn?.addEventListener("click", startUnlock);
             if (walletStatus) walletStatus.innerText = `🔌 Connected: ${connectedWallet.slice(0, 4)}...`;
             connectBtn.classList.add("hidden");
             disconnectBtn?.classList.remove("hidden");
+            await restorePaidAccessIfEligible(connectedWallet);
           } catch (e) {
             alert("❌ Wallet connection failed.");
           }
@@ -299,9 +334,11 @@ solanaPayBtn?.addEventListener("click", startUnlock);
         try {
           const resp = await window.solana.connect({ onlyIfTrusted: true });
           connectedWallet = resp.publicKey.toString();
+          localStorage.setItem("wallet", connectedWallet);
           if (walletStatus) walletStatus.innerText = `🔌 Connected: ${connectedWallet.slice(0, 4)}...`;
           connectBtn?.classList.add("hidden");
           disconnectBtn?.classList.remove("hidden");
+          await restorePaidAccessIfEligible(connectedWallet);
         } catch (e) {
           console.warn("Auto-connect failed.");
         }

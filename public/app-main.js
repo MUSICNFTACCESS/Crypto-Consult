@@ -223,7 +223,16 @@ const inPhantomBrowser =
 if (inPhantomBrowser) {
   window.location.href = payUrl.toString();
 } else {
-  window.location.href = phantomUL;
+  responseBox.innerHTML = `
+    <div style="margin-top:10px; line-height:1.4">
+      <div style="font-weight:700; margin-bottom:6px">👻 Open in Phantom to Pay</div>
+      <div style="opacity:.9; margin-bottom:10px">
+        To complete payment, open this page inside Phantom wallet.
+      </div>
+      <button id="openInPhantomBtn" class="solana-button">🚀 Open in Phantom</button>
+    </div>
+  `;
+  document.getElementById("openInPhantomBtn")?.addEventListener("click", openInPhantom);
 }
 return;
 

@@ -216,7 +216,11 @@ localStorage.setItem("pendingUnlock", "true");
 if (connectedWallet) localStorage.setItem("pendingWallet", connectedWallet);
 
 // Redirect correctly
-if (provider?.isPhantom) {
+const inPhantomBrowser =
+  /Phantom/i.test(navigator.userAgent || "") ||
+  !!window.phantom?.solana?.isPhantom;
+
+if (inPhantomBrowser) {
   window.location.href = payUrl.toString();
 } else {
   window.location.href = phantomUL;

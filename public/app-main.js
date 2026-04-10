@@ -34,6 +34,17 @@ function openInPhantom() {
   window.location.href = phantomBrowse;
 }
 
+function updateTrialStatus(isPaid = false) {
+  const el = document.getElementById("trialStatus");
+  if (!el) return;
+  if (isPaid) {
+    el.innerHTML = "✅ Unlimited access unlocked. Ask anything.";
+  } else {
+    el.innerHTML = "🆓 You get 3 free questions. No wallet needed.";
+  }
+}
+
+
 
 function showVerifyUnlockUI() {
   const paywall = document.getElementById("paywall");
@@ -50,7 +61,7 @@ function showVerifyUnlockUI() {
       <div style="margin-top:10px; line-height:1.4">
         <div style="font-weight:700; margin-bottom:6px">🔎 Verify Unlock</div>
         <div style="opacity:.9; margin-bottom:10px">
-          If you paid in Phantom, connect your wallet (if needed) then tap verify.
+          Payment complete? Connect the same wallet you used to pay, then tap verify. If it does not update, refresh once and try again.
         </div>
         <button id="verifyUnlockBtn" class="solana-button">✅ VERIFY UNLOCK</button>
       </div>
@@ -113,6 +124,7 @@ async function verifyPendingUnlock() {
         sEl.style.color = "lime";
         sEl.textContent = "✅ CrimznBot Unlocked!";
       }
+      updateTrialStatus(true);
 
       // Hide paywall + unlock buttons
       document.getElementById("paywall")?.classList.add("hidden");
@@ -124,7 +136,7 @@ async function verifyPendingUnlock() {
     } else {
       // keep pending so it can be checked again
       if (typeof responseBox !== "undefined" && responseBox) {
-        responseBox.innerText = "⏳ Payment not confirmed yet. If you just paid, tap Unlock again or wait a moment.";
+        responseBox.innerText = "⏳ Payment not confirmed yet. If you just paid, refresh once, reconnect wallet, then verify again.";
       }
     }
   } catch (e) {
@@ -259,6 +271,9 @@ solanaPayBtn?.addEventListener("click", startUnlock);
     if (localStorage.getItem("hasPaid") === "true") {
       document.getElementById("paywall")?.classList.add("hidden");
       solanaPayBtn?.classList.add("hidden");
+      updateTrialStatus(true);
+    } else {
+      updateTrialStatus(false);
     }
 
     // If user paid in wallet app and returned, allow verify on Chrome

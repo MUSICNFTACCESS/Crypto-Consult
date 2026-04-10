@@ -224,15 +224,23 @@ if (inPhantomBrowser) {
   window.location.href = payUrl.toString();
 } else {
   responseBox.innerHTML = `
-    <div style="margin-top:10px; line-height:1.4">
-      <div style="font-weight:700; margin-bottom:6px">👻 Open in Phantom to Pay</div>
+    <div style="margin-top:10px; line-height:1.5">
+      <div style="font-weight:700; margin-bottom:6px">👻 Open This Page in Phantom to Pay</div>
       <div style="opacity:.9; margin-bottom:10px">
-        To complete payment, open this page inside Phantom wallet.
+        Chrome and incognito may not hand off payment correctly.
       </div>
-      <button id="openInPhantomBtn" class="solana-button">🚀 Open in Phantom</button>
+      <div style="opacity:.9; margin-bottom:10px">
+        <strong>Do this:</strong><br>
+        1. Open the Phantom app<br>
+        2. Tap the browser icon<br>
+        3. Visit this page in Phantom<br>
+        4. Tap <strong>Unlock with 0.01 SOL</strong> there
+      </div>
+      <div style="font-size:12px; opacity:.8; word-break:break-all; border:1px solid #333; border-radius:8px; padding:8px;">
+        ${here}
+      </div>
     </div>
   `;
-  document.getElementById("openInPhantomBtn")?.addEventListener("click", openInPhantom);
 }
 return;
 

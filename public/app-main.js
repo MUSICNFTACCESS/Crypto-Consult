@@ -34,6 +34,23 @@ function openInPhantom() {
   window.location.href = phantomBrowse;
 }
 
+function updateTrialStatus(mode = "free") {
+  const el = document.getElementById("trialStatus");
+  if (!el) return;
+
+  if (mode === "paid") {
+    el.innerHTML = "✅ Unlimited access unlocked. Ask anything.";
+    return;
+  }
+
+  if (mode === "pending") {
+    el.innerHTML = "⏳ Payment submitted. Return here and verify access.";
+    return;
+  }
+
+  el.innerHTML = "🆓 You get 3 free questions. No wallet needed.";
+}
+
 function updateTrialStatus(isPaid = false) {
   const el = document.getElementById("trialStatus");
   if (!el) return;
@@ -135,6 +152,7 @@ async function verifyPendingUnlock() {
       }
     } else {
       // keep pending so it can be checked again
+      updateTrialStatus("pending");
       if (typeof responseBox !== "undefined" && responseBox) {
         responseBox.innerText = "⏳ Payment not confirmed yet. If you just paid, refresh once, reconnect wallet, then verify again.";
       }
@@ -192,6 +210,7 @@ payUrl.searchParams.set("message", "Unlock CrimznBot access");
 // Mark pending BEFORE redirect
 localStorage.setItem("pendingUnlock", "true");
 if (connectedWallet) localStorage.setItem("pendingWallet", connectedWallet);
+updateTrialStatus("pending");
 
 // Redirect correctly
 if (provider?.isPhantom) {
@@ -268,17 +287,18 @@ solanaPayBtn?.addEventListener("click", startUnlock);
     // ========================= /SAVE PROFILE =========================
 
     // ========================= PAYWALL HIDE IF ALREADY PAID (unchanged) =========================
-    if (localStorage.getItem("hasPaid") === "true") {
+    const hasPaidNow = localStorage.getItem("hasPaid") === "true";
+    const pendingNow = localStorage.getItem("pendingUnlock") === "true";
+
+    if (pendingNow) {
+      updateTrialStatus("pending");
+      showVerifyUnlockUI();
+    } else if (hasPaidNow) {
       document.getElementById("paywall")?.classList.add("hidden");
       solanaPayBtn?.classList.add("hidden");
-      updateTrialStatus(true);
+      updateTrialStatus("paid");
     } else {
-      updateTrialStatus(false);
-    }
-
-    // If user paid in wallet app and returned, allow verify on Chrome
-    if (localStorage.getItem("pendingUnlock") === "true") {
-      showVerifyUnlockUI();
+      updateTrialStatus("free");
     }
     // ========================= /PAYWALL =========================
 
@@ -324,7 +344,7 @@ solanaPayBtn?.addEventListener("click", startUnlock);
 } else {
   // ✅ Don't block visitors. Wallet is optional for the free trial.
   console.warn("Phantom not detected. Free mode will still work; wallet required only to unlock.");
-  if (walletStatus) walletStatus.innerText = "🔎 Wallet only needed after payment to restore paid access.";
+  if (walletStatus) walletStatus.innerText = "Use the same wallet only if you already paid.";
   // ✅ Chrome fallback: open this page inside Phantom browser for full connect + unlock flow
   if (typeof responseBox !== "undefined" && responseBox) {
     responseBox.innerHTML = `
@@ -387,7 +407,7 @@ document.getElementById("payNowInline")?.addEventListener("click", startUnlock);
       connectedWallet = id;
       localStorage.setItem("wallet", connectedWallet);
       if (typeof walletStatus !== "undefined" && walletStatus) {
-        walletStatus.innerText = "🔎 If you already paid, connect the same wallet to verify and restore access.";
+        walletStatus.innerText = "Use the same wallet you paid with to restore access.";
       }
     }
 
@@ -584,7 +604,7 @@ document.getElementById("payNowInline")?.addEventListener("click", startUnlock);
 
     // Optional: status line only (does NOT hide connect/disconnect)
     const s = document.getElementById("walletStatus");
-    if (s) s.textContent = "🆓 Free mode active. Wallet only needed after payment to restore paid access.";
+    if (s) s.textContent = "🆓 Free mode active. Wallet not needed unless you already paid and want to restore access.";
   }
 
   document.addEventListener("DOMContentLoaded", () => {

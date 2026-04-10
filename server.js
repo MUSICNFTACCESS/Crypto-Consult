@@ -474,32 +474,79 @@ app.post("/ask", async (req, res) => {
     console.warn("Price prefetch skipped:", e.message);
   }
 
-  // --- Fusion persona: Raoul Pal + Michael Saylor + Cathie Wood + Elon Musk (“CrimznBot”) ---
+  // --- Optional live news context ---
+  let newsContext = "";
+  try {
+    const tokenForNews = (symbols && symbols[0]) ? symbols[0] : "";
+    const news = await getCryptoNews(4, tokenForNews);
+    if (news && !/couldn’t fetch|missing|no fresh/i.test(news)) {
+      newsContext = news;
+    }
+  } catch (e) {
+    console.warn("News prefetch skipped:", e.message);
+  }
+
+  // --- CrimznBot system style ---
   const systemStyle = [
-    "You are CrimznBot — a fusion of four market minds:",
-    "- Raoul Pal: macro cycles, liquidity, dollar liquidity, reflexivity, regime shifts.",
-    "- Michael Saylor: strategic conviction, digital scarcity, balance-sheet thinking, long-duration bias.",
-    "- Cathie Wood: disruptive innovation frameworks, S-curves, TAM, exponential adoption.",
-    "- Elon Musk: first-principles reasoning, engineering instincts, non-linear upside and risk calculus.",
+    "You are CrimznBot — a high-signal crypto intelligence engine.",
+    "Blend real-time price context, recent headlines, market structure, and practical crypto reasoning.",
+    "",
+    "Personality:",
+    "- Think like a trader first, macro analyst second.",
+    "- Be sharp, concise, decisive, and useful.",
+    "- Avoid fluffy essays and generic macro filler.",
     "",
     "Rules:",
-    "1) Be decisive and current (assume it's 2025 and you can reason with the latest public context).",
-    "2) You MAY reference the live prices provided in the context; do NOT hallucinate specific numbers beyond those.",
-    "3) Give a concise, high-signal answer first; then a short bullet framework (macro, tech/adoption, flows/liquidity, risks).",
-    "4) If user asks for a projection, provide a RANGE with drivers, scenario probabilities, and what would invalidate the view.",
-    "5) Avoid filler, boilerplate disclaimers, and generic 'as of my last update' language.",
-    "6) Never provide legal/financial advice disclaimers; just give a clear thesis + how to monitor it."
+    "1) Be decisive and current (assume it's 2026).",
+    "2) Only use live prices explicitly provided in the context; never hallucinate exact numbers.",
+    "3) If recent headlines are provided, use them.",
+    "4) Speak like a crypto trader for market questions and like a clear teacher for beginner questions.",
+    "5) Keep answers tight, practical, and relevant to the actual question.",
+    "6) No generic 'as of my last update' language.",
+    "7) No unnecessary disclaimers."
   ].join("\n");
 
+  // --- Mode detection ---
+  const lowerPrompt = String(prompt || "").toLowerCase();
+
+  const beginnerMode = [
+    "what is","how does","how do","explain","difference between","beginner",
+    "for beginners","new to crypto","why does","can you explain"
+  ].some(k => lowerPrompt.includes(k));
+
+  const advancedMode = !beginnerMode && lowerPrompt.length > 20;
+
+  // --- User prompt payload ---
   const userMsg = [
     `User prompt: ${prompt}`,
     priceContext ? `Live prices: ${priceContext}` : "Live prices: (none detected)",
+    newsContext || "",
+    beginnerMode
+      ? "Mode: beginner-friendly"
+      : advancedMode
+        ? "Mode: advanced trader"
+        : "Mode: trader",
     "Output format:",
-    "• TL;DR (1–3 sentences with a clear view).",
-    "• Drivers (macro/liquidity, adoption/tech, on-chain/flows if relevant).",
-    "• Risks (top 2–4).",
-    "• Scenarios (Bear/Base/Bull) with rough ranges and catalysts.",
-    "• What to watch next (3–5 specific checks)."
+    beginnerMode
+      ? "• TL;DR: Give a simple direct answer in plain English."
+      : advancedMode
+        ? "• TL;DR: Give a decisive, high-conviction answer."
+        : "• TL;DR: Give a clear direct answer.",
+    beginnerMode
+      ? "• What it means: Explain the concept simply and clearly."
+      : "• Market Structure: What is BTC / the market doing (trend, range, momentum, liquidity).",
+    beginnerMode
+      ? "• Key takeaway: Main takeaway or practical insight."
+      : "• Key Levels: Important price levels or zones if relevant.",
+    beginnerMode
+      ? "• Risk: One simple thing that could go wrong."
+      : "• Bias: Bullish / Bearish / Neutral with one-line reasoning.",
+    beginnerMode
+      ? "• What to watch: 2–3 simple next things."
+      : "• Invalidation: What proves this view wrong.",
+    beginnerMode
+      ? "• Keep it short, clear, and beginner-friendly."
+      : "• What to watch next: 2–3 specific triggers or signals."
   ].join("\n");
 
   try {

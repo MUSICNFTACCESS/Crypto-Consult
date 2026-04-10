@@ -122,7 +122,7 @@ async function verifyPendingUnlock() {
       if (sEl) {
         sEl.style.display = "block";
         sEl.style.color = "lime";
-        sEl.textContent = "✅ CrimznBot Unlocked!";
+        sEl.textContent = "✅ Payment verified. Unlimited access restored!";
       }
       updateTrialStatus(true);
 
@@ -224,7 +224,7 @@ return;
         if (s) {
           s.style.display = "block";
           s.style.color = "lime";
-          s.textContent = "✅ CrimznBot Unlocked!";
+          s.textContent = "✅ Payment verified. Unlimited access restored!";
         }
         if (typeof responseBox !== "undefined" && responseBox) {
           responseBox.innerText = "✅ Unlocked! Ask away.";
@@ -324,7 +324,7 @@ solanaPayBtn?.addEventListener("click", startUnlock);
 } else {
   // ✅ Don't block visitors. Wallet is optional for the free trial.
   console.warn("Phantom not detected. Free mode will still work; wallet required only to unlock.");
-  if (walletStatus) walletStatus.innerText = "🆓 Free mode (no wallet). Install Phantom to unlock.";
+  if (walletStatus) walletStatus.innerText = "🔎 Wallet only needed after payment to restore paid access.";
   // ✅ Chrome fallback: open this page inside Phantom browser for full connect + unlock flow
   if (typeof responseBox !== "undefined" && responseBox) {
     responseBox.innerHTML = `
@@ -387,7 +387,7 @@ document.getElementById("payNowInline")?.addEventListener("click", startUnlock);
       connectedWallet = id;
       localStorage.setItem("wallet", connectedWallet);
       if (typeof walletStatus !== "undefined" && walletStatus) {
-        walletStatus.innerText = "🆓 Free mode (3 questions). Connect wallet to unlock unlimited.";
+        walletStatus.innerText = "🔎 If you already paid, connect the same wallet to verify and restore access.";
       }
     }
 
@@ -584,7 +584,7 @@ document.getElementById("payNowInline")?.addEventListener("click", startUnlock);
 
     // Optional: status line only (does NOT hide connect/disconnect)
     const s = document.getElementById("walletStatus");
-    if (s) s.textContent = "👋 Guest Mode Active (no wallet)";
+    if (s) s.textContent = "🆓 Free mode active. Wallet only needed after payment to restore paid access.";
   }
 
   document.addEventListener("DOMContentLoaded", () => {

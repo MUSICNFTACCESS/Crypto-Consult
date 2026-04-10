@@ -34,34 +34,6 @@ function openInPhantom() {
   window.location.href = phantomBrowse;
 }
 
-function updateTrialStatus(mode = "free") {
-  const el = document.getElementById("trialStatus");
-  if (!el) return;
-
-  if (mode === "paid") {
-    el.innerHTML = "✅ Unlimited access unlocked. Ask anything.";
-    return;
-  }
-
-  if (mode === "pending") {
-    el.innerHTML = "⏳ Payment submitted. Return here and verify access.";
-    return;
-  }
-
-  el.innerHTML = "🆓 You get 3 free questions. No wallet needed.";
-}
-
-function updateTrialStatus(isPaid = false) {
-  const el = document.getElementById("trialStatus");
-  if (!el) return;
-  if (isPaid) {
-    el.innerHTML = "✅ Unlimited access unlocked. Ask anything.";
-  } else {
-    el.innerHTML = "🆓 You get 3 free questions. No wallet needed.";
-  }
-}
-
-
 
 function showVerifyUnlockUI() {
   const paywall = document.getElementById("paywall");
@@ -78,7 +50,7 @@ function showVerifyUnlockUI() {
       <div style="margin-top:10px; line-height:1.4">
         <div style="font-weight:700; margin-bottom:6px">🔎 Verify Unlock</div>
         <div style="opacity:.9; margin-bottom:10px">
-          Payment complete? Connect the same wallet you used to pay, then tap verify. If it does not update, refresh once and try again.
+          If you paid in Phantom, connect your wallet (if needed) then tap verify.
         </div>
         <button id="verifyUnlockBtn" class="solana-button">✅ VERIFY UNLOCK</button>
       </div>
@@ -139,9 +111,8 @@ async function verifyPendingUnlock() {
       if (sEl) {
         sEl.style.display = "block";
         sEl.style.color = "lime";
-        sEl.textContent = "✅ Payment verified. Unlimited access restored!";
+        sEl.textContent = "✅ CrimznBot Unlocked!";
       }
-      updateTrialStatus(true);
 
       // Hide paywall + unlock buttons
       document.getElementById("paywall")?.classList.add("hidden");
@@ -152,9 +123,8 @@ async function verifyPendingUnlock() {
       }
     } else {
       // keep pending so it can be checked again
-      updateTrialStatus("pending");
       if (typeof responseBox !== "undefined" && responseBox) {
-        responseBox.innerText = "⏳ Payment not confirmed yet. If you just paid, refresh once, reconnect wallet, then verify again.";
+        responseBox.innerText = "⏳ Payment not confirmed yet. If you just paid, tap Unlock again or wait a moment.";
       }
     }
   } catch (e) {
@@ -210,7 +180,6 @@ payUrl.searchParams.set("message", "Unlock CrimznBot access");
 // Mark pending BEFORE redirect
 localStorage.setItem("pendingUnlock", "true");
 if (connectedWallet) localStorage.setItem("pendingWallet", connectedWallet);
-updateTrialStatus("pending");
 
 // Redirect correctly
 if (provider?.isPhantom) {
@@ -243,7 +212,7 @@ return;
         if (s) {
           s.style.display = "block";
           s.style.color = "lime";
-          s.textContent = "✅ Payment verified. Unlimited access restored!";
+          s.textContent = "✅ CrimznBot Unlocked!";
         }
         if (typeof responseBox !== "undefined" && responseBox) {
           responseBox.innerText = "✅ Unlocked! Ask away.";
@@ -287,18 +256,14 @@ solanaPayBtn?.addEventListener("click", startUnlock);
     // ========================= /SAVE PROFILE =========================
 
     // ========================= PAYWALL HIDE IF ALREADY PAID (unchanged) =========================
-    const hasPaidNow = localStorage.getItem("hasPaid") === "true";
-    const pendingNow = localStorage.getItem("pendingUnlock") === "true";
-
-    if (pendingNow) {
-      updateTrialStatus("pending");
-      showVerifyUnlockUI();
-    } else if (hasPaidNow) {
+    if (localStorage.getItem("hasPaid") === "true") {
       document.getElementById("paywall")?.classList.add("hidden");
       solanaPayBtn?.classList.add("hidden");
-      updateTrialStatus("paid");
-    } else {
-      updateTrialStatus("free");
+    }
+
+    // If user paid in wallet app and returned, allow verify on Chrome
+    if (localStorage.getItem("pendingUnlock") === "true") {
+      showVerifyUnlockUI();
     }
     // ========================= /PAYWALL =========================
 
@@ -344,7 +309,7 @@ solanaPayBtn?.addEventListener("click", startUnlock);
 } else {
   // ✅ Don't block visitors. Wallet is optional for the free trial.
   console.warn("Phantom not detected. Free mode will still work; wallet required only to unlock.");
-  if (walletStatus) walletStatus.innerText = "Use the same wallet only if you already paid.";
+  if (walletStatus) walletStatus.innerText = "🆓 Free mode (no wallet). Install Phantom to unlock.";
   // ✅ Chrome fallback: open this page inside Phantom browser for full connect + unlock flow
   if (typeof responseBox !== "undefined" && responseBox) {
     responseBox.innerHTML = `
@@ -407,7 +372,7 @@ document.getElementById("payNowInline")?.addEventListener("click", startUnlock);
       connectedWallet = id;
       localStorage.setItem("wallet", connectedWallet);
       if (typeof walletStatus !== "undefined" && walletStatus) {
-        walletStatus.innerText = "Use the same wallet you paid with to restore access.";
+        walletStatus.innerText = "🆓 Free mode (3 questions). Connect wallet to unlock unlimited.";
       }
     }
 
@@ -604,7 +569,7 @@ document.getElementById("payNowInline")?.addEventListener("click", startUnlock);
 
     // Optional: status line only (does NOT hide connect/disconnect)
     const s = document.getElementById("walletStatus");
-    if (s) s.textContent = "🆓 Free mode active. Wallet not needed unless you already paid and want to restore access.";
+    if (s) s.textContent = "👋 Guest Mode Active (no wallet)";
   }
 
   document.addEventListener("DOMContentLoaded", () => {

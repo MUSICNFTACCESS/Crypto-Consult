@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Cycle Top Radar</title>
+  <title>Market Cycle Radar | CryptoConsult</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
   <style>
@@ -46,18 +46,16 @@
   </style>
 </head>
 <body>
-  <h1>🧠 On The Radar: Crypto Cycle Top Dashboard</h1>
-  <p>📊 Visualize key crypto metrics to time market cycles, spot tops, and confirm trends.</p>
+  <h1>📊 Market Cycle Radar</h1>
+  <p>Visualize BTC, ETH, SOL, relative-strength pairs, and BTC dominance to help frame trend context and cycle behavior.</p>
 
-  <!-- 🔘 Tab Buttons -->
-  <div class="tab" data-id="btc">BTC/USD</div>
+  <div class="tab active" data-id="btc">BTC/USD</div>
   <div class="tab" data-id="eth">ETH/USD</div>
   <div class="tab" data-id="sol">SOL/USD</div>
   <div class="tab" data-id="ethbtc">ETH/BTC</div>
   <div class="tab" data-id="solbtc">SOL/BTC</div>
   <div class="tab" data-id="dominance">BTC Dominance</div>
 
-  <!-- 📈 Chart Containers -->
   <div id="btc" class="chart-container active"><div id="btc-chart"></div></div>
   <div id="eth" class="chart-container"><div id="eth-chart"></div></div>
   <div id="sol" class="chart-container"><div id="sol-chart"></div></div>
@@ -65,11 +63,8 @@
   <div id="solbtc" class="chart-container"><div id="solbtc-chart"></div></div>
   <div id="dominance" class="chart-container"><div id="dominance-chart"></div></div>
 
-
-  <!-- 📜 TradingView Widgets (Deferred) -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      // Tabs
       const tabs = document.querySelectorAll('.tab');
       const charts = document.querySelectorAll('.chart-container');
 
@@ -84,7 +79,6 @@
         });
       });
 
-      // TradingView Widgets
       new TradingView.widget({
         container_id: "btc-chart",
         width: "100%",
@@ -183,11 +177,10 @@
     });
   </script>
 
-<!-- Consistent Footer -->
-<div class="site-footer" style="text-align:center; margin-top:2rem; font-size:14px; color:#f7931a; font-family:'Courier New', Courier, monospace;">
-  <p class="foot-copy">© 2025 CryptoConsult by Crimzn. All Rights Reserved.</p>
-  <p class="foot-power">⚡ Powered by Solana &amp; Helius</p>
-  <a href="index.html" class="btn-back" style="display:inline-block; margin-top:8px; background:none; color:#f14f15; border:1px solid #f14f15; padding:4px 8px; text-decoration:none; border-radius:6px;">⬅ Back to Site</a>
-</div>
+  <div class="site-footer" style="text-align:center; margin-top:2rem; font-size:14px; color:#f7931a; font-family:'Courier New', Courier, monospace;">
+    <p class="foot-copy">© 2025 CryptoConsult by Crimzn. All Rights Reserved.</p>
+    <p class="foot-power">⚡ Powered by Solana &amp; Helius</p>
+    <a href="index.html" class="btn-back" style="display:inline-block; margin-top:8px; background:none; color:#f14f15; border:1px solid #f14f15; padding:4px 8px; text-decoration:none; border-radius:6px;">⬅ Back to Site</a>
+  </div>
 </body>
 </html>

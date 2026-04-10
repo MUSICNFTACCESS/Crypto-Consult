@@ -4,12 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SolanaMind Intelligence</title>
-
-  <!-- Reuse CryptoConsult styling -->
   <link rel="stylesheet" href="app-style.css" />
 
   <style>
-    /* Light touch to ensure it looks native even if app-style changes */
     .page-wrap { max-width: 920px; margin: 0 auto; padding: 18px 14px 40px; }
     .topbar { display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin: 8px 0 16px; }
     .brandline { display:flex; align-items:center; gap:10px; }
@@ -99,14 +96,31 @@
         <div class="brain">🧠</div>
         <div class="titleblock">
           <h1>SolanaMind Intelligence</h1>
-          <p class="muted">Wallet-level signals: flows, counterparties, dust/noise, and risk score.</p>
+          <p class="muted">Wallet intelligence for whale tracking, smart-money clues, counterparties, token noise, and risk scoring.</p>
         </div>
       </div>
 
       <div class="right">
         <a class="solana-button" href="/">← Back to CryptoConsult</a>
-</div>
+      </div>
+    </div>
 
+    <div class="card">
+      <div class="subhead">What it does</div>
+      <div class="muted" style="line-height:1.5;">
+        Paste any Solana wallet to analyze:
+        <br><br>
+        • top counterparties
+        <br>
+        • recent SOL flow
+        <br>
+        • token and NFT noise
+        <br>
+        • fail-rate patterns
+        <br>
+        • a heuristic risk score from 0–100
+      </div>
+    </div>
 
     <div class="card">
       <div class="subhead">Analyze a wallet</div>
@@ -115,7 +129,7 @@
         <button id="go" class="solana-button">🔍 Analyze</button>
       </div>
       <div class="muted" style="margin-top:10px;">
-        Tip: paste any address. you’ll get live balance + last 50 tx insights.
+        Paste any address. You’ll get live wallet metrics plus a recent transaction-based intelligence snapshot.
       </div>
     </div>
 
@@ -124,7 +138,6 @@
     <div id="results" style="display:none;">
       <div class="card">
         <div class="subhead">Overview</div>
-
         <div class="grid" id="metrics"></div>
 
         <div class="score-wrap">
@@ -138,7 +151,7 @@
       </div>
 
       <div class="card">
-        <div class="subhead">Top counterparties (by SOL volume in last 50 tx)</div>
+        <div class="subhead">Top counterparties (by SOL volume in sampled transactions)</div>
         <div class="list" id="cps"></div>
       </div>
 
@@ -164,7 +177,6 @@
   }
 
   function riskColor(score) {
-    // green -> yellow -> red
     if (score >= 80) return "#22c55e";
     if (score >= 60) return "#eab308";
     return "#ef4444";
@@ -197,7 +209,6 @@
         return;
       }
 
-      // Metrics
       const m = $("metrics");
       m.innerHTML = "";
       m.appendChild(metric("Address", `<span class="mono">${data.address}</span>`));
@@ -207,18 +218,16 @@
       m.appendChild(metric("Dust tokens", data.dust_token_count ?? "—"));
       m.appendChild(metric("Tx sampled", data.tx_sampled ?? "—"));
       m.appendChild(metric("Fail rate", fmt((data.fail_rate ?? 0) * 100, 1) + "%"));
-      m.appendChild(metric("SOL in (50tx)", fmt(data.sol_in_50tx, 6)));
-      m.appendChild(metric("SOL out (50tx)", fmt(data.sol_out_50tx, 6)));
-      m.appendChild(metric("Net SOL (50tx)", fmt(data.net_sol_50tx, 6)));
+      m.appendChild(metric("SOL in", fmt(data.sol_in_50tx, 6)));
+      m.appendChild(metric("SOL out", fmt(data.sol_out_50tx, 6)));
+      m.appendChild(metric("Net SOL", fmt(data.net_sol_50tx, 6)));
       m.appendChild(metric("Est age (days)", data.est_age_days ?? "—"));
 
-      // Score
       const score = Number(data.risk_score_0_100 ?? 0);
       $("scoreText").textContent = score;
       $("scoreBar").style.width = Math.max(0, Math.min(100, score)) + "%";
       $("scoreBar").style.background = riskColor(score);
 
-      // Flags
       const flags = Array.isArray(data.flags) ? data.flags : [];
       const f = $("flags");
       f.innerHTML = "";
@@ -236,14 +245,13 @@
         }
       }
 
-      // Counterparties
       const cps = $("cps");
       cps.innerHTML = "";
       const arr = Array.isArray(data.top_counterparties) ? data.top_counterparties : [];
       if (!arr.length) {
         const div = document.createElement("div");
         div.className = "muted";
-        div.textContent = "No counterparties detected in sampled txs.";
+        div.textContent = "No counterparties detected in sampled transactions.";
         cps.appendChild(div);
       } else {
         for (const c of arr) {
@@ -260,7 +268,6 @@
         }
       }
 
-      // Raw
       $("raw").textContent = JSON.stringify(data, null, 2);
 
       $("results").style.display = "block";

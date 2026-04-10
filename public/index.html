@@ -15,76 +15,149 @@
   <span>BTC: <strong id="btcPrice">--</strong></span>
   <span>ETH: <strong id="ethPrice">--</strong></span>
   <span>SOL: <strong id="solPrice">--</strong></span>
+  <span id="price-stale" style="font-size:.8em; opacity:.7; margin-left:.5rem; display:none;">(stale)</span>
 </div>
 
 <div style="text-align:center; margin: 20px 0;">
   <img src="brand.png?v=crimznAug27v1"
+       alt="CryptoConsult Brand"
        style="width:100px;height:auto;box-shadow:0 0 15px rgba(0,255,170,0.6);border-radius:8px;" />
 </div>
 
 <h1>🧠 CryptoConsult by Crimzn</h1>
 
-<div style="max-width:820px;margin:0 auto;text-align:center;padding:0 16px;">
-  <h2>Stop guessing your crypto trades.</h2>
-  <p>Ask CryptoConsult for a fast read on BTC, SOL, or any crypto setup before you enter.</p>
+<div style="max-width:860px;margin:0 auto 24px auto;text-align:center;padding:0 16px;">
+  <h2 style="margin-bottom:10px;">Your Crypto Intelligence Terminal</h2>
+  <p style="font-size:1.05rem;line-height:1.6;margin-bottom:14px;">
+    Ask CryptoConsult for a fast read on BTC, SOL, market news, and crypto setups before you enter.
+  </p>
+  <p style="color:#00ff99;font-weight:bold;margin-bottom:10px;">
+    Find tops. Track whales. Stay ahead.
+  </p>
 
-  <div style="background:#111;border:1px solid #333;border-radius:12px;padding:14px;margin:16px auto;max-width:680px;text-align:left;">
-    <strong>Try asking:</strong><br/>
-    • Should I short BTC here?<br/>
-    • Is SOL breaking down or bouncing?<br/>
-    • Where is the next liquidity sweep?
+  <div style="background:#111;border:1px solid #333;border-radius:12px;padding:14px 16px;margin:14px auto 18px auto;text-align:left;max-width:680px;">
+    <div style="font-weight:bold;margin-bottom:8px;">Try asking:</div>
+    <div>• Should I short BTC here?</div>
+    <div>• Is SOL breaking down or bouncing?</div>
+    <div>• What does this news mean for crypto?</div>
+    <div>• Where is the next liquidity sweep?</div>
   </div>
 
-  <p style="font-size:.9rem;">Free mode available. Wallet only needed for premium unlock.</p>
+  <p style="font-size:.95rem;opacity:.9;">
+    No logins. No friction. Just signal.
+  </p>
 </div>
 
 <h2>🤖 Ask CrimznBot</h2>
+<div style="max-width:820px;margin:0 auto;text-align:center;padding:0 16px 12px 16px;">
+  <p style="margin-bottom:10px;">
+    Get plain-English crypto answers with live pricing, strategy context, and market-aware reasoning.
+  </p>
+  <p style="color:#00ffcc;margin-bottom:10px;">
+    We help you not get wrecked.
+  </p>
+</div>
+
 <input id="user-input" type="text" placeholder="e.g. Should I short BTC at 73k?" />
 <button id="askBtn" class="solana-button">📤 Ask Now</button>
+<button id="continueWithoutWalletBtn" class="solana-button">🆓 Continue Free</button>
 <div id="response-box" class="response-box"></div>
 
-<!-- 🔥 TOOLKIT BUTTON -->
-<div style="text-align:center;margin-top:20px;">
-  <button onclick="document.getElementById('toolkit').style.display='block'" class="solana-button">
+<div id="paywall" style="max-width:820px;margin:24px auto 0 auto;text-align:center;padding:0 16px;">
+  <h2>🔓 Unlock Unlimited</h2>
+  <p>
+    Get unlimited CrimznBot access with a one-time payment of <strong>0.01 SOL (early access pricing)</strong>.
+  </p>
+  <p style="color:#00ffcc;">⚡ One-time unlock. No subscriptions.</p>
+  <button id="solana-pay-btn" class="solana-button">🔓 Unlock with Solana Pay</button>
+</div>
+
+<div style="text-align:center;margin-top:18px;">
+  <button onclick="document.getElementById('toolkit').style.display='block'; this.style.display='none';" class="solana-button">
     🔎 Open Trader Toolkit
   </button>
 </div>
 
-<!-- 🧰 TOOLKIT SECTION (HIDDEN BY DEFAULT) -->
 <div id="toolkit" style="display:none; margin-top:30px; text-align:center;">
 
-  <h2>🧰 Trader Toolkit</h2>
-  <p>Advanced tools for traders, research, and crypto insights.</p>
+  <div style="max-width:820px;margin:0 auto;text-align:center;padding:0 16px;">
+    <h2>🧰 Trader Toolkit</h2>
+    <p>Advanced tools for traders, research, and crypto intelligence.</p>
+  </div>
 
-  <!-- Wallet -->
+  <div style="max-width:820px;margin:28px auto 0 auto;text-align:center;padding:0 16px;">
+    <h2>🔓 Wallet & Unlock</h2>
+    <p style="margin-bottom:12px;">
+      Wallet connection is used only for payment verification and optional feature unlocks.
+      No custody. No personal data collection. No off-chain profiles.
+    </p>
+  </div>
+
   <button id="connectWalletBtn" class="solana-button">🟣 Connect Wallet</button>
   <button id="disconnectWalletBtn" class="solana-button hidden">❌ Disconnect</button>
   <p id="walletStatus" style="color: lime">🔌 Not connected</p>
 
-  <!-- PulseIt -->
-  <h3>🧠 PulseIt</h3>
-  <input id="pulseInput" placeholder="Topic like ETF, war, etc" />
-  <button id="pulseBtn" class="solana-button">Analyze</button>
-  <div id="pulseResult"></div>
+  <button id="openProfileModal" class="solana-button">💾 Save My Profile (optional)</button>
 
-  <!-- Tools -->
-  <h3>🔎 Tools</h3>
-  <a href="/solanamind.html" class="solana-button">🧠 SolanaMind</a>
-  <a href="/swap.html" class="solana-button">🔁 Privacy Swap</a>
-  <a href="radar.html" class="solana-button">📊 Market Radar</a>
-  <a href="whitepaper.html" class="solana-button">📄 Whitepaper</a>
+  <div id="profileModal" class="modal hidden">
+    <div class="modal-content">
+      <span id="closeProfileModal" class="close-button">❌</span>
+      <h3>Save Profile</h3>
+      <input id="name" placeholder="Name (optional)" /><br />
+      <input id="email" placeholder="Email (optional)" /><br />
+      <button id="saveProfileBtn" class="solana-button">💾 Save to Firebase</button>
+    </div>
+  </div>
+
+  <div id="unlockStatus" style="text-align:center;margin-top:8px;display:none;">
+    🔓 CrimznBot Unlocked
+  </div>
+
+  <h2>🧠 PulseIt - Sentiment Analyzer</h2>
+  <div style="max-width:820px;margin:0 auto;text-align:center;padding:0 16px 12px 16px;">
+    <p>Analyze macro sentiment around ETFs, war, regulation, rates, liquidity, or any crypto topic.</p>
+  </div>
+  <input id="pulseInput" placeholder="Type a topic like 'ETF' or 'war'" />
+  <button id="pulseBtn" class="solana-button">🔍 Analyze</button>
+  <div id="pulseResult" class="pulse-result"></div>
+
+  <h2>🔎 Explore More Tools</h2>
+  <div style="max-width:820px;margin:0 auto;text-align:center;padding:0 16px 12px 16px;">
+    <p>Use wallet intelligence, market-cycle dashboards, swaps, docs, and partner tools.</p>
+  </div>
+
+  <a href="/solanamind.html" class="solana-button">
+    🧠 SolanaMind Intelligence
+    <span style="margin-left:6px;font-size:12px;background:#22c55e;color:black;padding:2px 6px;border-radius:6px;">AI</span>
+  </a>
+  <a class="solana-button" href="/swap.html">🔁 Jupiter Swap</a>
+  <a href="radar.html" class="solana-button">📊 Market Cycle Radar</a>
+  <a href="whitepaper.html" class="solana-button">📄 Read the Whitepaper</a>
   <a href="faq.html" class="solana-button">❓ FAQ</a>
-  <a href="sponsor.html" class="solana-button">💰 Sponsor</a>
+  <a href="sponsor.html" class="solana-button">💰 Become a Partner</a>
 
-  <!-- Contact -->
-  <h3>📨 Contact</h3>
-  <a href="mailto:crimzncipriano@gmail.com" class="solana-button">Email</a>
-  <a href="https://t.me/CrimznBot" class="solana-button">Telegram</a>
-  <a href="https://x.com/crimzn" class="solana-button">X</a>
+  <h2>💼 Services Offered</h2>
+  <ul>
+    <li>🚀 Software as a Service (SaaS)</li>
+    <li>🔐 Wallet Setup & Security</li>
+    <li>📊 Technical Analysis & Market Insights</li>
+    <li>📈 Token Launch Guidance</li>
+    <li>🎓 Educational Sessions & Onboarding</li>
+    <li>📞 Strategy Calls & Portfolio Reviews</li>
+  </ul>
 
+  <h2>📨 Contact</h2>
+  <p>
+    <a href="mailto:crimzncipriano@gmail.com" class="solana-button">✉️ Email Me</a>
+    <a href="https://t.me/CrimznBot" class="solana-button" target="_blank">🗨️ Telegram @CrimznBot</a>
+    <a href="https://discord.com/users/CrimznBot" class="solana-button" target="_blank">🟣 Discord</a>
+    <a href="https://x.com/crimzn" class="solana-button" target="_blank">❌ X (Twitter) @crimzn</a>
+  </p>
 </div>
 
-<script defer src="app-main.js?v=crimznAug27v1"></script>
+<p style="color: #00ffff;">© 2025 by <strong>💬 CrimznBot</strong></p>
+<p>🚀 Built by Crimzn — powered by Solana & Helius</p>
 
+<script defer src="app-main.js?v=crimznAug27v1"></script>
 </body>
 </html>

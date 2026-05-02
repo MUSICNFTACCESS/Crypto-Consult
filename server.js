@@ -487,111 +487,131 @@ app.post("/ask", async (req, res) => {
   }
 
   // --- CrimznBot system style ---
-  const systemStyle = [
-    "You are CrimznBot — a high-signal crypto intelligence engine.",
-    "Blend real-time price context, recent headlines, market structure, and practical crypto reasoning.",
-    "",
-    "Personality:",
-    "- Think like a trader first, macro analyst second.",
-    "- Be sharp, concise, decisive, and useful.",
-    "- Avoid fluffy essays and generic macro filler.",
-    "",
-    "Rules:",
-    "1) Be decisive and current (assume it's 2026).",
-    "2) Only use live prices explicitly provided in the context; never hallucinate exact numbers.",
-    "3) If recent headlines are provided, use them.",
-    "4) Speak like a crypto trader for market questions and like a clear teacher for beginner questions.",
-    "5) Keep answers tight, practical, and relevant to the actual question.",
-    "6) No generic 'as of my last update' language.",
-    "7) No unnecessary disclaimers."
-  ].join("\n");
 
-  // --- Mode detection ---
-  const lowerPrompt = String(prompt || "").toLowerCase();
+const systemStyle = `
+You are CrimznBot, a crypto intelligence terminal.
 
-  const beginnerMode = [
-    "what is","how does","how do","explain","difference between","beginner",
-    "for beginners","new to crypto","why does","can you explain"
-  ].some(k => lowerPrompt.includes(k));
+You MUST respond in this exact format for MARKET_ANALYSIS only.
 
-  const advancedMode = !beginnerMode && lowerPrompt.length > 20;
+If the user intent is GENERAL_PRODUCT_HELP, DO NOT use the trading template.
+For GENERAL_PRODUCT_HELP, answer normally with short bullets, beginner-friendly language, and no price levels unless asked.
 
-  // --- User prompt payload ---
-  const userMsg = [
-    `User prompt: ${prompt}`,
-    priceContext ? `Live prices: ${priceContext}` : "Live prices: (none detected)",
-    newsContext || "",
-    beginnerMode
-      ? "Mode: beginner-friendly"
-      : advancedMode
-        ? "Mode: advanced trader"
-        : "Mode: trader",
-    "Output format:",
-    beginnerMode
-      ? "• TL;DR: Give a simple direct answer in plain English."
-      : advancedMode
-        ? "• TL;DR: Give a decisive, high-conviction answer."
-        : "• TL;DR: Give a clear direct answer.",
-    beginnerMode
-      ? "• What it means: Explain the concept simply and clearly."
-      : "• Market Structure: What is BTC / the market doing (trend, range, momentum, liquidity).",
-    beginnerMode
-      ? "• Key takeaway: Main takeaway or practical insight."
-      : "• Key Levels: Important price levels or zones if relevant.",
-    beginnerMode
-      ? "• Risk: One simple thing that could go wrong."
-      : "• Bias: Bullish / Bearish / Neutral with one-line reasoning.",
-    beginnerMode
-      ? "• What to watch: 2–3 simple next things."
-      : "• Invalidation: What proves this view wrong.",
-    beginnerMode
-      ? "• Keep it short, clear, and beginner-friendly."
-      : "• What to watch next: 2–3 specific triggers or signals."
-  ].join("\n");
+Updated: ${new Date().toISOString().replace("T"," ").slice(0,16)} UTC
 
-  try {
-    const reply = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        temperature: 0.38,
-        max_tokens: 900,
-        messages: [
-          { role: "system", content: systemStyle },
-          { role: "user", content: userMsg }
-        ]
-      })
-    });
+• Live Prices:
+${priceContext || "No live price data available"}
 
-    console.log("[ASK fusion] OpenAI status:", reply.status);
+• TL;DR:
+[ONE short sentence answer: BUY / WAIT / AVOID]
 
-    if (!reply.ok) {
-      const errTxt = await reply.text().catch(() => "");
-      console.error("[ASK fusion] OpenAI error:", errTxt.slice(0, 300));
-      const header = [ts].concat(priceLines.length ? ["", ...priceLines, ""] : [""]).join("\n");
-      return res.status(502).send(`${header}\n⚠️ AI temporarily unavailable. Try again shortly.`);
-    }
+• Market Structure:
+[1-2 sentences max. BTC direction + impact on altcoins]
 
-    const aiData = await reply.json();
-    let ans = aiData.choices?.[0]?.message?.content?.trim() || "";
+• Key Levels:
+• Resistance: [levels]
+• Support: [levels]
 
-    // Light scrub of annoying disclaimers if any sneak in
-    ans = ans
-      .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
-      .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
-      .trim();
+• Bias:
+[ Bullish / Neutral / Bearish ] — one sentence why
 
+• Invalidation:
+[What breaks your idea]
+
+• What to watch next:
+1. [Trigger 1]
+2. [Trigger 2]
+3. [Trigger 3]
+
+RULES:
+- ALWAYS follow this structure exactly
+- NEVER write paragraphs
+- NEVER skip sections
+- ONLY use live price data provided
+- If data is missing, say "No live price data available"
+- NEVER guess support or resistance levels
+- ONLY provide levels if clearly supported by price context
+- If unclear, say: "Levels unclear — waiting for confirmation"
+- If no token price is available, DO NOT perform analysis
+- Instead say: "No reliable data for this asset — cannot analyze"
+- No fluff, no filler, trader-focused only
+`;
+
+// --- Mode detection ---
+const lowerPrompt = String(prompt || "").toLowerCase();
+
+const beginnerMode = [
+  "what is", "how does", "how do", "explain", "difference between", "beginner",
+  "for beginners", "new to crypto", "why does", "can you explain"
+].some(k => lowerPrompt.includes(k));
+
+const advancedMode = !beginnerMode && lowerPrompt.length > 20;
+
+// --- User prompt payload ---
+const userMsg = [
+  `User prompt: ${prompt}`,
+  priceContext ? `Live prices: ${priceContext}` : "Live prices: (none detected)",
+  newsContext || "",
+  beginnerMode
+    ? "Mode: beginner-friendly"
+    : advancedMode
+      ? "Mode: advanced trader"
+      : "Mode: trader",
+
+  "Intent:",
+  lowerPrompt.includes("what can you do") ||
+  lowerPrompt.includes("help") ||
+  lowerPrompt.includes("features") ||
+  lowerPrompt.includes("how does this work") ||
+  lowerPrompt.includes("explain") ||
+  lowerPrompt.includes("what is") ||
+  lowerPrompt.includes("how does")
+    ? "GENERAL_PRODUCT_HELP: Explain what CrimznBot/CryptoConsult can do clearly. Do NOT use trading format, price levels, support/resistance, market structure, or bias."
+    : "MARKET_ANALYSIS: Use the REQUIRED CrimznBot terminal format from the system prompt exactly. Do not deviate."
+].join("\n");
+
+try {
+  const reply = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      temperature: 0.25,
+      max_tokens: 900,
+      messages: [
+        { role: "system", content: systemStyle },
+        { role: "user", content: userMsg }
+      ]
+    })
+  });
+
+  console.log("[ASK fusion] OpenAI status:", reply.status);
+
+  if (!reply.ok) {
+    const errTxt = await reply.text().catch(() => "");
+    console.error("[ASK fusion] OpenAI error:", errTxt.slice(0, 300));
     const header = [ts].concat(priceLines.length ? ["", ...priceLines, ""] : [""]).join("\n");
-    return res.send(`${header}\n${ans}`);
-  } catch (e) {
-    console.error("ASK fusion fatal:", e);
-    const header = [ts].concat(priceLines.length ? ["", ...priceLines, ""] : [""]).join("\n");
-    return res.status(500).send(`${header}\nBackend error.`);
+    return res.status(502).send(`${header}\n⚠️ AI temporarily unavailable. Try again shortly.`);
   }
+
+  const aiData = await reply.json();
+  let ans = aiData.choices?.[0]?.message?.content?.trim() || "";
+
+  ans = ans
+    .replace(/as of my (?:last|latest) update.*?(\.|$)/gi, "")
+    .replace(/i (do not|don't) have real[- ]?time data.*?(\.|$)/gi, "")
+    .trim();
+
+  const header = [ts].concat(priceLines.length ? ["", ...priceLines, ""] : [""]).join("\n");
+  return res.send(`${header}\n${ans}`);
+
+} catch (e) {
+  console.error("ASK fusion fatal:", e);
+  const header = [ts].concat(priceLines.length ? ["", ...priceLines, ""] : [""]).join("\n");
+  return res.status(500).send(`${header}\nBackend error.`);
+}
 });
 
 // 👤 Save Profile to Firebase (safe if Firebase disabled)

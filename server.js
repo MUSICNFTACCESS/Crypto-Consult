@@ -47,6 +47,10 @@ try {
   db = null;
 }
 
+// Affiliate tracking — Firebase storage
+const { createAffiliateSystem } = require("./affiliate");
+const affiliateSystem = createAffiliateSystem(db);
+
 // ⚙️ App Init
 const app = express();
 app.set("trust proxy", 1);
@@ -183,6 +187,66 @@ async function verifyHeliusPayment(wallet) {
   }
 }
 
+
+
+// AFFILIATE PAYMENT COMMISSION V1
+async function recordVerifiedAffiliateCommission(wallet) {
+  try {
+    if (!db || !wallet) return false;
+
+    const referral = await affiliateSystem.getReferral(wallet);
+    if (!referral || referral.converted) return false;
+
+    const receiver = process.env.SOLANA_ADDRESS;
+    const key = process.env.HELIUS_API_KEY;
+    if (!receiver || !key) return false;
+
+    const url = `https://api.helius.xyz/v0/addresses/${wallet}/transactions?api-key=${key}&limit=100`;
+    const response = await fetch(url);
+    if (!response.ok) return false;
+
+    const transactions = await response.json();
+    if (!Array.isArray(transactions)) return false;
+
+    const start = Date.parse(referral.createdAt);
+    const end = Date.parse(referral.expiresAt);
+
+    if (!Number.isFinite(start) || !Number.isFinite(end)) return false;
+
+    const candidates = transactions
+      .filter(tx =>
+        !tx.transactionError &&
+        typeof tx.signature === "string" &&
+        typeof tx.timestamp === "number" &&
+        tx.timestamp * 1000 >= start &&
+        tx.timestamp * 1000 <= end
+      )
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    for (const tx of candidates) {
+      const transfer = (tx.nativeTransfers || []).find(t =>
+        t.fromUserAccount === wallet &&
+        t.toUserAccount === receiver &&
+        Number.isSafeInteger(t.amount) &&
+        t.amount >= 10000000
+      );
+
+      if (!transfer) continue;
+
+      return await affiliateSystem.recordCommission(
+        wallet,
+        tx.signature,
+        transfer.amount,
+        tx.timestamp * 1000
+      );
+    }
+
+    return false;
+  } catch (err) {
+    console.warn("Affiliate commission check failed:", err.message);
+    return false;
+  }
+}
 
 // 🆕 Flexible token alias map
 const TOKEN_ALIASES = {
@@ -753,6 +817,10 @@ app.get("/verify-unlock", async (req, res) => {
 
     const paid = await verifyHeliusPayment(sender);
 
+    if (paid) {
+      await recordVerifiedAffiliateCommission(sender);
+    }
+
     if (paid && db) {
       await db.collection("profiles").doc(sender).set({
         paid: true,
@@ -810,6 +878,7 @@ app.get("/verify-paid", async (req, res) => {
     catch (e) { console.error(`❌ [/verify-paid] verifyHeliusPayment error wallet=${mask(wallet)}:`, e?.message || e); }
 
     if (paid) {
+      await recordVerifiedAffiliateCommission(wallet);
       console.log(`✅ Payment verified for wallet=${mask(wallet)} at ${new Date().toISOString()}`);
       walletUsage[wallet].hasPaid = true; // cache
 
@@ -962,6 +1031,115 @@ app.post("/api/solanamind/analyze", async (req, res) => {
   }
 });
 // ========================= end SolanaMind =========================
+
+
+
+// Affiliate wallet ownership verification
+const affiliateChallenges = new Map();
+
+app.post("/api/affiliate/challenge", (req, res) => {
+  try {
+    const wallet = String(req.body?.wallet || "");
+    const referralCode = String(req.body?.referralCode || "").trim().toLowerCase();
+
+    if (!/^[a-z0-9_-]{3,32}$/.test(referralCode)) {
+      return res.status(400).json({ error: "Invalid referral code" });
+    }
+
+    const key = new PublicKey(wallet);
+
+    if (key.toBase58() !== wallet) {
+      return res.status(400).json({ error: "Invalid wallet" });
+    }
+
+    const nonce = crypto.randomBytes(32).toString("hex");
+    const expiresAt = Date.now() + 5 * 60 * 1000;
+    const message =
+      `Crimzn Consult affiliate verification\n` +
+      `Wallet: ${wallet}\n` +
+      `Referral: ${referralCode}\n` +
+      `Nonce: ${nonce}\n` +
+      `Expires: ${new Date(expiresAt).toISOString()}`;
+
+    affiliateChallenges.set(wallet, { message, expiresAt, referralCode });
+
+    return res.json({ message });
+  } catch {
+    return res.status(400).json({ error: "Invalid wallet" });
+  }
+});
+
+function verifyAffiliateSignature(wallet, signature, referralCode) {
+  const challenge = affiliateChallenges.get(wallet);
+  if (!challenge || Date.now() > challenge.expiresAt || challenge.referralCode !== String(referralCode).trim().toLowerCase()) return false;
+
+  try {
+    const publicKey = new PublicKey(wallet);
+    const signatureBytes = bs58.decode(signature);
+
+    const valid = nacl.sign.detached.verify(
+      Buffer.from(challenge.message, "utf8"),
+      signatureBytes,
+      publicKey.toBytes()
+    );
+
+    if (valid) affiliateChallenges.delete(wallet);
+    return valid;
+  } catch {
+    return false;
+  }
+}
+
+// Register an approved affiliate referral
+app.post("/api/affiliate/referral", async (req, res) => {
+  try {
+    const { wallet, referralCode } = req.body || {};
+
+    if (typeof wallet !== "string" ||
+        typeof referralCode !== "string" ||
+        wallet.length > 100) {
+      return res.status(400).json({ error: "Invalid request" });
+    }
+
+    const signature = req.body?.signature;
+
+    if (typeof signature !== "string" ||
+        !verifyAffiliateSignature(wallet, signature, referralCode)) {
+      return res.status(403).json({
+        error: "Invalid or expired wallet signature"
+      });
+    }
+
+    // Prevent referrals from being registered after payment.
+    const profile = db
+      ? await db.collection("profiles").doc(wallet).get()
+      : null;
+
+    if (profile?.exists && profile.data()?.paid === true) {
+      return res.status(409).json({
+        error: "Referral must be activated before payment"
+      });
+    }
+
+    if (walletUsage[wallet]?.hasPaid === true ||
+        await verifyHeliusPayment(wallet)) {
+      return res.status(409).json({
+        error: "Wallet already has a verified payment"
+      });
+    }
+
+    const result = await affiliateSystem.recordReferral(wallet, referralCode);
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("Referral registration failed:", err.message);
+    return res.status(500).json({ error: "Registration failed" });
+  }
+});
 
 // Wildcard route to serve frontend for unmatched paths (keep this LAST)
 app.get("*", (req, res) => {

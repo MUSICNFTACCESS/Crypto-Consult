@@ -90,6 +90,65 @@ async function verifyPaidLoop(wallet) {
   return false;
 }
 
+
+// Affiliate referral capture — first valid referral wins.
+(function captureAffiliateReferral() {
+  try {
+    const code = new URLSearchParams(window.location.search).get("ref");
+    if (!code) return;
+
+    const normalized = code.trim().toUpperCase();
+
+    if (!/^[A-Z0-9_-]{3,32}$/.test(normalized)) return;
+
+    if (!localStorage.getItem("affiliateReferral")) {
+      localStorage.setItem("affiliateReferral", normalized);
+    }
+  } catch (err) {
+    console.warn("Referral capture unavailable");
+  }
+})();
+
+
+// AFFILIATE ACTIVATION BUTTON V1
+(function setupAffiliateActivation() {
+  const referralCode = localStorage.getItem("affiliateReferral");
+  if (!referralCode) return;
+
+  const connectButton = document.getElementById("connectWalletBtn");
+  if (!connectButton || !connectButton.parentElement) return;
+
+  const button = document.createElement("button");
+  button.id = "activateAffiliateReferralBtn";
+  button.type = "button";
+  button.className = "solana-button";
+  button.textContent = "Activate Referral";
+  button.style.marginLeft = "8px";
+
+  const status = document.createElement("span");
+  status.id = "affiliateActivationStatus";
+  status.setAttribute("role", "status");
+  status.style.marginLeft = "8px";
+
+  connectButton.insertAdjacentElement("afterend", button);
+  button.insertAdjacentElement("afterend", status);
+
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    status.textContent = "Waiting for Phantom approval...";
+
+    try {
+      await registerAffiliateWithPhantom(referralCode);
+      status.textContent = "Referral activated!";
+      button.remove();
+      localStorage.removeItem("affiliateReferral");
+    } catch (err) {
+      status.textContent = err.message || "Activation failed";
+      button.disabled = false;
+    }
+  });
+})();
+
 async function restorePaidAccessIfEligible(wallet) {
   try {
     if (!wallet || String(wallet).startsWith("guest-")) return false;
@@ -660,3 +719,70 @@ document.getElementById("payNowInline")?.addEventListener("click", startUnlock);
     };
   });
 })();
+
+
+// AFFILIATE PHANTOM SIGNING V1
+async function registerAffiliateWithPhantom(referralCode) {
+  const code = String(referralCode || "").trim().toLowerCase();
+
+  if (!/^[a-z0-9_-]{3,32}$/.test(code)) {
+    throw new Error("Invalid affiliate code");
+  }
+
+  const provider = window.phantom?.solana || window.solana;
+
+  if (!provider?.isPhantom || !provider.signMessage) {
+    throw new Error("Open this website in Phantom's browser");
+  }
+
+  const connection = await provider.connect();
+  const wallet = connection.publicKey.toBase58();
+
+  const challengeResponse = await fetch("/api/affiliate/challenge", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ wallet, referralCode: code })
+  });
+
+  const challenge = await challengeResponse.json();
+
+  if (!challengeResponse.ok) {
+    throw new Error(challenge.error || "Challenge failed");
+  }
+
+  const encoded = new TextEncoder().encode(challenge.message);
+
+  const signed = await provider.signMessage(encoded, "utf8");
+
+  const alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  const bytes = signed.signature;
+  let value = 0n;
+  for (const byte of bytes) value = (value << 8n) + BigInt(byte);
+  let signature = "";
+  while (value > 0n) {
+    signature = alphabet[Number(value % 58n)] + signature;
+    value /= 58n;
+  }
+  for (const byte of bytes) {
+    if (byte !== 0) break;
+    signature = "1" + signature;
+  }
+
+  const response = await fetch("/api/affiliate/referral", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      wallet,
+      referralCode: code,
+      signature
+    })
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "Affiliate registration failed");
+  }
+
+  return result;
+}

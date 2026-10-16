@@ -26,7 +26,95 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!document.hidden) verifyPendingUnlock();
     });
 
-    let connectedWallet = null;
+
+let connectedWallet = null;
+
+// CRIMZNBOT PAID WALLET SESSION
+let paidAuthSession = null;
+
+function paidSignatureBase58(bytes) {
+  const alphabet =
+    "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+  let value = 0n;
+  for (const byte of bytes) {
+    value = (value << 8n) + BigInt(byte);
+  }
+
+  let result = "";
+  while (value > 0n) {
+    result = alphabet[Number(value % 58n)] + result;
+    value /= 58n;
+  }
+
+  for (const byte of bytes) {
+    if (byte !== 0) break;
+    result = "1" + result;
+  }
+
+  return result;
+}
+
+async function authenticatePaidWallet(wallet) {
+  if (
+    paidAuthSession &&
+    paidAuthSession.wallet === wallet &&
+    Date.now() < paidAuthSession.expiresAt
+  ) {
+    return paidAuthSession.token;
+  }
+
+  const provider = window.phantom?.solana || window.solana;
+
+  if (!provider?.signMessage) {
+    throw new Error("Open CryptoConsult inside Phantom.");
+  }
+
+  const connection = await provider.connect();
+
+  if (connection.publicKey.toString() !== wallet) {
+    throw new Error("Connected wallet does not match.");
+  }
+
+  const challengeResponse = await fetch("/api/auth/challenge", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ wallet })
+  });
+
+  const challenge = await challengeResponse.json();
+
+  if (!challengeResponse.ok || !challenge.message) {
+    throw new Error("Wallet challenge failed.");
+  }
+
+  const encoded = new TextEncoder().encode(challenge.message);
+  const signed = await provider.signMessage(encoded, "utf8");
+
+  const signature = paidSignatureBase58(signed.signature);
+
+  const verifyResponse = await fetch("/api/auth/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ wallet, signature })
+  });
+
+  const verified = await verifyResponse.json();
+
+  if (!verifyResponse.ok || !verified.token) {
+    throw new Error("Wallet authentication failed.");
+  }
+
+  paidAuthSession = {
+    wallet,
+    token: verified.token,
+    expiresAt: Date.now() +
+      Math.max(0, verified.expiresInSeconds - 60) * 1000
+  };
+
+  return verified.token;
+}
+// END CRIMZNBOT PAID WALLET SESSION
 
 function openInPhantom() {
   const here = window.location.href.split("#")[0];
@@ -493,13 +581,16 @@ document.getElementById("payNowInline")?.addEventListener("click", startUnlock);
       }
     }
 
+const isConnectedSolanaWallet =
+  !!connectedWallet &&
+  /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(connectedWallet);
     const localKey = `askedLocal:${connectedWallet}`;
 
     // Read local count
     let askedLocal = parseInt(localStorage.getItem(localKey) || "0", 10);
 
     // Hard block immediately at local limit — show only unlock button
-    if (!hasPaid && askedLocal >= FREE_LIMIT) {
+if (!hasPaid && askedLocal >= FREE_LIMIT && !isConnectedSolanaWallet) {
       injectInlineUnlock();
       return;
     }
@@ -513,18 +604,49 @@ document.getElementById("payNowInline")?.addEventListener("click", startUnlock);
     askBtn.disabled = true;
     responseBox.innerText = "🧠 Thinking…";
 
-    const ac = new AbortController();
-    const timeout = setTimeout(() => ac.abort(), 25_000);
+const ac = new AbortController();
+let timeout;
 
-    try {
-      const res = await fetch("/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, wallet: connectedWallet }),
-        signal: ac.signal
-      });
-      clearTimeout(timeout);
+try {
+  // Authenticate paid wallets through Phantom
+const needsPaidAuth = isConnectedSolanaWallet;
 
+  const paidToken = needsPaidAuth
+    ? await authenticatePaidWallet(connectedWallet)
+    : null;
+
+  // Start timeout after wallet signing is complete
+  timeout = setTimeout(() => ac.abort(), 25_000);
+
+  const res = await fetch("/ask", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(paidToken
+        ? { "Authorization": `Bearer ${paidToken}` }
+        : {})
+    },
+    body: JSON.stringify({
+      prompt,
+      wallet: connectedWallet
+    }),
+    signal: ac.signal
+  });
+
+// Handle expired or mismatched wallet sessions
+
+if (res.status === 401 || res.status === 403) {
+  paidAuthSession = null;
+
+  if (!hasPaid) {
+    const n = Number(localStorage.getItem(localKey) || "0");
+    localStorage.setItem(localKey, String(Math.max(0, n - 1)));
+  }
+
+  responseBox.innerText =
+    "🔐 Wallet authentication required. Tap Ask Now again to sign securely with Phantom. No SOL payment needed.";
+  return;
+}
       // ✅ Safer server + client paywall handling
       if (res.status === 429) {
         try {
@@ -542,6 +664,10 @@ document.getElementById("payNowInline")?.addEventListener("click", startUnlock);
         return;
       }
 
+// Failed AI requests must not consume free questions
+if (!res.ok) {
+  throw new Error(`CrimznBot request failed (HTTP ${res.status})`);
+}
       const answer = await res.text();
       console.log("[ASK] raw server answer:", answer);
 
@@ -558,7 +684,7 @@ document.getElementById("payNowInline")?.addEventListener("click", startUnlock);
       responseBox.innerText = answer;
 
       // If this click *used up* the last free question, show unlock now
-      if (!hasPaid && askedLocal >= FREE_LIMIT) {
+if (!hasPaid && askedLocal >= FREE_LIMIT && !isConnectedSolanaWallet) {
         injectInlineUnlock();
         return;
       }

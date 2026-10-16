@@ -45,7 +45,7 @@ function createChallenge(wallet) {
 
   const message =
     "CryptoConsult wallet authentication\n" +
-    "Domain: crypto-consult.onrender.com\n" +
+    "Domain: " + (process.env.AUTH_DOMAIN || "crypto-consult.onrender.com") + "\n" +
     "Wallet: " + wallet + "\n" +
     "Nonce: " + nonce + "\n" +
     "Expires: " + new Date(expiresAt).toISOString() +

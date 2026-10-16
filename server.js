@@ -59,6 +59,56 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 const PORT = process.env.PORT || 3000;
 
+// CRIMZNBOT PAID WALLET AUTHENTICATION
+const paidAuth = require("./paid-auth");
+
+const paidAuthLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 12,
+  standardHeaders: "draft-7",
+  legacyHeaders: false
+});
+
+app.post("/api/auth/challenge", paidAuthLimiter, (req, res) => {
+  try {
+    const wallet = req.body?.wallet;
+    if (typeof wallet !== "string" || wallet.length > 44) {
+      return res.status(400).json({ error: "Invalid wallet" });
+    }
+
+    const message = paidAuth.createChallenge(wallet);
+    return res.json({ message });
+  } catch {
+    return res.status(400).json({
+      error: "Invalid wallet or challenge unavailable"
+    });
+  }
+});
+
+app.post("/api/auth/verify", paidAuthLimiter, (req, res) => {
+  const { wallet, signature } = req.body || {};
+
+  if (typeof wallet !== "string" ||
+      typeof signature !== "string" ||
+      signature.length > 120) {
+    return res.status(400).json({ error: "Invalid request" });
+  }
+
+  const token = paidAuth.verifyChallenge(wallet, signature);
+
+  if (!token) {
+    return res.status(403).json({
+      error: "Invalid or expired wallet signature"
+    });
+  }
+
+  return res.json({
+    token,
+    expiresInSeconds: 3600
+  });
+});
+// END CRIMZNBOT PAID WALLET AUTHENTICATION
+
 // ===== Load top 100 tokens =====
 let topTokens = {};      // { SYMBOL_UPPER: cgId, NAME_UPPER: cgId }
 let cgIdToSymbol = {};   // { cgId: SYMBOL_UPPER }
@@ -510,14 +560,134 @@ app.post("/ask", async (req, res) => {
     return res.status(500).send("🤖 CrimznBot: temporary backend issue – try again shortly.");
   }
 
-  // --- server-enforced limiter & paywall (UNCHANGED) ---
-  if (!walletUsage[wallet]) walletUsage[wallet] = { count: 0, hasPaid: false };
-  if (!walletUsage[wallet].hasPaid && walletUsage[wallet].count >= 3) {
-    const paid = await verifyHeliusPayment(wallet);
-    if (!paid) return res.status(429).json({ code: "FREE_LIMIT_REACHED" });
-    walletUsage[wallet].hasPaid = true;
+// CRIMZNBOT SIGNED PAID ACCESS
+const bearer = String(req.headers.authorization || "");
+const tokenMatch = /^Bearer ([0-9a-f]{64})$/i.exec(bearer);
+
+const sessionWallet = tokenMatch
+  ? paidAuth.getSessionWallet(tokenMatch[1])
+  : null;
+
+const isGuest = typeof wallet === "string" &&
+  /^guest-[a-z0-9-]{8,80}$/i.test(wallet);
+
+const isWallet = typeof wallet === "string" &&
+  /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(wallet);
+
+if (!isGuest && !isWallet) {
+  return res.status(400).json({
+    code: "INVALID_WALLET"
+  });
+}
+
+if (sessionWallet && sessionWallet !== wallet) {
+  return res.status(403).json({
+    code: "WALLET_MISMATCH"
+  });
+}
+
+if (!walletUsage[wallet]) {
+  walletUsage[wallet] = {
+    count: 0,
+    hasPaid: false
+  };
+}
+
+const usage = walletUsage[wallet];
+const authenticated = isWallet && sessionWallet === wallet;
+
+// Three free questions before paid access is required
+if (usage.count >= 3) {
+
+  // Require wallet ownership for paid access
+  if (!authenticated) {
+    return res.status(isWallet ? 401 : 429).json({
+      code: isWallet
+        ? "AUTH_REQUIRED"
+        : "FREE_LIMIT_REACHED"
+    });
   }
-  walletUsage[wallet].count++;
+
+  // Check payment only after free questions are used
+  if (!usage.hasPaid) {
+    let paid = false;
+
+    // Check permanent Firebase payment record first
+    if (db) {
+      try {
+        const receipt = await db
+          .collection("profiles")
+          .doc(wallet)
+          .get();
+
+        paid = receipt.exists &&
+          receipt.data()?.paid === true;
+
+      } catch (e) {
+        console.warn(
+          "Payment record lookup failed:",
+          e.message
+        );
+      }
+    }
+
+    // Fall back to Helius verification
+    if (!paid) {
+      paid = await verifyHeliusPayment(wallet);
+
+      // Save verified payment permanently
+      if (paid && db) {
+        try {
+          await db
+            .collection("profiles")
+            .doc(wallet)
+            .set({
+              paid: true,
+              timestampPaid: new Date().toISOString()
+            }, { merge: true });
+
+        } catch (e) {
+          console.warn(
+            "Payment receipt save failed:",
+            e.message
+          );
+        }
+      }
+    }
+
+    // No verified payment
+    if (!paid) {
+      return res.status(429).json({
+        code: "FREE_LIMIT_REACHED"
+      });
+    }
+
+    usage.hasPaid = true;
+  }
+}
+
+// Reserve question while processing
+usage.count++;
+
+let requestFinished = false;
+
+// Refund failed responses
+res.once("finish", () => {
+  requestFinished = true;
+
+  if (res.statusCode < 200 || res.statusCode >= 300) {
+    usage.count = Math.max(0, usage.count - 1);
+  }
+});
+
+// Refund requests interrupted before completion
+res.once("close", () => {
+  if (!requestFinished) {
+    usage.count = Math.max(0, usage.count - 1);
+  }
+});
+
+// END CRIMZNBOT SIGNED PAID ACCESS
 
   // --- detect tokens & (optionally) fetch live prices for grounding ---
   const ts = `Updated: ${new Date().toISOString().replace("T", " ").slice(0, 16)} UTC`;

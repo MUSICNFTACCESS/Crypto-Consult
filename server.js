@@ -803,6 +803,87 @@ const userMsg = [
     : "MARKET_ANALYSIS: Use the REQUIRED CrimznBot terminal format from the system prompt exactly. Do not deviate."
 ].join("\n");
 
+
+  // Technical analysis enhancement ONLY.
+  // Keep the original prompt path unchanged for other questions.
+  let aiSystemStyle = systemStyle;
+  let aiUserMsg = userMsg;
+  let verifiedTechnicalContext = null;
+
+  const originalMarketMode = userMsg.endsWith(
+    "MARKET_ANALYSIS: Use the REQUIRED CrimznBot terminal format from the system prompt exactly. Do not deviate."
+  );
+
+  // EXPLICIT-TECHNICAL-ROUTING-V2
+  const router = require("./market-question-router");
+  const explicitTechnicalRequest =
+    router.isTechnicalQuestion(prompt);
+
+  if (originalMarketMode || explicitTechnicalRequest) {
+    try {
+      verifiedTechnicalContext =
+        await router.getTechnicalContext(prompt);
+
+      if (verifiedTechnicalContext) {
+        if (explicitTechnicalRequest && !originalMarketMode) {
+          const generalIntent =
+            "GENERAL_PRODUCT_HELP: Explain what CrimznBot/CryptoConsult can do clearly. Do NOT use trading format, price levels, support/resistance, market structure, or bias.";
+
+          const marketIntent =
+            "MARKET_ANALYSIS: Use the REQUIRED CrimznBot terminal format from the system prompt exactly. Do not deviate.";
+
+          if (!aiUserMsg.endsWith(generalIntent))
+            throw Error("Unexpected general intent format");
+
+          aiUserMsg =
+            aiUserMsg.slice(0, -generalIntent.length) +
+            marketIntent;
+        }
+
+        aiSystemStyle +=
+          "\nFor this technical analysis, use the verified candle context supplied in the user message. " +
+          "Ground conclusions in observed timeframes. Treat candle closes separately from live spot quotes. " +
+          "Do not invent indicators, volume signals, price levels, or market structure.";
+
+        aiUserMsg +=
+          "\n\nVERIFIED MARKET DATA:\n" +
+          verifiedTechnicalContext;
+
+        // TECHNICAL-ACCURACY-V2
+        // Only applies when verified technical context exists.
+        aiSystemStyle += [
+          "",
+          "TECHNICAL ANALYSIS ACCURACY RULES:",
+          "- Analyze the requested cryptocurrency, not BTC by default.",
+          "- Do not claim BTC is influencing the asset unless verified BTC data is supplied.",
+          "- Keep the existing CrimznBot market-analysis headings and concise terminal format.",
+          "- State the exact verified EMA20, EMA50, RSI14 and relative volume values when relevant.",
+          "- Include the timeframe beside each indicator.",
+          "- RSI14 below 30 may be called oversold; above 70 may be called overbought.",
+          "- RSI14 between 30 and 50 is not automatically oversold.",
+          "- Distinguish bearish momentum from genuinely oversold conditions.",
+          "- Base directional conclusions on supplied candle and indicator evidence.",
+          "- Explain agreement or disagreement between 1H, 4H and daily trends.",
+          "- Use verified prices for actionable conditional triggers.",
+          "- Identify observed 24H range boundaries as reference levels, not confirmed support/resistance.",
+          "- Give numerical invalidation levels when supported by the data.",
+          "- Never invent technical levels, confirmations, divergence, funding, VWAP or order flow.",
+          "- Never claim a breakout or breakdown without verified evidence.",
+          "- If important data is unavailable, explicitly say what is missing.",
+          "- Do not manufacture certainty or guarantees.",
+          "- BUY, WAIT or AVOID must follow from the available evidence.",
+          "- Never omit requested indicator values that exist in the verified context."
+        ].join("\n");
+
+      }
+    } catch (e) {
+      console.warn(
+        "Technical context unavailable:",
+        e.message
+      );
+    }
+  }
+
 try {
   const reply = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -815,8 +896,8 @@ try {
       temperature: 0.25,
       max_tokens: 900,
       messages: [
-        { role: "system", content: systemStyle },
-        { role: "user", content: userMsg }
+        { role: "system", content: aiSystemStyle },
+        { role: "user", content: aiUserMsg }
       ]
     })
   });
@@ -839,7 +920,16 @@ try {
     .trim();
 
   const header = [ts].concat(priceLines.length ? ["", ...priceLines, ""] : [""]).join("\n");
-  return res.send(`${header}\n${ans}`);
+  if (verifiedTechnicalContext) {
+    ans = require("./technical-claim-guard")
+      .cleanTechnicalAnswer(ans, verifiedTechnicalContext);
+  }
+
+  const verifiedAppendix = verifiedTechnicalContext
+    ? require("./verified-market-display")
+        .formatVerifiedMarketContext(verifiedTechnicalContext)
+    : "";
+  return res.send(`${header}\n${ans}${verifiedAppendix}`);
 
 } catch (e) {
   console.error("ASK fusion fatal:", e);
